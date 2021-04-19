@@ -1,0 +1,7 @@
+EUR = [currency_EUR]
+GBP = [currency_GBP]
+
+@context FX
+    GBP -> EUR: value * 1.11108 EUR/GBP
+    EUR -> GBP: value * 0.81227 GBP/EUR
+@end
