@@ -12,6 +12,7 @@ numpy = "^1.20.2"
 pint = "^0.17"
 cheminventory = "^0.2.3"
 python-dotenv = "^0.17.0"
+summit = "^0.8.1"
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^5.5.3"
