@@ -14,13 +14,15 @@ Install [poetry](https://python-poetry.org/docs/) and then run the following com
 
     poetry install
 
-This will get you all the needed dependencies.
+Additionally, until this [issue](https://github.com/open-reaction-database/ord-schema/issues/600) is fixed you will need to manually install the ord-schema dependencies:
+    
+    poetry run pip install -r ord-requirements.txt
 
 ## In-Silico Comparison
 Questions:
 - [ ] What is the effect of the number of cotraining tasks?
 - [ ] Can MTBO accelerate reaction optimization with unseen reagents (e.g., catalyst, bases)?
-- [ ] Does MTBO work when only some of the variables are changed in the co-training dataset?
+- [ ] Does MTBO work when only some of the variables are changed in the co-training dataset? (e.g., high throughput datasets)
 - [ ] What is the effect of the difference in substrates?
 
 Algorithms to compare
@@ -37,12 +39,11 @@ Worth reading through the [peer review](https://static-content.springer.com/esm/
 ### Data Sources for Benchmarks
 
 * Suzuki-Miyura Reaction
-    - [Reizman](https://gosummit.readthedocs.io/en/latest/experiments_benchmarks/implemented_benchmarks.html#summit.benchmarks.ReizmanSuzukiEmulator): 4 cases with varying catalysts, temperature, residence time, catalyst loading and optimizing yield and TON
-    - [Baumgartner Suzuki](https://pubs.rsc.org/en/content/articlelanding/2018/RE/C8RE00032H#!divAbstract): 3 cases varying catalyst complex, catalyst loading, temperature, and residence time and optimizing yield and TON
-    - [Perera](http://www.sciencemag.org/lookup/doi/10.1126/science.aap9112): HT screening 9 cases (3 electrophiles, 3 nucelophiles) varying ligand, base, solvent
-    - [Jaman](https://chemistry-europe.onlinelibrary.wiley.com/doi/full/10.1002/chem.201801165): 10 cases (1 nucleophile, 10 electrophiles) varying temperature and order of addition
-    - [Christensen](https://pubs.rsc.org/en/content/articlelanding/2019/re/c9re00086k#!divAbstract): Kinetic profiling, only looking at different species over time, probably not the best for our application
-    - [Christensen](https://chemrxiv.org/articles/preprint/Data-science_driven_autonomous_process_optimization/13146404): 1 case varying ligand, temperature, catalyst loading and ligand ratio to optimize formation of one product over two others
+    - [x] [Reizman](https://gosummit.readthedocs.io/en/latest/experiments_benchmarks/implemented_benchmarks.html#summit.benchmarks.ReizmanSuzukiEmulator): 4 cases with varying catalysts, temperature, residence time, catalyst loading and optimizing yield and TON
+    - [ ] [Baumgartner Suzuki](https://pubs.rsc.org/en/content/articlelanding/2018/RE/C8RE00032H#!divAbstract): 3 cases varying catalyst complex, catalyst loading, temperature, and residence time and optimizing yield and TON
+    - [ ] [Perera](http://www.sciencemag.org/lookup/doi/10.1126/science.aap9112): HT screening 9 cases (3 electrophiles, 3 nucelophiles) varying ligand, base, solvent
+    - [ ] [Christensen](https://pubs.rsc.org/en/content/articlelanding/2019/re/c9re00086k#!divAbstract): Kinetic profiling, only looking at different species over time, probably not the best for our application
+    - [ ] [Christensen](https://chemrxiv.org/articles/preprint/Data-science_driven_autonomous_process_optimization/13146404): 1 case varying ligand, temperature, catalyst loading and ligand ratio to optimize formation of one product over two others
 
 * C-N Cross Coupling Reaction
     - [Baumgartner C-N](https://pubs.acs.org/doi/10.1021/acs.oprd.9b00236): 4 cases with varying catalysts, bases, temperature, residence time, base equivalents and optimizing yield and TON

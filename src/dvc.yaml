@@ -1,0 +1,7 @@
+stages:
+  etl_baumbarter:
+    cmd: python etl_baumgartner_suzuki.py ../data/baumgartner_suzuki/c8re00032h2.xlsx
+      ../data/baumgartner_suzuki/
+    deps:
+    - ../data/baumgartner_suzuki/
+    - ../data/baumgartner_suzuki/c8re00032h2.xlsx

@@ -1,0 +1,13 @@
+schema: '2.0'
+stages:
+  etl_baumbarter:
+    cmd: python etl_baumgartner_suzuki.py ../data/baumgartner_suzuki/c8re00032h2.xlsx
+      ../data/baumgartner_suzuki/
+    deps:
+    - path: ../data/baumgartner_suzuki/
+      md5: fbc8356a256593f45acda05c41081da9.dir
+      size: 534627
+      nfiles: 5
+    - path: ../data/baumgartner_suzuki/c8re00032h2.xlsx
+      md5: 5dd468b3686c8495fd37c6aa6f2e114f
+      size: 58908
