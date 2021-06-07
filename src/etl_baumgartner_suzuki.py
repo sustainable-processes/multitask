@@ -409,7 +409,7 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
         type=CompoundIdentifier.SMILES
     )
     water.amount.volume.value = 0.5 * reaction_volume
-    water.amount.volume.value = Volume.MICROLITER
+    water.amount.volume.units = Volume.MICROLITER
 
     # Workup specification
     workup = reaction.workups.add()
