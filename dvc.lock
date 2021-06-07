@@ -8,12 +8,12 @@ stages:
       md5: 5dd468b3686c8495fd37c6aa6f2e114f
       size: 58908
     - path: src/etl_baumgartner_suzuki.py
-      md5: 5867d62314aa0cc4ad319bceb5848b76
-      size: 16889
+      md5: 2758b04bcfdff7881001674bbaf68165
+      size: 16857
     params:
       params.yaml:
         baumgartner_etl.sheet-name: MINLP1 optimization
     outs:
     - path: data/baumgartner_suzuki/baumgartner_suzuki-minlp1-optimization.pb
-      md5: 72b3b87a44d6c64e1d7936442032b467
+      md5: b1f44fb88a13b9b43eb9633fd0f0f911
       size: 268435
