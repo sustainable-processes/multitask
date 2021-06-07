@@ -469,6 +469,7 @@ def add_standard(measurement: ProductMeasurement):
     standard_prep.details = details
 
 def define_measurement(measurement: ProductMeasurement, row: pd.Series):
+    measurement.analysis_key = "LCMS"
     measurement.type = ProductMeasurement.YIELD
     measurement.percentage.value = row["Reaction Yield"]*100
     measurement.retention_time.value = row["2-Fluoro-3,3'-bipyridine Retention time in min"]
@@ -497,6 +498,10 @@ def specify_outcome(reaction: Reaction, row: pd.Series):
     )
     product.is_desired_product = True
     product.reaction_role = ReactionRole.PRODUCT
+
+    # Analysis
+    analysis = outcome.analyses["LCMS"]
+    analysis.type = Analysis.LCMS
 
     # Measurement
     measurement = product.measurements.add()
