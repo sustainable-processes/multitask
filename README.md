@@ -2,6 +2,8 @@
 
 Optimizing alcohol amination via borrowing hydrogen using multitask bayesian optimization.
 
+* Manuscript draft on [Overleaf](https://www.overleaf.com/project/608a83b48a501409d68c2f69)
+
 ## Relevant References
 
 - [Fast continuous alcohol amination employing a hydrogen borrowing protocol](https://pubs.rsc.org/en/content/articlelanding/2019/gc/c8gc03328e#!divAbstract)
@@ -24,6 +26,7 @@ Questions:
 - [ ] Can MTBO accelerate reaction optimization with unseen reagents (e.g., catalyst, bases)?
 - [ ] Does MTBO work when only some of the variables are changed in the co-training dataset? (e.g., high throughput datasets)
 - [ ] What is the effect of the difference in substrates?
+- [ ] How many more experiments does each extra objective add?
 
 Algorithms to compare
 - MTBO
