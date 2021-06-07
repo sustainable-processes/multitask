@@ -1,5 +1,5 @@
 stages:
-  baumgartner_etl_1:
+  baumgartner_etl:
     cmd: python src/etl_baumgartner_suzuki.py data/baumgartner_suzuki/c8re00032h2.xlsx
       data/baumgartner_suzuki/
     deps:
@@ -7,4 +7,6 @@ stages:
     - src/etl_baumgartner_suzuki.py
     outs:
     - data/baumgartner_suzuki/baumgartner_suzuki-minlp1-optimization.pb
+    - data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp1-optimization.json
     - data/baumgartner_suzuki/baumgartner_suzuki-minlp2-optimization.pb
+    - data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp2-optimization.json

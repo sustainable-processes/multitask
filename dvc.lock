@@ -1,6 +1,6 @@
 schema: '2.0'
 stages:
-  baumgartner_etl_1:
+  baumgartner_etl:
     cmd: python src/etl_baumgartner_suzuki.py data/baumgartner_suzuki/c8re00032h2.xlsx
       data/baumgartner_suzuki/
     deps:
@@ -8,12 +8,18 @@ stages:
       md5: 5dd468b3686c8495fd37c6aa6f2e114f
       size: 58908
     - path: src/etl_baumgartner_suzuki.py
-      md5: 7d96b1a1d2a32631b808d3c1ebce2f83
-      size: 16945
+      md5: 4eb8d8168766f469e4b2c05dfe50eff8
+      size: 17387
     outs:
     - path: data/baumgartner_suzuki/baumgartner_suzuki-minlp1-optimization.pb
-      md5: 5a7097eff13797e0c69ba2e789e9e5b8
-      size: 268435
+      md5: cd905086c627129d6184b109419cc03b
+      size: 268811
     - path: data/baumgartner_suzuki/baumgartner_suzuki-minlp2-optimization.pb
-      md5: d1149db1aaec52500c044be1d7273d66
-      size: 169269
+      md5: af03888aca16a3efa066611975584039
+      size: 169505
+    - path: data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp1-optimization.json
+      md5: 3b7901ad01cd36ac35a95fa6a4b840e2
+      size: 16466
+    - path: data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp2-optimization.json
+      md5: eb5dcf2f23c5bd232468a5c56deb7471
+      size: 12097

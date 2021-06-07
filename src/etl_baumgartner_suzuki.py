@@ -8,20 +8,25 @@ python etl_baumgartner_suzuki.py ../data/baumgartner_suzuki/c8re00032h2.xlsx ../
 from ord_schema.proto.reaction_pb2 import *
 from ord_schema.proto.dataset_pb2 import *
 from ord_schema.message_helpers import find_submessages
+from ord_schema import  validations
 
 import typer
 from tqdm.auto import tqdm
 import pandas as pd
-from pathlib import Path
 import numpy as np
+from pathlib import Path
+import json
+
 
 
 
 def main(input_file: str, output_path:str):
     """Entrypoint for running ETL job"""
+    output_path = Path(output_path)
     # Extract data
     for i in range(2):
         sheet_name = f"MINLP{i+1} optimization"
+        case = sheet_name.replace(" ", "-").lower()
         df = pd.read_excel(input_file,sheet_name=sheet_name)
 
         # Transform
@@ -32,11 +37,16 @@ def main(input_file: str, output_path:str):
         dataset = Dataset()
         dataset.name = "Baumgartner Suzuki Cross-Coupling"
         dataset.reactions.extend(reactions)
-        dataset.dataset_id = "10453"
+        dataset.dataset_id = str(i)
+
+        # Validate dataset
+        validation_output = validations.validate_message(dataset)
+        print(f"First 5 Warnings. See {output_path / f'warnings_baumgartner_suzuki-{case}.json'} for full output")
+        print(validation_output.warnings[:5])
+        with open(output_path / f"warnings_baumgartner_suzuki-{case}.json", "w") as f:
+            json.dump(validation_output.warnings, f)
 
         # Load back
-        case = sheet_name.replace(" ", "-").lower()
-        output_path = Path(output_path)
         with open(output_path / f"baumgartner_suzuki-{case}.pb", "wb") as f:
             f.write(dataset.SerializeToString())
 
@@ -397,7 +407,7 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
         type=CompoundIdentifier.SMILES
     )
     acetone.amount.volume.value = 0.5 * reaction_volume
-    acetone.amount.volume.value = Volume.MICROLITER
+    acetone.amount.volume.units = Volume.MICROLITER
 
     # Water
     water = quench.components.add()
@@ -460,7 +470,7 @@ def add_standard(measurement: ProductMeasurement):
 
 def define_measurement(measurement: ProductMeasurement, row: pd.Series):
     measurement.type = ProductMeasurement.YIELD
-    measurement.percentage.value = row["Reaction Yield"]
+    measurement.percentage.value = row["Reaction Yield"]*100
     measurement.retention_time.value = row["2-Fluoro-3,3'-bipyridine Retention time in min"]
     measurement.retention_time.units = Time.MINUTE
 
@@ -498,7 +508,7 @@ def add_provenance(reaction: Reaction):
     provenance.doi = "10.1039/c8re00032h"
     provenance.publication_url = "http://doi.org/10.1039/c8re00032h"
     creator = provenance.record_created.person
-    creator.username = "maracosfelt"
+    creator.username = "marcosfelt"
     creator.name = "Kobi Felton"
     creator.orcid = "0000-0002-3616-4766"
     creator.organization = "University of Cambridge"
