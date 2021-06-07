@@ -1,6 +1,6 @@
 schema: '2.0'
 stages:
-  baumgartner_etl:
+  baumgartner_etl_1:
     cmd: python src/etl_baumgartner_suzuki.py data/baumgartner_suzuki/c8re00032h2.xlsx
       data/baumgartner_suzuki/
     deps:
@@ -12,8 +12,8 @@ stages:
       size: 16857
     params:
       params.yaml:
-        baumgartner_etl.sheet-name: MINLP1 optimization
+        baumgartner_etl_1.sheet-name: MINLP1 optimization
     outs:
     - path: data/baumgartner_suzuki/baumgartner_suzuki-minlp1-optimization.pb
-      md5: b1f44fb88a13b9b43eb9633fd0f0f911
+      md5: e5eff315ec48ac23a96051c05eb83e34
       size: 268435
