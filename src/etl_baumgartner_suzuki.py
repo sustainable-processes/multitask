@@ -17,26 +17,28 @@ import numpy as np
 
 
 
-def main(input_file: str, output_path:str, sheet_name: str="MINLP1 optimization"):
+def main(input_file: str, output_path:str):
     """Entrypoint for running ETL job"""
     # Extract data
-    df = pd.read_excel(input_file,sheet_name=sheet_name)
+    for i in range(2):
+        sheet_name = f"MINLP{i+1} optimization"
+        df = pd.read_excel(input_file,sheet_name=sheet_name)
 
-    # Transform
-    tqdm.pandas(desc="Converting to ORD")
-    reactions = df.progress_apply(inner_loop, axis=1)
+        # Transform
+        tqdm.pandas(desc="Converting to ORD")
+        reactions = df.progress_apply(inner_loop, axis=1)
 
-    # Create dataset
-    dataset = Dataset()
-    dataset.name = "Baumgartner Suzuki Cross-Coupling"
-    dataset.reactions.extend(reactions)
-    dataset.dataset_id = "10453"
+        # Create dataset
+        dataset = Dataset()
+        dataset.name = "Baumgartner Suzuki Cross-Coupling"
+        dataset.reactions.extend(reactions)
+        dataset.dataset_id = "10453"
 
-    # Load back
-    case = sheet_name.replace(" ", "-").lower()
-    output_path = Path(output_path)
-    with open(output_path / f"baumgartner_suzuki-{case}.pb", "wb") as f:
-        f.write(dataset.SerializeToString())
+        # Load back
+        case = sheet_name.replace(" ", "-").lower()
+        output_path = Path(output_path)
+        with open(output_path / f"baumgartner_suzuki-{case}.pb", "wb") as f:
+            f.write(dataset.SerializeToString())
 
 
 def inner_loop(row: pd.Series) -> Reaction:
