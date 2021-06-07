@@ -24,6 +24,7 @@ Questions:
 - [ ] Can MTBO accelerate reaction optimization with unseen reagents (e.g., catalyst, bases)?
 - [ ] Does MTBO work when only some of the variables are changed in the co-training dataset? (e.g., high throughput datasets)
 - [ ] What is the effect of the difference in substrates?
+- [ ] How many more experiments does each extra objective add?
 
 Algorithms to compare
 - MTBO
