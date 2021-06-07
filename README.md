@@ -2,6 +2,8 @@
 
 Optimizing alcohol amination via borrowing hydrogen using multitask bayesian optimization.
 
+* Manuscript draft on [Overleaf](https://www.overleaf.com/project/608a83b48a501409d68c2f69)
+
 ## Relevant References
 
 - [Fast continuous alcohol amination employing a hydrogen borrowing protocol](https://pubs.rsc.org/en/content/articlelanding/2019/gc/c8gc03328e#!divAbstract)
