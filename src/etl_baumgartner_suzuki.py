@@ -1,7 +1,7 @@
 """
 Create an ORD dataset from the the paper by Baumgartner et al.
 
-python etl_baumgartner_suzuki.py ../data/baumgartner_suzuki/c8re00032h2.xlsx ../data/baumgartner_suzuki/baumgartner_suzuki.pb
+python etl_baumgartner_suzuki.py ../data/baumgartner_suzuki/c8re00032h2.xlsx ../data/baumgartner_suzuki/
 
 """
 

@@ -1,0 +1,11 @@
+stages:
+  baumgartner_etl:
+    cmd: python src/etl_baumgartner_suzuki.py data/baumgartner_suzuki/c8re00032h2.xlsx
+      data/baumgartner_suzuki/
+    deps:
+    - data/baumgartner_suzuki/c8re00032h2.xlsx
+    - src/etl_baumgartner_suzuki.py
+    params:
+    - baumgartner_etl.sheet-name
+    outs:
+    - data/baumgartner_suzuki/baumgartner_suzuki-minlp1-optimization.pb
