@@ -8,7 +8,7 @@ python etl_baumgartner_suzuki.py ../data/baumgartner_suzuki/c8re00032h2.xlsx ../
 from ord_schema.proto.reaction_pb2 import *
 from ord_schema.proto.dataset_pb2 import *
 from ord_schema.message_helpers import find_submessages
-from ord_schema import  validations
+from ord_schema import validations
 
 import typer
 from pint import UnitRegistry
@@ -21,14 +21,14 @@ import json
 ureg = UnitRegistry()
 
 
-def main(input_file: str, output_path:str):
+def main(input_file: str, output_path: str):
     """Entrypoint for running ETL job"""
     output_path = Path(output_path)
     # Extract data
     for i in range(2):
         sheet_name = f"MINLP{i+1} optimization"
         case = sheet_name.replace(" ", "-").lower()
-        df = pd.read_excel(input_file,sheet_name=sheet_name)
+        df = pd.read_excel(input_file, sheet_name=sheet_name)
 
         # Transform
         tqdm.pandas(desc="Converting to ORD")
@@ -42,7 +42,9 @@ def main(input_file: str, output_path:str):
 
         # Validate dataset
         validation_output = validations.validate_message(dataset)
-        print(f"First 5 Warnings. See {output_path / f'warnings_baumgartner_suzuki-{case}.json'} for full output")
+        print(
+            f"First 5 Warnings. See {output_path / f'warnings_baumgartner_suzuki-{case}.json'} for full output"
+        )
         print(validation_output.warnings[:5])
         with open(output_path / f"warnings_baumgartner_suzuki-{case}.json", "w") as f:
             json.dump(validation_output.warnings, f)
@@ -56,9 +58,7 @@ def inner_loop(row: pd.Series) -> Reaction:
     """Innter loop for creating a Reaction object for each row in the spreadsheet"""
     # Create reaction
     reaction = Reaction()
-    reaction.identifiers.add(
-        value=r"Suzuki Coupling", type=5
-    )
+    reaction.identifiers.add(value=r"Suzuki Coupling", type=5)
     # Add reactants
     add_electrophile(reaction, row)
     add_nucleophile(reaction, row)
@@ -86,26 +86,21 @@ def add_thf_solvent(
     stock: ReactionInput,
     final_solute_conc: float,
     stock_conc: float,
-    droplet_volume: float=40.0,
-)-> None:
+    droplet_volume: float = 40.0,
+) -> None:
     """
     final_solute_conc is in molar
     droplet volume in microliters
     stock_conc in molar
     """
     thf = stock.components.add()
-    thf.identifiers.add(
-        value="THF",
-        type=CompoundIdentifier.NAME
-    )
-    thf.identifiers.add(
-        value=r"C1CCOC1",
-        type=CompoundIdentifier.SMILES
-    )
+    thf.identifiers.add(value="THF", type=CompoundIdentifier.NAME)
+    thf.identifiers.add(value=r"C1CCOC1", type=CompoundIdentifier.SMILES)
     thf.reaction_role = ReactionRole.SOLVENT
-    thf.amount.volume.units=Volume.MICROLITER
-    thf.amount.volume.value=final_solute_conc*droplet_volume/stock_conc
-    thf.amount.volume_includes_solutes=True
+    thf.amount.volume.units = Volume.MICROLITER
+    thf.amount.volume.value = final_solute_conc * droplet_volume / stock_conc
+    thf.amount.volume_includes_solutes = True
+
 
 def add_electrophile(reaction: Reaction, row: pd.Series):
     # Chloropyridine
@@ -116,12 +111,10 @@ def add_electrophile(reaction: Reaction, row: pd.Series):
     chloropyridine = chloropyridine_stock.components.add()
     chloropyridine.reaction_role = ReactionRole.REACTANT
     chloropyridine.identifiers.add(
-        value="3-Chloropyridine",
-        type=CompoundIdentifier.NAME
+        value="3-Chloropyridine", type=CompoundIdentifier.NAME
     )
     chloropyridine.identifiers.add(
-        value=r"C1=CC(=CN=C1)Cl",
-        type=CompoundIdentifier.SMILES
+        value=r"C1=CC(=CN=C1)Cl", type=CompoundIdentifier.SMILES
     )
     chloropyridine_conc = row["Reagent 1 Conc. (M)"]
     amount = chloropyridine.amount
@@ -132,13 +125,9 @@ def add_electrophile(reaction: Reaction, row: pd.Series):
     # Internal standard
     internal_std = chloropyridine_stock.components.add()
     internal_std.reaction_role = ReactionRole.INTERNAL_STANDARD
+    internal_std.identifiers.add(value="Naphthelene", type=CompoundIdentifier.NAME)
     internal_std.identifiers.add(
-        value="Naphthelene",
-        type=CompoundIdentifier.NAME
-    )
-    internal_std.identifiers.add(
-        value=r"c1c2ccccc2ccc1",
-        type=CompoundIdentifier.SMILES
+        value=r"c1c2ccccc2ccc1", type=CompoundIdentifier.SMILES
     )
     istd_conc = row["Internal Standard Conc. (g/L)"]
     amount = internal_std.amount
@@ -146,11 +135,8 @@ def add_electrophile(reaction: Reaction, row: pd.Series):
     amount.mass.value = istd_conc * 40.0
 
     # Solvent
-    add_thf_solvent(
-        chloropyridine_stock,
-        chloropyridine_conc,
-        stock_conc=1.434
-    )
+    add_thf_solvent(chloropyridine_stock, chloropyridine_conc, stock_conc=1.434)
+
 
 def add_nucleophile(reaction: Reaction, row: pd.Series):
     # Pinacol ester
@@ -162,11 +148,10 @@ def add_nucleophile(reaction: Reaction, row: pd.Series):
     pinacol_ester.reaction_role = ReactionRole.REACTANT
     pinacol_ester.identifiers.add(
         value="2-fluoropyridine-3-boronic acid pincacol ester",
-        type=CompoundIdentifier.NAME
+        type=CompoundIdentifier.NAME,
     )
     pinacol_ester.identifiers.add(
-        value=r"CC1(C)OB(OC1(C)C)c2ccc(F)nc2",
-        type=CompoundIdentifier.SMILES
+        value=r"CC1(C)OB(OC1(C)C)c2ccc(F)nc2", type=CompoundIdentifier.SMILES
     )
     pe_conc = row["Reagent 2 Conc. (M)"]
     amount = pinacol_ester.amount
@@ -174,26 +159,18 @@ def add_nucleophile(reaction: Reaction, row: pd.Series):
     amount.moles.value = pe_conc * 40.0  # 40 µL droplet
 
     # Solvent
-    add_thf_solvent(
-        pinacol_ester_stock,
-        pe_conc,
-        stock_conc=0.996
-    )
+    add_thf_solvent(pinacol_ester_stock, pe_conc, stock_conc=0.996)
+
+
 pre_catalysts = {
-    "P1": {
-        "SMILES": "CS(=O)(=O)O[Pd]c1ccccc1-c2ccccc2N",
-        "name": "Pd G3 µ-OMS"
-    },
-    "P2": {
-        "SMILES": "Cl[Pd]c1ccccc1-c2ccccc2N",
-        "name": "Pd G3 Cl"
-    }
+    "P1": {"SMILES": "CS(=O)(=O)O[Pd]c1ccccc1-c2ccccc2N", "name": "Pd G3 µ-OMS"},
+    "P2": {"SMILES": "Cl[Pd]c1ccccc1-c2ccccc2N", "name": "Pd G3 Cl"},
 }
 
 ligands = {
     "L1": {
         "SMILES": "CC(C)c1cc(C(C)C)c(c(c1)C(C)C)-c2ccccc2P(C3CCCCC3)C4CCCCC4",
-        "name": "XPhos"
+        "name": "XPhos",
     },
     "L2": {
         "SMILES": "COc1cccc(OC)c1-c2ccccc2P(C3CCCCC3)C4CCCCC4",
@@ -201,32 +178,25 @@ ligands = {
     },
     "L3": {
         "SMILES": "CC(C)Oc1cccc(OC(C)C)c1-c2ccccc2P(C3CCCCC3)C4CCCCC4",
-        "name": "RuPhos"
+        "name": "RuPhos",
     },
     "L4": {
         "SMILES": "CC1(C)c2cccc(P(c3ccccc3)c4ccccc4)c2Oc5c(cccc15)P(c6ccccc6)c7ccccc7",
-        "name": "XantPhos"
+        "name": "XantPhos",
     },
-    "L5": {
-        "SMILES": "C1CCC(CC1)P(C2CCCCC2)C3CCCCC3",
-        "name": "tricyclohexylphosphine"
-    },
-    "L6": {
-        "SMILES": "c1ccc(cc1)P(c2ccccc2)c3ccccc3",
-        "name": "triphenylphosphine"
-    },
-    "L7": {
-        "SMILES": "CC(C)(C)P(C(C)(C)C)C(C)(C)C",
-        "name": "tri-tert-butylphosphine"
-    }
+    "L5": {"SMILES": "C1CCC(CC1)P(C2CCCCC2)C3CCCCC3", "name": "tricyclohexylphosphine"},
+    "L6": {"SMILES": "c1ccc(cc1)P(c2ccccc2)c3ccccc3", "name": "triphenylphosphine"},
+    "L7": {"SMILES": "CC(C)(C)P(C(C)(C)C)C(C)(C)C", "name": "tri-tert-butylphosphine"},
 }
 
-def catalyst_details(pre_catalyst_id:str, ligand_id:str)-> (str, str):
+
+def catalyst_details(pre_catalyst_id: str, ligand_id: str) -> (str, str):
     pre_cat = pre_catalysts[pre_catalyst_id]
     ligand = ligands[ligand_id]
     smiles = f"""{pre_cat["SMILES"]}.{ligand["SMILES"]}"""
     name = pre_cat["name"] + " " + pre_cat["name"]
     return name, smiles
+
 
 def add_catalyst(reaction: Reaction, row: pd.Series):
     # Catalyst
@@ -238,24 +208,15 @@ def add_catalyst(reaction: Reaction, row: pd.Series):
     catalyst.reaction_role = ReactionRole.CATALYST
     cat_id = row["Reagent 3 ID"]
     name, smiles = catalyst_details(cat_id[:2], cat_id[2:4])
-    catalyst.identifiers.add(
-        value=name,
-        type=CompoundIdentifier.NAME
-    )
-    catalyst.identifiers.add(
-        value=smiles,
-        type=CompoundIdentifier.SMILES
-    )
+    catalyst.identifiers.add(value=name, type=CompoundIdentifier.NAME)
+    catalyst.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
     cat_conc = row["Reagent 3 Conc. (M)"]
     catalyst.amount.moles.units = Moles.MICROMOLE
     catalyst.amount.moles.value = cat_conc * 40.0
 
     # Solvent
-    add_thf_solvent(
-        catalyst_stock,
-        cat_conc,
-        stock_conc=0.017
-    )
+    add_thf_solvent(catalyst_stock, cat_conc, stock_conc=0.017)
+
 
 def add_solvent(reaction: Reaction, row: pd.Series):
     # Solvent
@@ -270,31 +231,20 @@ def add_solvent(reaction: Reaction, row: pd.Series):
 
     # THF
     thf = solvent_mix.components.add()
-    thf.identifiers.add(
-        value="THF",
-        type=CompoundIdentifier.NAME
-    )
-    thf.identifiers.add(
-        value=r"C1CCOC1",
-        type=CompoundIdentifier.SMILES
-    )
+    thf.identifiers.add(value="THF", type=CompoundIdentifier.NAME)
+    thf.identifiers.add(value=r"C1CCOC1", type=CompoundIdentifier.SMILES)
     thf.reaction_role = ReactionRole.SOLVENT
     thf.amount.volume.value = thf_volume
     thf.amount.volume.units = Volume.MICROLITER
 
     # Water
     water = solvent_mix.components.add()
-    water.identifiers.add(
-        value="water",
-        type=CompoundIdentifier.NAME
-    )
-    water.identifiers.add(
-        value="O",
-        type=CompoundIdentifier.SMILES
-    )
+    water.identifiers.add(value="water", type=CompoundIdentifier.NAME)
+    water.identifiers.add(value="O", type=CompoundIdentifier.SMILES)
     water.reaction_role = ReactionRole.SOLVENT
     water.amount.volume.value = water_volume
     water.amount.volume.units = Volume.MICROLITER
+
 
 def add_base(reaction: Reaction, row: pd.Series):
     # Base
@@ -304,30 +254,19 @@ def add_base(reaction: Reaction, row: pd.Series):
     # Solute
     base = base_stock.components.add()
     base.reaction_role = ReactionRole.REAGENT
-    base.identifiers.add(
-        value="DBU",
-        type=CompoundIdentifier.NAME
-    )
-    base.identifiers.add(
-        value=r"N\2=C1\N(CCCCC1)CCC/2",
-        type=CompoundIdentifier.SMILES
-    )
+    base.identifiers.add(value="DBU", type=CompoundIdentifier.NAME)
+    base.identifiers.add(value=r"N\2=C1\N(CCCCC1)CCC/2", type=CompoundIdentifier.SMILES)
     base.amount.moles.value = row["Inlet Injection (µL)"] * 1.645
     base.amount.moles.units = Moles.MICROMOLE
 
     # Solvent
     thf = base_stock.components.add()
-    thf.identifiers.add(
-        value="THF",
-        type=CompoundIdentifier.NAME
-    )
-    thf.identifiers.add(
-        value=r"C1CCOC1",
-        type=CompoundIdentifier.SMILES
-    )
+    thf.identifiers.add(value="THF", type=CompoundIdentifier.NAME)
+    thf.identifiers.add(value=r"C1CCOC1", type=CompoundIdentifier.SMILES)
     thf.reaction_role = ReactionRole.SOLVENT
     thf.amount.volume.value = row["Inlet Injection (µL)"]
     thf.amount.volume.units = Volume.MICROLITER
+
 
 def specify_temperature(reaction: Reaction, row: pd.Series):
     # Temperature
@@ -338,6 +277,7 @@ def specify_temperature(reaction: Reaction, row: pd.Series):
     control.details = details
     temp_conditions.setpoint.value = row["Temperature (°C)"]
     temp_conditions.setpoint.units = Temperature.TemperatureUnit.CELSIUS
+
 
 def specify_flow_conditions(reaction: Reaction, row: pd.Series):
     flow_conditions = reaction.conditions.flow
@@ -351,11 +291,12 @@ def specify_flow_conditions(reaction: Reaction, row: pd.Series):
     flow_conditions.tubing.details = """1/16 in. ID tubing for main reactor."""
     flow_conditions.tubing.diameter.units = Length.INCH
 
+
 def get_pint(amount: Amount):
     """Get an amount in terms of pint units"""
     kind = amount.WhichOneof("kind")
     units = getattr(amount, kind).units
-    value =  getattr(amount, kind).value
+    value = getattr(amount, kind).value
     pint_value = None
     if kind == "moles":
         units_str = Moles.MolesUnit.Name(units)
@@ -365,6 +306,7 @@ def get_pint(amount: Amount):
         units_str = Mass.MassUnit.Name(units)
     return value * ureg(units_str.lower())
 
+
 def calculate_total_volume(reaction, include_workup=False):
     # Calculate total reaction volume in microliters
     total_volume = 0.0 * ureg.ml
@@ -372,10 +314,15 @@ def calculate_total_volume(reaction, include_workup=False):
     for k in rxn_inputs:
         for component in rxn_inputs[k].components:
             amount = component.amount
-            include_workup = True if include_workup else component.reaction_role != ReactionRole.WORKUP
+            include_workup = (
+                True
+                if include_workup
+                else component.reaction_role != ReactionRole.WORKUP
+            )
             if amount.WhichOneof("kind") == "volume" and include_workup:
                 total_volume += get_pint(amount)
     return total_volume.to(ureg.microliter).magnitude
+
 
 def cross_checks(reaction: Reaction, row: pd.Series):
     # Check that reaction volume adds up properly
@@ -399,6 +346,7 @@ def cross_checks(reaction: Reaction, row: pd.Series):
             f", but it is actually {catalyst.amount.moles.value} micromols."
         )
 
+
 def quench_reaction(reaction: Reaction, row: pd.Series):
     # Quench
     quench = reaction.inputs["Quench"]
@@ -408,28 +356,16 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
     # Acetone
     acetone = quench.components.add()
     acetone.reaction_role = ReactionRole.WORKUP
-    acetone.identifiers.add(
-        value="acetone",
-        type=CompoundIdentifier.NAME
-    )
-    acetone.identifiers.add(
-        value="CC(=O)C",
-        type=CompoundIdentifier.SMILES
-    )
+    acetone.identifiers.add(value="acetone", type=CompoundIdentifier.NAME)
+    acetone.identifiers.add(value="CC(=O)C", type=CompoundIdentifier.SMILES)
     acetone.amount.volume.value = 0.5 * reaction_volume
     acetone.amount.volume.units = Volume.MICROLITER
 
     # Water
     water = quench.components.add()
     water.reaction_role = ReactionRole.WORKUP
-    water.identifiers.add(
-        value="water",
-        type=CompoundIdentifier.NAME
-    )
-    water.identifiers.add(
-        value="O",
-        type=CompoundIdentifier.SMILES
-    )
+    water.identifiers.add(value="water", type=CompoundIdentifier.NAME)
+    water.identifiers.add(value="O", type=CompoundIdentifier.SMILES)
     water.amount.volume.value = 0.5 * reaction_volume
     water.amount.volume.units = Volume.MICROLITER
 
@@ -446,18 +382,17 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
     workup.details = details
     workup.input.CopyFrom(quench)
 
+
 def add_standard(measurement: ProductMeasurement):
     # Standard
     measurement.uses_internal_standard = True
     measurement.uses_authentic_standard = True
     standard = measurement.authentic_standard
     standard.identifiers.add(
-        value="2'-fluoro-2,3'-bipyridine",
-        type=CompoundIdentifier.NAME
+        value="2'-fluoro-2,3'-bipyridine", type=CompoundIdentifier.NAME
     )
     standard.identifiers.add(
-        value="FC1=C(C2=NC=CC=C2)C=CC=N1",
-        type=CompoundIdentifier.SMILES
+        value="FC1=C(C2=NC=CC=C2)C=CC=N1", type=CompoundIdentifier.SMILES
     )
     standard.reaction_role = ReactionRole.AUTHENTIC_STANDARD
     standard_prep = standard.preparations.add()
@@ -478,11 +413,14 @@ def add_standard(measurement: ProductMeasurement):
     )
     standard_prep.details = details
 
+
 def define_measurement(measurement: ProductMeasurement, row: pd.Series):
     measurement.analysis_key = "LCMS"
     measurement.type = ProductMeasurement.YIELD
-    measurement.percentage.value = row["Reaction Yield"]*100
-    measurement.retention_time.value = row["2-Fluoro-3,3'-bipyridine Retention time in min"]
+    measurement.percentage.value = row["Reaction Yield"] * 100
+    measurement.retention_time.value = row[
+        "2-Fluoro-3,3'-bipyridine Retention time in min"
+    ]
     measurement.retention_time.units = Time.MINUTE
 
 
@@ -499,12 +437,10 @@ def specify_outcome(reaction: Reaction, row: pd.Series):
     # Product
     product = outcome.products.add()
     product.identifiers.add(
-        value="2'-fluoro-2,3'-bipyridine",
-        type=CompoundIdentifier.NAME
+        value="2'-fluoro-2,3'-bipyridine", type=CompoundIdentifier.NAME
     )
     product.identifiers.add(
-        value="FC1=C(C2=NC=CC=C2)C=CC=N1",
-        type=CompoundIdentifier.SMILES
+        value="FC1=C(C2=NC=CC=C2)C=CC=N1", type=CompoundIdentifier.SMILES
     )
     product.is_desired_product = True
     product.reaction_role = ReactionRole.PRODUCT
@@ -518,6 +454,7 @@ def specify_outcome(reaction: Reaction, row: pd.Series):
     define_measurement(measurement, row)
     add_standard(measurement)
 
+
 def add_provenance(reaction: Reaction):
     provenance = reaction.provenance
     provenance.doi = "10.1039/c8re00032h"
@@ -529,9 +466,6 @@ def add_provenance(reaction: Reaction):
     creator.organization = "University of Cambridge"
     creator.email = "kobi.c.f@gmail.com"
 
+
 if __name__ == "__main__":
     typer.run(main)
-
-
-
-
