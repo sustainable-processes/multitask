@@ -21,6 +21,7 @@ typer = "^0.3.2"
 [tool.poetry.dev-dependencies]
 ipykernel = "^5.5.3"
 dvc = {extras = ["gdrive"], version = "^2.3.0"}
+black = "^21.5b2"
 
 [build-system]
 requires = ["poetry>=0.12"]

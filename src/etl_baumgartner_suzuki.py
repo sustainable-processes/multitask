@@ -11,13 +11,14 @@ from ord_schema.message_helpers import find_submessages
 from ord_schema import  validations
 
 import typer
+from pint import UnitRegistry
 from tqdm.auto import tqdm
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import json
 
-
+ureg = UnitRegistry()
 
 
 def main(input_file: str, output_path:str):
@@ -148,7 +149,7 @@ def add_electrophile(reaction: Reaction, row: pd.Series):
     add_thf_solvent(
         chloropyridine_stock,
         chloropyridine_conc,
-        stock_conc=0.996
+        stock_conc=1.434
     )
 
 def add_nucleophile(reaction: Reaction, row: pd.Series):
@@ -167,7 +168,7 @@ def add_nucleophile(reaction: Reaction, row: pd.Series):
         value=r"CC1(C)OB(OC1(C)C)c2ccc(F)nc2",
         type=CompoundIdentifier.SMILES
     )
-    pe_conc = row["Reagent 1 Conc. (M)"]
+    pe_conc = row["Reagent 2 Conc. (M)"]
     amount = pinacol_ester.amount
     amount.moles.units = Moles.MICROMOLE
     amount.moles.value = pe_conc * 40.0  # 40 µL droplet
@@ -262,12 +263,7 @@ def add_solvent(reaction: Reaction, row: pd.Series):
     solvent_mix.addition_order = 1
 
     # Calculate volume of solvent needed for 40 microliter droplet
-    reactants = [
-        reaction.inputs[v]
-        for v in
-        ["Electrophile", "Nucleophile", "Catalyst"]
-    ]
-    reactants_volume = sum([r.components[1].amount.volume.value for r in reactants])
+    reactants_volume = calculate_total_volume(reaction, include_workup=False)
     solvent_volume = 40.0 - reactants_volume
     thf_volume = 5 / 6 * solvent_volume
     water_volume = 1 / 6 * solvent_volume
@@ -355,17 +351,31 @@ def specify_flow_conditions(reaction: Reaction, row: pd.Series):
     flow_conditions.tubing.details = """1/16 in. ID tubing for main reactor."""
     flow_conditions.tubing.diameter.units = Length.INCH
 
-def calculate_total_volume(reaction: Reaction):
-    # Calculate total reaction volume
-    reactants = [
-        reaction.inputs[v]
-        for v in
-        ["Electrophile", "Nucleophile", "Catalyst", "Base"]
-    ]
-    reaction_volume = sum([r.components[1].amount.volume.value for r in reactants])
-    solvent_mix = reaction.inputs["Solvent"]
-    reaction_volume += sum([s.value for s in find_submessages(solvent_mix, Volume)])
-    return reaction_volume
+def get_pint(amount: Amount):
+    """Get an amount in terms of pint units"""
+    kind = amount.WhichOneof("kind")
+    units = getattr(amount, kind).units
+    value =  getattr(amount, kind).value
+    pint_value = None
+    if kind == "moles":
+        units_str = Moles.MolesUnit.Name(units)
+    elif kind == "volume":
+        units_str = Volume.VolumeUnit.Name(units)
+    elif kind == "mass":
+        units_str = Mass.MassUnit.Name(units)
+    return value * ureg(units_str.lower())
+
+def calculate_total_volume(reaction, include_workup=False):
+    # Calculate total reaction volume in microliters
+    total_volume = 0.0 * ureg.ml
+    rxn_inputs = reaction.inputs
+    for k in rxn_inputs:
+        for component in rxn_inputs[k].components:
+            amount = component.amount
+            include_workup = True if include_workup else component.reaction_role != ReactionRole.WORKUP
+            if amount.WhichOneof("kind") == "volume" and include_workup:
+                total_volume += get_pint(amount)
+    return total_volume.to(ureg.microliter).magnitude
 
 def cross_checks(reaction: Reaction, row: pd.Series):
     # Check that reaction volume adds up properly

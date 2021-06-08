@@ -8,14 +8,14 @@ stages:
       md5: 5dd468b3686c8495fd37c6aa6f2e114f
       size: 58908
     - path: src/etl_baumgartner_suzuki.py
-      md5: 952ad3bcef058114101b87899f1ba69b
-      size: 17515
+      md5: 0ffe0b8903382a0b52af01dfad40f3c3
+      size: 18038
     outs:
     - path: data/baumgartner_suzuki/baumgartner_suzuki-minlp1-optimization.pb
-      md5: 4397f468e172508d23708dd2d8cfe03d
+      md5: 554668b34fbc9b28c37f0d9a533bc1f5
       size: 270521
     - path: data/baumgartner_suzuki/baumgartner_suzuki-minlp2-optimization.pb
-      md5: ee3c81f1575028cd05ecdea42a4925db
+      md5: 0e4052f94353c2b5d9479cd91ba862db
       size: 170585
     - path: data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp1-optimization.json
       md5: 07208af99bc894a638e40821ac92e205
