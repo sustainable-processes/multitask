@@ -1,10 +1,12 @@
 import ord_schema
+from summit import *
 from ord_schema import message_helpers, validations
 from ord_schema.proto import dataset_pb2
 from ord_schema.proto.reaction_pb2 import *
 from ord_schema.message_helpers import find_submessages
 from ord_schema import units
 
+from rdkit import Chem
 from pint import UnitRegistry
 
 from pathlib import Path
@@ -21,6 +23,7 @@ __all__ = [
     "suzuki_reaction_to_dataframe",
 ]
 
+exp = ExperimentalEmulator()
 
 def get_pint_amount(amount: Amount):
     """Get an amount in terms of pint units"""
@@ -37,10 +40,11 @@ def get_pint_amount(amount: Amount):
     return value * ureg(units_str.lower())
 
 
-def get_smiles(compound: Compound):
+def get_smiles(compound: Compound, canonicalize=True):
     for identifier in compound.identifiers:
         if identifier.type == CompoundIdentifier.SMILES:
-            return identifier.value
+            smiles = identifier.value
+            return Chem.CanonSmiles(smiles)
 
 
 def split_cat_ligand(smiles: str):
@@ -72,11 +76,31 @@ def calculate_total_volume(rxn_inputs, include_workup=False):
                 total_volume += get_pint_amount(amount)
     return total_volume
 
+def contains_boron(smiles):
+    """Check for the presence of Boron"""
+    boron = Chem.MolFromSmarts("[B]")
+    mol = Chem.MolFromSmiles(smiles)
+    res = mol.GetSubstructMatches(boron)
+    if len(res)>0:
+        return True
+    else:
+        False
+
+def get_rxn_yield(outcome):
+    yields = []
+    for product in outcome.products:
+        for measurement in product.measurements:
+            if measurement.type == ProductMeasurement.YIELD:
+                yields.append(measurement.percentage.value)
+    if len(yields)>1:
+        raise ValueError("More than one product with a yield in reaction outcome. This is ambiguous.")
+    elif len(yields)==0:
+        raise ValueError("No reaction yield found in reaction outcome.")
+    return yields[0]
 
 def get_suzuki_row(reaction: Reaction) -> dict:
     """Convert a Suzuki ORD reaction into a dictionary"""
     row = {}
-    reaction = baumgartner_datasets[0].reactions[0]
     rxn_inputs = reaction.inputs
     reactants = 0
     total_volume = calculate_total_volume(rxn_inputs, include_workup=False)
@@ -97,8 +121,14 @@ def get_suzuki_row(reaction: Reaction) -> dict:
                 row["ligand_smiles"] = ligand
                 row["ligand_ratio"] = 1.0
             if component.reaction_role == ReactionRole.REACTANT:
-                row[f"reactant_{reactants+1}"] = get_smiles(component)
-                row[f"reactant_{reactants+1}_concentration (M)"] = conc.to(
+                if reactants>2:
+                    raise ValueError(f"Suzuki couplings can only have 2 reactants but this has {reactants} reactants.")
+                smiles = get_smiles(component)
+                # Nucleophile in Suzuki is always a boronic acid
+                boron = contains_boron(smiles)
+                name = "nucleophile" if boron else "electrophile"
+                row[f"{name}_smiles"] = smiles
+                row[f"{name}_concentration (M)"] = conc.to(
                     ureg.moles / ureg.liters
                 ).magnitude
                 reactants += 1
@@ -116,10 +146,36 @@ def get_suzuki_row(reaction: Reaction) -> dict:
     units = Temperature.TemperatureUnit.Name(sp.units)
     temp = ureg.Quantity(sp.value, ureg(units.lower()))
     row["temperature (deg C)"] = temp.to(ureg.degC).magnitude
+
+    # Reaction time
+    time = reaction.outcomes[0].reaction_time
+    units = Time.TimeUnit.Name(time.units)
+    time = time.value * ureg(units.lower())
+    row["time (min)"] = time.to(ureg.minute).magnitude
+
+    # Yield
+    row["yld (percentage)"] = get_rxn_yield(reaction.outcomes[0])
+
     # TODO reaction quench
     return row
 
 
 def suzuki_reaction_to_dataframe(reactions: Iterable[Reaction]) -> pd.DataFrame:
     """Convert a list of reactions into a dataframe that can be used for machine learning"""
-    return pd.DataFrame([get_reaction_row(reaction) for reaction in reactions])
+    # Conversion
+    df =  pd.DataFrame([get_suzuki_row(reaction) for reaction in reactions])
+    # Assert that all rows have the same electrophile and nucleophile
+    electrophiles = df["electrophile_smiles"].unique()
+    if len(electrophiles)>1:
+        raise ValueError(
+            f"Each dataset should contain only one electrophile. " 
+            f"Electrophiles in this dataset: {electrophiles}"
+        )
+    nucleophiles = df["nucleophile_smiles"].unique()
+    if len(nucleophiles)>1:
+        raise ValueError(
+            f"Each dataset should contain only one nucleophile. " 
+             f"Nucleophile in this dataset: {nucleophiles}"
+        )
+
+    return df
