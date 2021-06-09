@@ -11,12 +11,10 @@ stages:
       md5: aa1c3026ec15826ad23c38c26ab7c597
       size: 17501
     outs:
-    - path: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
-      md5: 4fa841d95ec81eaae280105a18270519
-      size: 441068
-    - path: data/baumgartner_suzuki/ord/warnings_baumgartner_suzuki.json
-      md5: c30d796dc27a66d35d67753ec7c53abb
-      size: 5358
+    - path: data/baumgartner_suzuki/ord/
+      md5: 82ab5143f2c69df002c24d12f90ab832.dir
+      size: 446426
+      nfiles: 2
   suzuki_benchmark_training:
     cmd: python multitask/suzuki_benchmark_training.py baumgartner_suzuki-minlp1-optimization
       data/baumgartner_suzuki/emulator --split-catalyst --max-epochs 1000 --verbose
