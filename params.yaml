@@ -1,5 +1,6 @@
 suzuki_benchmark_training:
-  split-catalyst: "split-catalyst"
+  split-catalyst: "no-split-catalyst"
   max-epochs: 1000
+  cv-folds: 5
   verbose: 0
-
+  include-reactant-concentrations: "no-include-reactant-concentrations"

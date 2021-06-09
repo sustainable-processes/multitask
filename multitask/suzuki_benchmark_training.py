@@ -126,25 +126,27 @@ def suzuki_reaction_to_dataframe(
 
 
 def create_suzuki_domain(
-    split_catalyst: bool = True,
-    catalyst_list: list = None,
-    pre_catalyst_list: list = None,
-    ligand_list: list = None,
+    include_reactant_concentrations: Optional[bool] = False,
+    split_catalyst: Optional[bool] = True,
+    catalyst_list: Optional[list] = None,
+    pre_catalyst_list: Optional[list] = None,
+    ligand_list: Optional[list] = None,
 ) -> Domain:
     """Create the domain for the optimization"""
     domain = Domain()
 
     # Decision variables
-    domain += ContinuousVariable(
-        name="electrophile_concentration",
-        description="Concentration of electrophile in molar",
-        bounds=[0, 2],
-    )
-    domain += ContinuousVariable(
-        name="nucleophile_concentration",
-        description="Concentration of nucleophile in molar",
-        bounds=[0, 2],
-    )
+    if include_reactant_concentrations:
+        domain += ContinuousVariable(
+            name="electrophile_concentration",
+            description="Concentration of electrophile in molar",
+            bounds=[0, 2],
+        )
+        domain += ContinuousVariable(
+            name="nucleophile_concentration",
+            description="Concentration of nucleophile in molar",
+            bounds=[0, 2],
+        )
 
     if split_catalyst:
         domain += CategoricalVariable(
@@ -205,13 +207,16 @@ def get_suzuki_datasets(data_paths, split_catalyst=True, print_warnings=True):
 
 def prepare_domain_data(
     data_paths: List[str],
+    include_reactant_concentrations: Optional[bool] = False,
     split_catalyst: Optional[bool] = True,
     print_warnings: Optional[bool] = True,
 ) -> Tuple[dict, Domain]:
     """Prepare domain and data for downstream tasks"""
     # Get data
     dfs = get_suzuki_datasets(
-        data_paths, split_catalyst=split_catalyst, print_warnings=print_warnings
+        data_paths,
+        split_catalyst=split_catalyst,
+        print_warnings=print_warnings,
     )
     big_df = pd.concat(list(dfs.values()))
 
@@ -220,7 +225,10 @@ def prepare_domain_data(
         pre_catalysts = big_df["pre_catalyst_smiles"].unique().tolist()
         ligands = big_df["ligand_smiles"].unique().tolist()
         domain = create_suzuki_domain(
-            split_catalyst=True, pre_catalyst_list=pre_catalysts, ligand_list=ligands
+            split_catalyst=True,
+            pre_catalyst_list=pre_catalysts,
+            ligand_list=ligands,
+            include_reactant_concentrations=include_reactant_concentrations,
         )
     else:
         catalysts = big_df["catalyst_smiles"].unique().tolist()
@@ -234,14 +242,17 @@ def train_benchmark(
     data_paths: List[str],
     save_path: str,
     figure_path: str,
+    include_reactant_concentrations: Optional[bool] = False,
     print_warnings: Optional[bool] = True,
     split_catalyst: Optional[bool] = True,
     max_epochs: Optional[int] = 1000,
+    cv_folds: Optional[int] = 5,
     verbose: Optional[int] = 0,
 ) -> None:
     # Get data
     dfs, domain = prepare_domain_data(
         data_paths=data_paths,
+        include_reactant_concentrations=include_reactant_concentrations,
         split_catalyst=split_catalyst,
         print_warnings=print_warnings,
     )
