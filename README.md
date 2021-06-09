@@ -3,6 +3,7 @@
 Optimizing alcohol amination via borrowing hydrogen using multitask bayesian optimization.
 
 * Manuscript draft on [Overleaf](https://www.overleaf.com/project/608a83b48a501409d68c2f69)
+* Kanban board on [Github](https://github.com/sustainable-processes/multitask/projects)
 
 ## Relevant References
 
@@ -12,13 +13,38 @@ Optimizing alcohol amination via borrowing hydrogen using multitask bayesian opt
 
 ## Setup
 
-Install [poetry](https://python-poetry.org/docs/) and then run the following command:
+Clone the project:
+
+    git clone https://github.com/sustainable-processes/multitask.git
+
+Install [poetry](https://python-poetry.org/docs/) and then run the following command to install dependencies:
 
     poetry install
 
-Additionally, until this [issue](https://github.com/open-reaction-database/ord-schema/issues/600) is fixed you will need to manually install the ord-schema dependencies:
+Additionally, until this [issue](https://github.com/open-reaction-database/ord-schema/issues/600) is fixed, you will need to manually install the ord-schema dependencies:
     
     poetry run pip install -r ord-requirements.txt
+
+You can run commands from inside the poetry virtual environment in one of two ways:
+
+  - **Option 1**: Put `poetry run` in front of every command (e.g., `poetry run dvc repro`) as we did above to install extra requirements.
+  - **Option 2**: Activate the virtual environement and run everything as normal:
+      - Run `poetry show -v`. Copy the path specified after "Using virtualenv"
+      - Activate the virtual environemnt at that path. So, if the path is `/Users/Kobi/Library/Caches/pypoetry/virtualenvs/multitask-z7ErTcQa-py3.7`, you would run `source /Users/Kobi/Library/Caches/pypoetry/virtualenvs/multitask-z7ErTcQa-py3.7/bin/activate`
+  
+[DVC](https://dvc.org/doc) is used for tracking data and keeping it in sync with git. When you first clone the project, you will need to download the existing data:
+
+    dvc pull
+
+This will ask you to authenticate with Google Drive. Make sure to use your Cambridge account (or an account you shared the [Multitask Bayesian Optimization shared drive](https://drive.google.com/drive/u/2/folders/0AGWGXkw78NfUUk9PVA) with).
+
+## Pipelines
+
+[Pipelines](https://dvc.org/doc/start/data-pipelines#get-started-data-pipelines) are a feature of DVC for keeping track of data workflows.  You can run our existing pipelines using the following command:
+
+    dvc repro
+
+By default, DVC will only re-run the steps of the 
 
 ## In-Silico Comparison
 Questions:
@@ -42,7 +68,7 @@ Worth reading through the [peer review](https://static-content.springer.com/esm/
 ### Data Sources for Benchmarks
 
 * Suzuki-Miyura Reaction
-    - [] [Reizman](https://gosummit.readthedocs.io/en/latest/experiments_benchmarks/implemented_benchmarks.html#summit.benchmarks.ReizmanSuzukiEmulator): 4 cases with varying catalysts, temperature, residence time, catalyst loading and optimizing yield and TON
+    - [ ] [Reizman](https://gosummit.readthedocs.io/en/latest/experiments_benchmarks/implemented_benchmarks.html#summit.benchmarks.ReizmanSuzukiEmulator): 4 cases with varying catalysts, temperature, residence time, catalyst loading and optimizing yield and TON
     - [x] [Baumgartner Suzuki](https://pubs.rsc.org/en/content/articlelanding/2018/RE/C8RE00032H#!divAbstract): 3 cases varying catalyst complex, catalyst loading, temperature, and residence time and optimizing yield and TON
     - [ ] [Perera](http://www.sciencemag.org/lookup/doi/10.1126/science.aap9112): HT screening 9 cases (3 electrophiles, 3 nucelophiles) varying ligand, base, solvent
     - [ ] [Christensen](https://pubs.rsc.org/en/content/articlelanding/2019/re/c9re00086k#!divAbstract): Kinetic profiling, only looking at different species over time, probably not the best for our application
