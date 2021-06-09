@@ -11,7 +11,8 @@ from pint import UnitRegistry
 
 import typer
 from pathlib import Path
-from typing import Iterable, Tuple, Dict, Union
+import pkg_resources
+from typing import Iterable, Tuple, Dict, Union, List, Optional
 import pandas as pd
 
 __all__ = ["get_suzuki_datasets", "suzuki_reaction_to_dataframe", "prepare_domain_data"]
@@ -182,33 +183,36 @@ def create_suzuki_domain(
     return domain
 
 
-def get_suzuki_datasets(split_catalyst=True):
+def get_suzuki_datasets(data_paths, split_catalyst=True, print_warnings=True):
     """Get all suzuki ORD datasets"""
-    file_dir = Path(__file__).parent.absolute()
-    data_path = Path(file_dir / "../data")
-    baumgartner_suzuki_path = data_path / "baumgartner_suzuki"
-    data_paths = {
-        f"baumgartner_suzuki-minlp{i+1}-optimization": str(
-            baumgartner_suzuki_path / f"baumgartner_suzuki-minlp{i+1}-optimization.pb"
-        )
-        for i in range(2)
-    }
+    directories = [Path(data_path) for data_path in data_paths]
     dss = {}
-    for name, d in data_paths.items():
-        dataset = message_helpers.load_message(d, dataset_pb2.Dataset)
-        valid_output = validations.validate_message(dataset)
-        print(valid_output.warnings)
-        df = suzuki_reaction_to_dataframe(
-            dataset.reactions, split_catalyst=split_catalyst
-        )
-        dss[name] = DataSet.from_df(df)
+    for directory in directories:
+        # Get all protobuf files
+        data_paths = directory.glob("*.pb")
+        for data_path in data_paths:
+            dataset = message_helpers.load_message(str(data_path), dataset_pb2.Dataset)
+            valid_output = validations.validate_message(dataset)
+            if print_warnings:
+                print(valid_output.warnings)
+            df = suzuki_reaction_to_dataframe(
+                dataset.reactions, split_catalyst=split_catalyst
+            )
+            name = data_path.parts[-1].rstrip(".pb")
+            dss[name] = DataSet.from_df(df)
     return dss
 
 
-def prepare_domain_data(split_catalyst: bool = True) -> Tuple[dict, Domain]:
+def prepare_domain_data(
+    data_paths: List[str],
+    split_catalyst: Optional[bool] = True,
+    print_warnings: Optional[bool] = True,
+) -> Tuple[dict, Domain]:
     """Prepare domain and data for downstream tasks"""
     # Get data
-    dfs = get_suzuki_datasets()
+    dfs = get_suzuki_datasets(
+        data_paths, split_catalyst=split_catalyst, print_warnings=print_warnings
+    )
     big_df = pd.concat(list(dfs.values()))
 
     # Create domains
@@ -227,13 +231,19 @@ def prepare_domain_data(split_catalyst: bool = True) -> Tuple[dict, Domain]:
 
 def train_benchmark(
     dataset_name,
+    data_paths: List[str],
     save_path: str,
-    split_catalyst: bool = True,
-    max_epochs: int = 1000,
-    verbose: int = 0,
-)-> None:
+    print_warnings: Optional[bool] = True,
+    split_catalyst: Optional[bool] = True,
+    max_epochs: Optional[int] = 1000,
+    verbose: Optional[int] = 0,
+) -> None:
     # Get data
-    dfs, domain = prepare_domain_data(split_catalyst=split_catalyst)
+    dfs, domain = prepare_domain_data(
+        data_paths=data_paths,
+        split_catalyst=split_catalyst,
+        print_warnings=print_warnings,
+    )
 
     # Create emulator benchmark
     emulator = ExperimentalEmulator(dataset_name, domain, dataset=dfs[dataset_name])
@@ -245,5 +255,5 @@ def train_benchmark(
     emulator.save(save_dir=save_path)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     typer.run(train_benchmark)

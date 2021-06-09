@@ -1,7 +1,7 @@
 """
-Create an ORD dataset from the the paper by Baumgartner et al.
+Create an ORD dataset from the the paper by reizman et al.
 
-python etl_baumgartner_suzuki.py ../data/baumgartner_suzuki/c8re00032h2.xlsx ../data/baumgartner_suzuki/
+python etl_reizman_suzuki.py ../data/reizman_suzuki/c8re00032h2.xlsx ../data/reizman_suzuki/
 
 """
 
@@ -21,49 +21,49 @@ import json
 ureg = UnitRegistry()
 
 
-def main(input_file: str, output_path: str):
+def main(input_path: str, output_path: str):
     """Entrypoint for running ETL job"""
+    input_path = Path(input_path)
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
     # Extract data
-    reactions = []
-    for i in range(2):
-        sheet_name = f"MINLP{i+1} optimization"
-        case = sheet_name.replace(" ", "-").lower()
-        df = pd.read_excel(input_file, sheet_name=sheet_name)
+    for i in range(4):
+        name = f"reizman_suzuki_case_{i+1}"
+        df = pd.read_csv(input_path / f"{name}.csv")
 
         # Transform
         tqdm.pandas(desc="Converting to ORD")
-        reactions.extend(df.progress_apply(inner_loop, axis=1))
+        case = i+1
+        reactions = df.progress_apply(inner_loop, axis=1, args=(case,))
 
-    # Create dataset
-    dataset = Dataset()
-    dataset.name = "Baumgartner Suzuki Cross-Coupling"
-    dataset.reactions.extend(reactions)
-    dataset.dataset_id = str(1)
+        # Create dataset
+        dataset = Dataset()
+        dataset.name = "Reizman Suzuki Cross-Coupling"
+        dataset.reactions.extend(reactions)
+        dataset.dataset_id = str(2+i)
 
-    # Validate dataset
-    validation_output = validations.validate_message(dataset)
-    print(
-        f"First 5 Warnings. See {output_path / f'warnings_baumgartner_suzuki.json'} for full output"
-    )
-    print(validation_output.warnings[:5])
-    with open(output_path / f"warnings_baumgartner_suzuki.json", "w") as f:
-        json.dump(validation_output.warnings, f)
+        # Validate dataset
+        validation_output = validations.validate_message(dataset)
+        print(
+            f"First 5 Warnings. See {output_path / f'warnings_{name}.json'} for full output"
+        )
+        print(validation_output.warnings[:5])
+        with open(output_path / f"warnings_{name}.json", "w") as f:
+            json.dump(validation_output.warnings, f)
 
-    # Load back
-    with open(output_path / f"baumgartner_suzuki.pb", "wb") as f:
-        f.write(dataset.SerializeToString())
+        # Load back
+        with open(output_path / f"{name}.pb", "wb") as f:
+            f.write(dataset.SerializeToString())
 
 
-def inner_loop(row: pd.Series) -> Reaction:
+def inner_loop(row: pd.Series, case) -> Reaction:
     """Innter loop for creating a Reaction object for each row in the spreadsheet"""
     # Create reaction
     reaction = Reaction()
     reaction.identifiers.add(value=r"Suzuki Coupling", type=5)
     # Add reactants
-    add_electrophile(reaction, row)
-    add_nucleophile(reaction, row)
+    add_electrophile(case, reaction, row)
+    add_nucleophile(case, reaction, row)
     add_catalyst(reaction, row)
     add_solvent(reaction, row)
     add_base(reaction, row)
@@ -79,7 +79,7 @@ def inner_loop(row: pd.Series) -> Reaction:
     quench_reaction(reaction, row)
 
     # Specify reaction outcome
-    specify_outcome(reaction, row)
+    specify_outcome(case, reaction, row)
 
     return reaction
 
@@ -88,7 +88,7 @@ def add_thf_solvent(
     stock: ReactionInput,
     final_solute_conc: float,
     stock_conc: float,
-    droplet_volume: float = 40.0,
+    droplet_volume: float = 14.0,
 ) -> None:
     """
     final_solute_conc is in molar
@@ -103,44 +103,86 @@ def add_thf_solvent(
     thf.amount.volume.value = final_solute_conc * droplet_volume / stock_conc
     thf.amount.volume_includes_solutes = True
 
+electrophiles_by_case = {
+    1: {
+        "name": "3-bromoquinoline",
+        "smiles": r"Brc1cnc2ccccc2c1"
+    },
+    2: {
+        "name": "3-Chloropyridine",
+        "smiles": r"C1=CC(=CN=C1)Cl"
+    },
+    3: {
+        "name": "2-Chloropyridine",
+        "smiles": r"Clc1ccccn1"
+    },
+    3: {
+        "name": "2-Chloropyridine",
+        "smiles": r"Clc1ccccn1"
+    },
+    4: {
+        "name": "2-Chloropyridine",
+        "smiles": r"Clc1ccccn1"
+    }
+}
 
-def add_electrophile(reaction: Reaction, row: pd.Series):
+
+def add_electrophile(case: int, reaction: Reaction, row: pd.Series):
     # Chloropyridine
-    chloropyridine_stock = reaction.inputs["Electrophile"]
-    chloropyridine_stock.addition_order = 1
+    electrophile_stock = reaction.inputs["Electrophile"]
+    electrophile_stock.addition_order = 1
 
     # Reactant
-    chloropyridine = chloropyridine_stock.components.add()
-    chloropyridine.reaction_role = ReactionRole.REACTANT
-    chloropyridine.identifiers.add(
-        value="3-Chloropyridine", type=CompoundIdentifier.NAME
+    electrophile = electrophile_stock.components.add()
+    electrophile.reaction_role = ReactionRole.REACTANT
+    details = electrophiles_by_case[case]
+    electrophile.identifiers.add(
+        value=details["name"], type=CompoundIdentifier.NAME
     )
-    chloropyridine.identifiers.add(
-        value=r"C1=CC(=CN=C1)Cl", type=CompoundIdentifier.SMILES
+    electrophile.identifiers.add(
+        value=details["smiles"], type=CompoundIdentifier.SMILES
     )
-    chloropyridine_conc = row["Reagent 1 Conc. (M)"]
-    amount = chloropyridine.amount
+    electrophile_conc = 0.167
+    amount = electrophile.amount
     amount.moles.units = Moles.MICROMOLE
-    amount.moles.value = chloropyridine_conc * 40.0  # 40 µL droplet
-    chloropyridine.is_limiting = True
+    amount.moles.value = electrophile_conc * 14.0  # 40 µL droplet
+    electrophile.is_limiting = True
 
     # Internal standard
-    internal_std = chloropyridine_stock.components.add()
+    internal_std = electrophile_stock.components.add()
     internal_std.reaction_role = ReactionRole.INTERNAL_STANDARD
     internal_std.identifiers.add(value="Naphthelene", type=CompoundIdentifier.NAME)
     internal_std.identifiers.add(
         value=r"c1c2ccccc2ccc1", type=CompoundIdentifier.SMILES
     )
-    istd_conc = row["Internal Standard Conc. (g/L)"]
+    istd_conc = 0.0059
     amount = internal_std.amount
     amount.mass.units = Mass.MICROGRAM
-    amount.mass.value = istd_conc * 40.0
+    amount.mass.value = istd_conc * 14.0
 
     # Solvent
-    add_thf_solvent(chloropyridine_stock, chloropyridine_conc, stock_conc=1.434)
+    add_thf_solvent(electrophile_stock, electrophile_conc, stock_conc=1.4)
 
+nucleophiles_by_case = {
+    1: {
+        "name": "3,5-Dimethylisoxazole-4-boronic acid pinacol ester",
+        "smiles": r"Cc1noc(C)c1B2OC(C)(C)C(C)(C)O2"
+    },
+    2: {
+        "name": "3,5-Dimethylisoxazole-4-boronic acid pinacol ester",
+        "smiles": r"Cc1noc(C)c1B2OC(C)(C)C(C)(C)O2"
+    },
+    3: {
+        "name": "2-benzofuranboronic acid",
+        "smiles": r"OB(O)c1cc2ccccc2o1"
+    },
+    4: {
+        "name": "N-Boc-2-pyrroleboronic acid",
+        "smiles": r"CC(C)(C)OC(=O)n1cccc1B(O)O"
+    },
+}
 
-def add_nucleophile(reaction: Reaction, row: pd.Series):
+def add_nucleophile(case, reaction: Reaction, row: pd.Series):
     # Pinacol ester
     pinacol_ester_stock = reaction.inputs["Nucleophile"]
     pinacol_ester_stock.addition_order = 1
@@ -148,20 +190,21 @@ def add_nucleophile(reaction: Reaction, row: pd.Series):
     # Solute
     pinacol_ester = pinacol_ester_stock.components.add()
     pinacol_ester.reaction_role = ReactionRole.REACTANT
+    details = nucleophiles_by_case[case]
     pinacol_ester.identifiers.add(
-        value="2-fluoropyridine-3-boronic acid pincacol ester",
+        value=details["name"],
         type=CompoundIdentifier.NAME,
     )
     pinacol_ester.identifiers.add(
-        value=r"CC1(C)OB(OC1(C)C)c2ccc(F)nc2", type=CompoundIdentifier.SMILES
+        value=details["smiles"], type=CompoundIdentifier.SMILES
     )
-    pe_conc = row["Reagent 2 Conc. (M)"]
+    pe_conc = 0.250
     amount = pinacol_ester.amount
     amount.moles.units = Moles.MICROMOLE
-    amount.moles.value = pe_conc * 40.0  # 40 µL droplet
+    amount.moles.value = pe_conc * 14.0  # 40 µL droplet
 
     # Solvent
-    add_thf_solvent(pinacol_ester_stock, pe_conc, stock_conc=0.996)
+    add_thf_solvent(pinacol_ester_stock, pe_conc, stock_conc=1.0)
 
 
 pre_catalysts = {
@@ -208,16 +251,16 @@ def add_catalyst(reaction: Reaction, row: pd.Series):
     # Solute
     catalyst = catalyst_stock.components.add()
     catalyst.reaction_role = ReactionRole.CATALYST
-    cat_id = row["Reagent 3 ID"]
-    name, smiles = catalyst_details(cat_id[:2], cat_id[2:4])
+    pre_cat, lig = row["catalyst"].split("-")
+    name, smiles = catalyst_details(pre_cat, lig)
     catalyst.identifiers.add(value=name, type=CompoundIdentifier.NAME)
     catalyst.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
-    cat_conc = row["Reagent 3 Conc. (M)"]
+    cat_conc = row["catalyst_loading"]/100*0.167
     catalyst.amount.moles.units = Moles.MICROMOLE
-    catalyst.amount.moles.value = cat_conc * 40.0
+    catalyst.amount.moles.value = cat_conc * 14.0
 
     # Solvent
-    add_thf_solvent(catalyst_stock, cat_conc, stock_conc=0.017)
+    add_thf_solvent(catalyst_stock, cat_conc, stock_conc=0.018)
 
 
 def add_solvent(reaction: Reaction, row: pd.Series):
@@ -227,7 +270,7 @@ def add_solvent(reaction: Reaction, row: pd.Series):
 
     # Calculate volume of solvent needed for 40 microliter droplet
     reactants_volume = calculate_total_volume(reaction, include_workup=False)
-    solvent_volume = 40.0 - reactants_volume
+    solvent_volume = 14.0 - reactants_volume
     thf_volume = 5 / 6 * solvent_volume
     water_volume = 1 / 6 * solvent_volume
 
@@ -258,7 +301,7 @@ def add_base(reaction: Reaction, row: pd.Series):
     base.reaction_role = ReactionRole.REAGENT
     base.identifiers.add(value="DBU", type=CompoundIdentifier.NAME)
     base.identifiers.add(value=r"N\2=C1\N(CCCCC1)CCC/2", type=CompoundIdentifier.SMILES)
-    base.amount.moles.value = row["Inlet Injection (µL)"] * 1.645
+    base.amount.moles.value = 0.333 * 14.0
     base.amount.moles.units = Moles.MICROMOLE
 
     # Solvent
@@ -266,18 +309,18 @@ def add_base(reaction: Reaction, row: pd.Series):
     thf.identifiers.add(value="THF", type=CompoundIdentifier.NAME)
     thf.identifiers.add(value=r"C1CCOC1", type=CompoundIdentifier.SMILES)
     thf.reaction_role = ReactionRole.SOLVENT
-    thf.amount.volume.value = row["Inlet Injection (µL)"]
+    thf.amount.volume.value = 3.5
     thf.amount.volume.units = Volume.MICROLITER
 
 
 def specify_temperature(reaction: Reaction, row: pd.Series):
     # Temperature
     temp_conditions = reaction.conditions.temperature
-    details = "Oscillatory flow reactor with two cartridge heaters and a thermocouple"
+    details = "Flow reactor with four 40W cartridge heaters"
     control = temp_conditions.control
     control.type = TemperatureConditions.TemperatureControl.DRY_ALUMINUM_PLATE
     control.details = details
-    temp_conditions.setpoint.value = row["Temperature (°C)"]
+    temp_conditions.setpoint.value = row["temperature"]
     temp_conditions.setpoint.units = Temperature.TemperatureUnit.CELSIUS
 
 
@@ -289,9 +332,9 @@ def specify_flow_conditions(reaction: Reaction, row: pd.Series):
         " and oscillatory flow reactor. Each droplet is like a mini-batch reactor."
     )
     flow_conditions.tubing.type = FlowConditions.Tubing.PFA
-    flow_conditions.tubing.diameter.value = 1 / 16
-    flow_conditions.tubing.details = """1/16 in. ID tubing for main reactor."""
-    flow_conditions.tubing.diameter.units = Length.INCH
+    flow_conditions.tubing.diameter.value = 500e-6
+    flow_conditions.tubing.details = """500 µm diameter tubing, 240µL reactor"""
+    flow_conditions.tubing.diameter.units = Length.METER
 
 
 def get_pint(amount: Amount):
@@ -330,23 +373,23 @@ def cross_checks(reaction: Reaction, row: pd.Series):
     # Check that reaction volume adds up properly
     vol = calculate_total_volume(reaction)
     try:
-        assert np.isclose(vol, 43.5, rtol=1e-2)
+        assert np.isclose(vol, 17.5, rtol=1e-2)
     except AssertionError:
         raise ValueError(
             f"Total volume expected to be 43.5 µL but it is actually {vol}µL."
         )
-
-    # Cross-check concentration calculations using catalyst mol%
-    mol_electrophile = reaction.inputs["Electrophile"].components[0].amount.moles.value
-    cat_mols_check = mol_electrophile * row["Reagent 3 Conc in mol%"]
-    catalyst = reaction.inputs["Catalyst"].components[0]
-    try:
-        assert np.isclose(catalyst.amount.moles.value, cat_mols_check)
-    except AssertionError:
-        raise ValueError(
-            f"Inconsistent amounts. Catalyst should be: {cat_mols_check} micromols"
-            f", but it is actually {catalyst.amount.moles.value} micromols."
-        )
+    #
+    # # Cross-check concentration calculations using catalyst mol%
+    # mol_electrophile = reaction.inputs["Electrophile"].components[0].amount.moles.value
+    # cat_mols_check = mol_electrophile * row["Reagent 3 Conc in mol%"]
+    # catalyst = reaction.inputs["Catalyst"].components[0]
+    # try:
+    #     assert np.isclose(catalyst.amount.moles.value, cat_mols_check)
+    # except AssertionError:
+    #     raise ValueError(
+    #         f"Inconsistent amounts. Catalyst should be: {cat_mols_check} micromols"
+    #         f", but it is actually {catalyst.amount.moles.value} micromols."
+    #     )
 
 
 def quench_reaction(reaction: Reaction, row: pd.Series):
@@ -360,7 +403,7 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
     acetone.reaction_role = ReactionRole.WORKUP
     acetone.identifiers.add(value="acetone", type=CompoundIdentifier.NAME)
     acetone.identifiers.add(value="CC(=O)C", type=CompoundIdentifier.SMILES)
-    acetone.amount.volume.value = 0.5 * reaction_volume
+    acetone.amount.volume.value = 0.5 * 16.0
     acetone.amount.volume.units = Volume.MICROLITER
 
     # Water
@@ -368,7 +411,7 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
     water.reaction_role = ReactionRole.WORKUP
     water.identifiers.add(value="water", type=CompoundIdentifier.NAME)
     water.identifiers.add(value="O", type=CompoundIdentifier.SMILES)
-    water.amount.volume.value = 0.5 * reaction_volume
+    water.amount.volume.value = 0.5 * 16.0
     water.amount.volume.units = Volume.MICROLITER
 
     # Workup specification
@@ -385,64 +428,49 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
     workup.input.CopyFrom(quench)
 
 
-def add_standard(measurement: ProductMeasurement):
-    # Standard
-    measurement.uses_internal_standard = True
-    measurement.uses_authentic_standard = True
-    standard = measurement.authentic_standard
-    standard.identifiers.add(
-        value="2'-fluoro-2,3'-bipyridine", type=CompoundIdentifier.NAME
-    )
-    standard.identifiers.add(
-        value="FC1=C(C2=NC=CC=C2)C=CC=N1", type=CompoundIdentifier.SMILES
-    )
-    standard.reaction_role = ReactionRole.AUTHENTIC_STANDARD
-    standard_prep = standard.preparations.add()
-    standard_prep.type = CompoundPreparation.SYNTHESIZED
-    details = (
-        "The product 2-fluoro-3,3’-bipyridine 11 was synthesized in batch following the procedure of Reizman et al. "
-        "A magnetic stir bar, SPhos Pd G2 (72 mg, 0.10 mmol, 0.05 equiv.), THF (8 mL) and water (2 mL) was added "
-        "to a dry and nitrogen-filled 20-mL septum vial under nitrogen atmosphere. Using syringes, 3-chloropyridine 9 "
-        "(190 µL, 2.0 mmol, 1.0 equiv.) and DBU (598 µL, 4.0 mmol, 2.0 equiv.) were added sequentially. The reaction"
-        "mixture was then heated to 65 ◦C, followed by addition of the THF (1 mL) solution of 2-fluoropyridine-3-"
-        "boronic acid pincol ester 10 (669 mg, 3.0 mmol, 1.5 equiv.). The reaction mixture was allowed to stir overnight."
-        " The next day, the reaction was diluted with ethyl acetate, washed with brine and dried over Na2SO4"
-        " , filtered and concentrated under reduced pressure. The resulting residue was then purifed by flash column chromatography"
-        "(ethyl acetate/heptane = 1:1) to afford the desired product 11 (330 mg, 95% yield) as a white solid. The purity"
-        "was confirmed with LC/MS (m/z = 174.06, Fig. 6) and NMR (Fig. 7 and Fig. 8). 1H NMR (400 MHz, CDCl3)"
-        "δ 8.86-8.84 (m, 1H), 8.70 (dt, J = 4.8, 1.2 Hz, 1H), 8.32-8.30 (m, 1H), 7.99-7.94 (m, 1H), 7.93-7.91 (m, 1H),"
-        "7.50-7.46 (m, 1H), 7.37 (ddt, J = 7.3, 4.9, 1.3 Hz, 1H)."
-    )
-    standard_prep.details = details
-
-
 def define_measurement(measurement: ProductMeasurement, row: pd.Series):
     measurement.analysis_key = "LCMS"
     measurement.type = ProductMeasurement.YIELD
-    measurement.percentage.value = row["Reaction Yield"] * 100
-    measurement.retention_time.value = row[
-        "2-Fluoro-3,3'-bipyridine Retention time in min"
-    ]
-    measurement.retention_time.units = Time.MINUTE
+    measurement.percentage.value = row["yld"]
 
+products_by_case = {
+    1: {
+        "name": "3,5-dimethyl-4-(quinolin-3-yl)isoxazole",
+        "smiles": r"CC1=C(C2=CC(C=CC=C3)=C3N=C2)C(C)=NO1"
+    },
+    2: {
+        "name": "3,5-dimethyl-4-(quinolin-3-yl)isoxazole",
+        "smiles": r"CC1=C(C2=CC=CN=C2)C(C)=NO1"
+    },
+    3: {
+        "name": "3-(benzofuran-2-yl)pyridine",
+        "smiles": r"C1(C2=CC(C=CC=C3)=C3O2)=CC=CN=C1"
+    },
+    4: {
+        "name": "tert-butyl 2-(pyridin-2-yl)-1H-pyrrole-1-carboxylate",
+        "smiles": r"CC(OC(N1C=CC=C1C2=CC=CC=N2)=O)(C)C"
+    }
 
-def specify_outcome(reaction: Reaction, row: pd.Series):
+}
+
+def specify_outcome(case, reaction: Reaction, row: pd.Series):
     # Reaction Outcome
     outcome = reaction.outcomes.add()
 
     # Time
-    outcome.reaction_time.value = row["Residence Time Actual (s)"]
+    outcome.reaction_time.value = row["t_res"]
     outcome.reaction_time.units = Time.SECOND
 
     # TODO: conversion calculation
 
     # Product
     product = outcome.products.add()
+    details = products_by_case[case]
     product.identifiers.add(
-        value="2'-fluoro-2,3'-bipyridine", type=CompoundIdentifier.NAME
+        value=details["name"], type=CompoundIdentifier.NAME
     )
     product.identifiers.add(
-        value="FC1=C(C2=NC=CC=C2)C=CC=N1", type=CompoundIdentifier.SMILES
+        value=details["smiles"], type=CompoundIdentifier.SMILES
     )
     product.is_desired_product = True
     product.reaction_role = ReactionRole.PRODUCT
@@ -454,13 +482,12 @@ def specify_outcome(reaction: Reaction, row: pd.Series):
     # Measurement
     measurement = product.measurements.add()
     define_measurement(measurement, row)
-    add_standard(measurement)
 
 
 def add_provenance(reaction: Reaction):
     provenance = reaction.provenance
-    provenance.doi = "10.1039/c8re00032h"
-    provenance.publication_url = "http://doi.org/10.1039/c8re00032h"
+    provenance.doi = "110.1039/C6RE00153J"
+    provenance.publication_url = "http://doi.org/10.1039/C6RE00153J."
     creator = provenance.record_created.person
     creator.username = "marcosfelt"
     creator.name = "Kobi Felton"

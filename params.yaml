@@ -1,5 +1,5 @@
 suzuki_benchmark_training:
   split-catalyst: "split-catalyst"
   max-epochs: 1000
-  verbose: 1
+  verbose: 0
 

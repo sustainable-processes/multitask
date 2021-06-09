@@ -2,27 +2,21 @@ schema: '2.0'
 stages:
   baumgartner_etl:
     cmd: python multitask/etl_baumgartner_suzuki.py data/baumgartner_suzuki/c8re00032h2.xlsx
-      data/baumgartner_suzuki/
+      data/baumgartner_suzuki/ord
     deps:
     - path: data/baumgartner_suzuki/c8re00032h2.xlsx
       md5: 5dd468b3686c8495fd37c6aa6f2e114f
       size: 58908
     - path: multitask/etl_baumgartner_suzuki.py
-      md5: 6ef0fab0cc282328f5e638799a1b99ee
-      size: 17524
+      md5: aa1c3026ec15826ad23c38c26ab7c597
+      size: 17501
     outs:
-    - path: data/baumgartner_suzuki/baumgartner_suzuki-minlp1-optimization.pb
-      md5: 1632b1c6ec653c486cc5e0f2deca87e2
-      size: 270521
-    - path: data/baumgartner_suzuki/baumgartner_suzuki-minlp2-optimization.pb
-      md5: f3a9fe1f5b4aeb17db0635e02bae5f6e
-      size: 170585
-    - path: data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp1-optimization.json
-      md5: 07208af99bc894a638e40821ac92e205
-      size: 2226
-    - path: data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp2-optimization.json
-      md5: 27b82275740689a2fd54a7e3f43ef75a
-      size: 3107
+    - path: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+      md5: 4fa841d95ec81eaae280105a18270519
+      size: 441068
+    - path: data/baumgartner_suzuki/ord/warnings_baumgartner_suzuki.json
+      md5: c30d796dc27a66d35d67753ec7c53abb
+      size: 5358
   suzuki_benchmark_training:
     cmd: python multitask/suzuki_benchmark_training.py baumgartner_suzuki-minlp1-optimization
       data/baumgartner_suzuki/emulator --split-catalyst --max-epochs 1000 --verbose
@@ -38,4 +32,132 @@ stages:
     - path: data/baumgartner_suzuki/emulator/
       md5: 636c56e71199a4a9cfb4339b4897a0c8.dir
       size: 167107
+      nfiles: 6
+  reizman_etl:
+    cmd: python multitask/etl_reizman_suzuki.py data/reizman_suzuki/ data/reizman_suzuki/ord/
+    deps:
+    - path: data/reizman_suzuki/reizman_suzuki_case_1.csv
+      md5: 752e9df6597ce23f37d2e1549a3aa05e
+      size: 3239
+    - path: data/reizman_suzuki/reizman_suzuki_case_2.csv
+      md5: cb4d270e465e1b79995abe1526f1776d
+      size: 3180
+    - path: data/reizman_suzuki/reizman_suzuki_case_3.csv
+      md5: d11e3036924270f2f01027e962c32aff
+      size: 3273
+    - path: data/reizman_suzuki/reizman_suzuki_case_4.csv
+      md5: ebff787dfbcc0ac852994133f43182b1
+      size: 3410
+    - path: multitask/etl_reizman_suzuki.py
+      md5: e850e67d19887793d686684ea2e87827
+      size: 16677
+    outs:
+    - path: data/reizman_suzuki/ord/
+      md5: e4d8a72cf6ed315163bc7ec442299418.dir
+      size: 585221
+      nfiles: 8
+  baumgartner_suzuki_benchmark_training:
+    cmd: python multitask/suzuki_benchmark_training.py baumgartner_suzuki data/baumgartner_suzuki/ord
+      data/reizman_suzuki/ord data/baumgartner_suzuki/emulator --split-catalyst --max-epochs
+      1000 --verbose 0 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/ord/
+      md5: 82ab5143f2c69df002c24d12f90ab832.dir
+      size: 446426
+      nfiles: 2
+    - path: data/reizman_suzuki/ord
+      md5: e4d8a72cf6ed315163bc7ec442299418.dir
+      size: 585221
+      nfiles: 8
+    - path: multitask/suzuki_benchmark_training.py
+      md5: a8db9e78de3cfe2606599401235baa1a
+      size: 8741
+    outs:
+    - path: data/baumgartner_suzuki/emulator/
+      md5: 56d7d1f23f8e27d4906bf3ed9404b953.dir
+      size: 167104
+      nfiles: 6
+  reizman_suzuki_benchmark_training@2:
+    cmd: python multitask/suzuki_benchmark_training.py reizman_suzuki_case_2 data/baumgartner_suzuki/ord
+      data/reizman_suzuki/ord data/reizman_suzuki/emulator_case_2/ --split-catalyst
+      --max-epochs 1000 --verbose 0 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/ord/
+      md5: 82ab5143f2c69df002c24d12f90ab832.dir
+      size: 446426
+      nfiles: 2
+    - path: data/reizman_suzuki/ord
+      md5: e4d8a72cf6ed315163bc7ec442299418.dir
+      size: 585221
+      nfiles: 8
+    - path: multitask/suzuki_benchmark_training.py
+      md5: a8db9e78de3cfe2606599401235baa1a
+      size: 8741
+    outs:
+    - path: data/reizman_suzuki/emulator_case_2/
+      md5: 20437612a922734f03b10f977ff6e4cf.dir
+      size: 167107
+      nfiles: 6
+  reizman_suzuki_benchmark_training@1:
+    cmd: python multitask/suzuki_benchmark_training.py reizman_suzuki_case_1 data/baumgartner_suzuki/ord
+      data/reizman_suzuki/ord data/reizman_suzuki/emulator_case_1/ --split-catalyst
+      --max-epochs 1000 --verbose 0 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/ord/
+      md5: 82ab5143f2c69df002c24d12f90ab832.dir
+      size: 446426
+      nfiles: 2
+    - path: data/reizman_suzuki/ord
+      md5: e4d8a72cf6ed315163bc7ec442299418.dir
+      size: 585221
+      nfiles: 8
+    - path: multitask/suzuki_benchmark_training.py
+      md5: a8db9e78de3cfe2606599401235baa1a
+      size: 8741
+    outs:
+    - path: data/reizman_suzuki/emulator_case_1/
+      md5: 4ee83a3bf862fdb49f8b7b848cf890b9.dir
+      size: 167093
+      nfiles: 6
+  reizman_suzuki_benchmark_training@3:
+    cmd: python multitask/suzuki_benchmark_training.py reizman_suzuki_case_3 data/baumgartner_suzuki/ord
+      data/reizman_suzuki/ord data/reizman_suzuki/emulator_case_3/ --split-catalyst
+      --max-epochs 1000 --verbose 0 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/ord/
+      md5: 82ab5143f2c69df002c24d12f90ab832.dir
+      size: 446426
+      nfiles: 2
+    - path: data/reizman_suzuki/ord
+      md5: e4d8a72cf6ed315163bc7ec442299418.dir
+      size: 585221
+      nfiles: 8
+    - path: multitask/suzuki_benchmark_training.py
+      md5: a8db9e78de3cfe2606599401235baa1a
+      size: 8741
+    outs:
+    - path: data/reizman_suzuki/emulator_case_3/
+      md5: dffdc7ed83f1c5b1cb0eab8a93e47982.dir
+      size: 167098
+      nfiles: 6
+  reizman_suzuki_benchmark_training@4:
+    cmd: python multitask/suzuki_benchmark_training.py reizman_suzuki_case_4 data/baumgartner_suzuki/ord
+      data/reizman_suzuki/ord data/reizman_suzuki/emulator_case_4/ --split-catalyst
+      --max-epochs 1000 --verbose 0 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/ord/
+      md5: 82ab5143f2c69df002c24d12f90ab832.dir
+      size: 446426
+      nfiles: 2
+    - path: data/reizman_suzuki/ord
+      md5: e4d8a72cf6ed315163bc7ec442299418.dir
+      size: 585221
+      nfiles: 8
+    - path: multitask/suzuki_benchmark_training.py
+      md5: a8db9e78de3cfe2606599401235baa1a
+      size: 8741
+    outs:
+    - path: data/reizman_suzuki/emulator_case_4/
+      md5: b862f8228fdd7715c4566e07f0895520.dir
+      size: 167091
       nfiles: 6
