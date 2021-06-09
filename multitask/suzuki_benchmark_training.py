@@ -178,9 +178,21 @@ def create_suzuki_domain(
         bounds=[0, 5],
     )
 
+    domain += ContinuousVariable(
+        name="temperature",
+        description="Reaction temperature in deg C",
+        bounds=[20, 120]
+    )
+
+    domain += ContinuousVariable(
+        name="time",
+        description="Reaction time in seconds",
+        bounds=[60, 120*60]
+    )
+
     # Objectives
     domain += ContinuousVariable(
-        name="yld", description="Reaction yield", bounds=[0, 100], is_objective=True
+        name="yld", description="Reaction yield", bounds=[0, 100], is_objective=True, maximize=True
     )
     return domain
 
@@ -206,6 +218,7 @@ def get_suzuki_datasets(data_paths, split_catalyst=True, print_warnings=True):
 
 
 def prepare_domain_data(
+    dataset_name: str,
     data_paths: List[str],
     include_reactant_concentrations: Optional[bool] = False,
     split_catalyst: Optional[bool] = True,
@@ -222,8 +235,10 @@ def prepare_domain_data(
 
     # Create domains
     if split_catalyst:
-        pre_catalysts = big_df["pre_catalyst_smiles"].unique().tolist()
-        ligands = big_df["ligand_smiles"].unique().tolist()
+        pre_catalysts = dfs[dataset_name]["pre_catalyst_smiles"].unique().tolist()
+        print("Number of pre-catalysts:", len(pre_catalysts))
+        ligands = dfs[dataset_name]["ligand_smiles"].unique().tolist()
+        print("Number of ligands:", len(ligands))
         domain = create_suzuki_domain(
             split_catalyst=True,
             pre_catalyst_list=pre_catalysts,
@@ -231,7 +246,8 @@ def prepare_domain_data(
             include_reactant_concentrations=include_reactant_concentrations,
         )
     else:
-        catalysts = big_df["catalyst_smiles"].unique().tolist()
+        catalysts = dfs[dataset_name]["catalyst_smiles"].unique().tolist()
+        print("Number of catalysts:", len(catalysts))
         domain = create_suzuki_domain(split_catalyst=False, catalyst_list=catalysts)
 
     return dfs, domain
@@ -251,6 +267,7 @@ def train_benchmark(
 ) -> None:
     # Get data
     dfs, domain = prepare_domain_data(
+        dataset_name=dataset_name,
         data_paths=data_paths,
         include_reactant_concentrations=include_reactant_concentrations,
         split_catalyst=split_catalyst,
@@ -261,7 +278,7 @@ def train_benchmark(
     emulator = ExperimentalEmulator(dataset_name, domain, dataset=dfs[dataset_name])
 
     # Train emulator
-    emulator.train(max_epochs=max_epochs, verbose=verbose)
+    emulator.train(max_epochs=max_epochs, cv_folds=cv_folds, verbose=verbose)
 
     # Parity plot
     fig, _ = emulator.parity_plot(include_test=True)
