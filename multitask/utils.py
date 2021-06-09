@@ -20,10 +20,10 @@ __all__ = [
     "get_smiles",
     "split_cat_ligand",
     "calculate_total_volume",
-    "suzuki_reaction_to_dataframe",
+    "get_rxn_yield",
+    "ureg"
 ]
 
-exp = ExperimentalEmulator()
 
 def get_pint_amount(amount: Amount):
     """Get an amount in terms of pint units"""
@@ -76,15 +76,6 @@ def calculate_total_volume(rxn_inputs, include_workup=False):
                 total_volume += get_pint_amount(amount)
     return total_volume
 
-def contains_boron(smiles):
-    """Check for the presence of Boron"""
-    boron = Chem.MolFromSmarts("[B]")
-    mol = Chem.MolFromSmiles(smiles)
-    res = mol.GetSubstructMatches(boron)
-    if len(res)>0:
-        return True
-    else:
-        False
 
 def get_rxn_yield(outcome):
     yields = []
@@ -98,84 +89,3 @@ def get_rxn_yield(outcome):
         raise ValueError("No reaction yield found in reaction outcome.")
     return yields[0]
 
-def get_suzuki_row(reaction: Reaction) -> dict:
-    """Convert a Suzuki ORD reaction into a dictionary"""
-    row = {}
-    rxn_inputs = reaction.inputs
-    reactants = 0
-    total_volume = calculate_total_volume(rxn_inputs, include_workup=False)
-    # Components and concentrations
-    for k in rxn_inputs:
-        for component in rxn_inputs[k].components:
-            amount = component.amount
-            pint_value = get_pint_amount(amount)
-            conc = pint_value / total_volume
-            if component.reaction_role == ReactionRole.CATALYST:
-                # TODO: make sure the catalyst and ligand are one of the approved ones
-                smiles = get_smiles(component)
-                pre_catalyst, ligand = split_cat_ligand(smiles)
-                row["pre_catalyst_smiles"] = pre_catalyst
-                row["catalyst_concentration (M)"] = conc.to(
-                    ureg.moles / ureg.liters
-                ).magnitude
-                row["ligand_smiles"] = ligand
-                row["ligand_ratio"] = 1.0
-            if component.reaction_role == ReactionRole.REACTANT:
-                if reactants>2:
-                    raise ValueError(f"Suzuki couplings can only have 2 reactants but this has {reactants} reactants.")
-                smiles = get_smiles(component)
-                # Nucleophile in Suzuki is always a boronic acid
-                boron = contains_boron(smiles)
-                name = "nucleophile" if boron else "electrophile"
-                row[f"{name}_smiles"] = smiles
-                row[f"{name}_concentration (M)"] = conc.to(
-                    ureg.moles / ureg.liters
-                ).magnitude
-                reactants += 1
-            if component.reaction_role == ReactionRole.REAGENT:
-                # TODO: make base is one of the approved bases
-                row[f"reagent"] = get_smiles(component)
-                conc = get_pint_amount(component.amount) / total_volume
-                row[f"reagent_concentration (M)"] = conc.to(
-                    ureg.moles / ureg.liters
-                ).magnitude
-            if component.reaction_role == ReactionRole.SOLVENT:
-                row["solvent"] = get_smiles(component)
-    # Temperature
-    sp = reaction.conditions.temperature.setpoint
-    units = Temperature.TemperatureUnit.Name(sp.units)
-    temp = ureg.Quantity(sp.value, ureg(units.lower()))
-    row["temperature (deg C)"] = temp.to(ureg.degC).magnitude
-
-    # Reaction time
-    time = reaction.outcomes[0].reaction_time
-    units = Time.TimeUnit.Name(time.units)
-    time = time.value * ureg(units.lower())
-    row["time (min)"] = time.to(ureg.minute).magnitude
-
-    # Yield
-    row["yld (percentage)"] = get_rxn_yield(reaction.outcomes[0])
-
-    # TODO reaction quench
-    return row
-
-
-def suzuki_reaction_to_dataframe(reactions: Iterable[Reaction]) -> pd.DataFrame:
-    """Convert a list of reactions into a dataframe that can be used for machine learning"""
-    # Conversion
-    df =  pd.DataFrame([get_suzuki_row(reaction) for reaction in reactions])
-    # Assert that all rows have the same electrophile and nucleophile
-    electrophiles = df["electrophile_smiles"].unique()
-    if len(electrophiles)>1:
-        raise ValueError(
-            f"Each dataset should contain only one electrophile. " 
-            f"Electrophiles in this dataset: {electrophiles}"
-        )
-    nucleophiles = df["nucleophile_smiles"].unique()
-    if len(nucleophiles)>1:
-        raise ValueError(
-            f"Each dataset should contain only one nucleophile. " 
-             f"Nucleophile in this dataset: {nucleophiles}"
-        )
-
-    return df
