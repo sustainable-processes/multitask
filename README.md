@@ -1,6 +1,6 @@
 # Multitask 
 
-Optimizing alcohol amination via borrowing hydrogen using multitask bayesian optimization.
+Optimizing reactions using multitask bayesian optimization. Case study with alcohol amination via borrowing hydrogen  plus large-scale in-silico comparison.
 
 * Manuscript draft on [Overleaf](https://www.overleaf.com/project/608a83b48a501409d68c2f69)
 * Kanban board on [Github](https://github.com/sustainable-processes/multitask/projects)
@@ -10,43 +10,10 @@ Optimizing alcohol amination via borrowing hydrogen using multitask bayesian opt
 - [Fast continuous alcohol amination employing a hydrogen borrowing protocol](https://pubs.rsc.org/en/content/articlelanding/2019/gc/c8gc03328e#!divAbstract)
 - [A Survey of the Borrowing Hydrogen Approach to the Synthesis of some Pharmaceutically Relevant Intermediates](https://pubs.acs.org/doi/10.1021/acs.oprd.5b00199)
 - [Multi-task Bayesian Optimization of Chemical Reactions](https://chemrxiv.org/articles/preprint/Multi-task_Bayesian_Optimization_of_Chemical_Reactions/13250216)
-
-## Setup
-
-Clone the project:
-
-    git clone https://github.com/sustainable-processes/multitask.git
-
-Install [poetry](https://python-poetry.org/docs/) and then run the following command to install dependencies:
-
-    poetry install
-
-Additionally, until this [issue](https://github.com/open-reaction-database/ord-schema/issues/600) is fixed, you will need to manually install the ord-schema dependencies:
-    
-    poetry run pip install -r ord-requirements.txt
-
-You can run commands from inside the poetry virtual environment in one of two ways:
-
-  - **Option 1**: Put `poetry run` in front of every command (e.g., `poetry run dvc repro`) as we did above to install extra requirements.
-  - **Option 2**: Activate the virtual environement and run everything as normal:
-      - Run `poetry show -v`. Copy the path specified after "Using virtualenv"
-      - Activate the virtual environemnt at that path. So, if the path is `/Users/Kobi/Library/Caches/pypoetry/virtualenvs/multitask-z7ErTcQa-py3.7`, you would run `source /Users/Kobi/Library/Caches/pypoetry/virtualenvs/multitask-z7ErTcQa-py3.7/bin/activate`
-  
-[DVC](https://dvc.org/doc) is used for tracking data and keeping it in sync with git. When you first clone the project, you will need to download the existing data:
-
-    dvc pull
-
-This will ask you to authenticate with Google Drive. Make sure to use your Cambridge account (or an account you shared the [Multitask Bayesian Optimization shared drive](https://drive.google.com/drive/u/2/folders/0AGWGXkw78NfUUk9PVA) with).
-
-## Pipelines
-
-[Pipelines](https://dvc.org/doc/start/data-pipelines#get-started-data-pipelines) are a feature of DVC for keeping track of data workflows.  You can run our existing pipelines using the following command:
-
-    dvc repro
-
-By default, DVC will only re-run the steps of the 
+- Worth reading through the [peer review](https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-021-03213-y/MediaObjects/41586_2021_3213_MOESM2_ESM.pdf) of the shields Nature paper.
 
 ## In-Silico Comparison
+
 Questions:
 - [ ] What is the effect of the number of cotraining tasks?
 - [ ] Can MTBO accelerate reaction optimization with unseen reagents (e.g., catalyst, bases)?
@@ -62,9 +29,6 @@ Algorithms to compare
 
 Quantification
 - Percent of total combinations required to get quantitative yield?
-
-Worth reading through the [peer review](https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-021-03213-y/MediaObjects/41586_2021_3213_MOESM2_ESM.pdf) of the shields Nature paper.
-
 ### Data Sources for Benchmarks
 
 * Suzuki-Miyura Reaction
@@ -104,5 +68,62 @@ Worth reading through the [peer review](https://static-content.springer.com/esm/
     - [Pedersen](https://pubs.acs.org/doi/full/10.1021/acs.iecr.8b00564): 1 case with a kinetic model
     - [Changi](https://pubs.acs.org/doi/full/10.1021/acs.oprd.5b00281): 1 case with a kinetic model
 
-Also look at the EDBO examples.
+## Setup
+
+Clone the project:
+
+    git clone https://github.com/sustainable-processes/multitask.git
+
+Install [poetry](https://python-poetry.org/docs/) and then run the following command to install dependencies:
+
+    poetry install
+
+Additionally, until this [issue](https://github.com/open-reaction-database/ord-schema/issues/600) is fixed, you will need to manually install the ord-schema dependencies:
+    
+    poetry run pip install -r ord-requirements.txt
+
+You can run commands from inside the poetry virtual environment in one of two ways:
+
+  - **Option 1**: Put `poetry run` in front of every command (e.g., `poetry run dvc repro`) as we did above to install extra requirements.
+  - **Option 2**: Activate the virtual environement and run everything as normal:
+      - Run `poetry show -v`. Copy the path specified after "Using virtualenv"
+      - Activate the virtual environemnt at that path. So, if the path is `/Users/Kobi/Library/Caches/pypoetry/virtualenvs/multitask-z7ErTcQa-py3.7`, you would run `source /Users/Kobi/Library/Caches/pypoetry/virtualenvs/multitask-z7ErTcQa-py3.7/bin/activate`
+  
+[DVC](https://dvc.org/doc) is used for tracking data and keeping it in sync with git. When you first clone the project, you will need to download the existing data:
+
+    dvc pull
+
+This will ask you to authenticate with Google Drive. Make sure to use your Cambridge account (or an account you shared the [Multitask Bayesian Optimization shared drive](https://drive.google.com/drive/u/2/folders/0AGWGXkw78NfUUk9PVA) with).
+
+### Pipelines
+
+[Pipelines](https://dvc.org/doc/start/data-pipelines#get-started-data-pipelines) are a feature of DVC for keeping track of data workflows.  You can see our existing pipelines using the following command:
+
+    dvc dag
+
+You can rerun the pipeline using `dvc repro`. By default, DVC will only re-run the steps of the pipeline where code or data dependencies have changed.   You can override this with `dvc repro no-run-cache`.
+
+Follow the steps [here](https://dvc.org/doc/start/data-pipelines#get-started-data-pipelines) to create a new pipeline on the command line or read through the [documentation](https://dvc.org/doc/user-guide/project-structure/pipelines-files) on `dvc.yaml` to see how to edit the pipeline configuration file directly. 
+
+## Coding Guidelines
+
+Please format your code using [black](https://github.com/psf/black). Jupyter notebooks, which are for exploration, don't need to be formatted.
+
+**Directory Structure**
+```
+├── data/  # Store all data and results here (tracked mainly by DVC)
+├── dvc.lock # Lock file for DVC
+├── dvc.yaml # DVC pipelines configuration
+├── figures/  # Store figures in this directory and track using dvc
+├── multitask # python package with key functionality
+├── nbs # Exploratory Jupyter notebooks
+├── ord-requirements.txt # Dependencies for ORD schema
+├── params.yaml # Parameters for DVC pipelines
+├── poetry.lock  # Poetry lock file
+└── pyproject.toml # Poetry cnfiguration file
+```
+* Put final code for pipelines in `multitask`, and add the code to pipelines as described in the previous section.
+* [Typer](https://typer.tiangolo.com/tutorial/first-steps/) is great for turning a python function into a command line script. It's already installed, so you might as well use it.
+
+
 

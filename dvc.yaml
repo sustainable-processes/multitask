@@ -1,5 +1,6 @@
 stages:
   baumgartner_etl:
+    desc: "Convert excel file into ORD schema"
     cmd: python multitask/etl_baumgartner_suzuki.py data/baumgartner_suzuki/c8re00032h2.xlsx
       data/baumgartner_suzuki/
     deps:
@@ -11,6 +12,7 @@ stages:
       - data/baumgartner_suzuki/baumgartner_suzuki-minlp2-optimization.pb
       - data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp2-optimization.json
   suzuki_benchmark_training:
+    desc: "Train a benchmark based on data in the ORD schema format"
     cmd: >-
       python multitask/suzuki_benchmark_training.py
       baumgartner_suzuki-minlp1-optimization
