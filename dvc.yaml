@@ -3,10 +3,23 @@ stages:
     cmd: python multitask/etl_baumgartner_suzuki.py data/baumgartner_suzuki/c8re00032h2.xlsx
       data/baumgartner_suzuki/
     deps:
-    - data/baumgartner_suzuki/c8re00032h2.xlsx
-    - multitask/etl_baumgartner_suzuki.py
+      - data/baumgartner_suzuki/c8re00032h2.xlsx
+      - multitask/etl_baumgartner_suzuki.py
     outs:
-    - data/baumgartner_suzuki/baumgartner_suzuki-minlp1-optimization.pb
-    - data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp1-optimization.json
-    - data/baumgartner_suzuki/baumgartner_suzuki-minlp2-optimization.pb
-    - data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp2-optimization.json
+      - data/baumgartner_suzuki/baumgartner_suzuki-minlp1-optimization.pb
+      - data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp1-optimization.json
+      - data/baumgartner_suzuki/baumgartner_suzuki-minlp2-optimization.pb
+      - data/baumgartner_suzuki/warnings_baumgartner_suzuki-minlp2-optimization.json
+  suzuki_benchmark_training:
+    cmd: >-
+      python multitask/suzuki_benchmark_training.py
+      baumgartner_suzuki-minlp1-optimization
+      data/baumgartner_suzuki/emulator
+      --${suzuki_benchmark_training.split-catalyst}
+      --max-epochs ${suzuki_benchmark_training.max-epochs}
+      --verbose ${suzuki_benchmark_training.verbose}
+    deps:
+      - multitask/suzuki_benchmark_training.py
+      - data/baumgartner_suzuki/baumgartner_suzuki-minlp1-optimization.pb
+    outs:
+    - data/baumgartner_suzuki/emulator/
