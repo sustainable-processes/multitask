@@ -32,7 +32,7 @@ Quantification
 ### Data Sources for Benchmarks
 
 * Suzuki-Miyura Reaction
-    - [ ] [Reizman](https://gosummit.readthedocs.io/en/latest/experiments_benchmarks/implemented_benchmarks.html#summit.benchmarks.ReizmanSuzukiEmulator): 4 cases with varying catalysts, temperature, residence time, catalyst loading and optimizing yield and TON
+    - [x] [Reizman](https://gosummit.readthedocs.io/en/latest/experiments_benchmarks/implemented_benchmarks.html#summit.benchmarks.ReizmanSuzukiEmulator): 4 cases with varying catalysts, temperature, residence time, catalyst loading and optimizing yield and TON
     - [x] [Baumgartner Suzuki](https://pubs.rsc.org/en/content/articlelanding/2018/RE/C8RE00032H#!divAbstract): 3 cases varying catalyst complex, catalyst loading, temperature, and residence time and optimizing yield and TON
     - [ ] [Perera](http://www.sciencemag.org/lookup/doi/10.1126/science.aap9112): HT screening 9 cases (3 electrophiles, 3 nucelophiles) varying ligand, base, solvent
     - [ ] [Christensen](https://pubs.rsc.org/en/content/articlelanding/2019/re/c9re00086k#!divAbstract): Kinetic profiling, only looking at different species over time, probably not the best for our application

@@ -233,6 +233,7 @@ def train_benchmark(
     dataset_name,
     data_paths: List[str],
     save_path: str,
+    figure_path: str,
     print_warnings: Optional[bool] = True,
     split_catalyst: Optional[bool] = True,
     max_epochs: Optional[int] = 1000,
@@ -250,6 +251,11 @@ def train_benchmark(
 
     # Train emulator
     emulator.train(max_epochs=max_epochs, verbose=verbose)
+
+    # Parity plot
+    fig, _ = emulator.parity_plot(include_test=True)
+    figure_path = Path(figure_path)
+    fig.savefig(figure_path / f"{dataset_name}_parity_plot.png", dpi=300)
 
     # Save emulator
     emulator.save(save_dir=save_path)

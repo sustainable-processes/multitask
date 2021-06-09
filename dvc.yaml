@@ -7,9 +7,7 @@ stages:
       - data/baumgartner_suzuki/c8re00032h2.xlsx
       - multitask/etl_baumgartner_suzuki.py
     outs:
-      - data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
-      - data/baumgartner_suzuki/ord/warnings_baumgartner_suzuki.json
-
+      - data/baumgartner_suzuki/ord/
   reizman_etl:
     desc: "Convert Reizman data to ORD schema"
     cmd: python multitask/etl_reizman_suzuki.py data/reizman_suzuki/ data/reizman_suzuki/ord/
@@ -21,7 +19,6 @@ stages:
       - multitask/etl_reizman_suzuki.py
     outs:
       - data/reizman_suzuki/ord/
-
   baumgartner_suzuki_benchmark_training:
     desc: "Train a benchmark based on data in the ORD schema format"
     cmd: >-
@@ -29,6 +26,7 @@ stages:
       baumgartner_suzuki
       data/baumgartner_suzuki/ord data/reizman_suzuki/ord
       data/baumgartner_suzuki/emulator
+      figures/
       --${suzuki_benchmark_training.split-catalyst}
       --max-epochs ${suzuki_benchmark_training.max-epochs}
       --verbose ${suzuki_benchmark_training.verbose}
@@ -39,6 +37,7 @@ stages:
       - data/reizman_suzuki/ord
     outs:
     - data/baumgartner_suzuki/emulator/
+    - figures/baumgartner_suzuki_parity_plot.png
 
   reizman_suzuki_benchmark_training:
     foreach: # cases
@@ -53,6 +52,7 @@ stages:
         reizman_suzuki_case_${item}
         data/baumgartner_suzuki/ord data/reizman_suzuki/ord
         data/reizman_suzuki/emulator_case_${item}/
+        figures/
         --${suzuki_benchmark_training.split-catalyst}
         --max-epochs ${suzuki_benchmark_training.max-epochs}
         --verbose ${suzuki_benchmark_training.verbose}
@@ -63,3 +63,4 @@ stages:
         - data/reizman_suzuki/ord
       outs:
         - data/reizman_suzuki/emulator_case_${item}/
+        - figures/reizman_suzuki_case_${item}_parity_plot.png
