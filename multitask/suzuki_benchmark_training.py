@@ -109,11 +109,11 @@ def create_suzuki_domain(
         description="Concentration of pre_catalyst in molar",
         bounds=[0, 2],
     )
-    domain += ContinuousVariable(
-        name="ligand_ratio",
-        description="Ratio of pre-catalyst to ligand",
-        bounds=[0, 5],
-    )
+    # domain += ContinuousVariable(
+    #     name="ligand_ratio",
+    #     description="Ratio of pre-catalyst to ligand",
+    #     bounds=[0, 5],
+    # )
 
     domain += ContinuousVariable(
         name="temperature",

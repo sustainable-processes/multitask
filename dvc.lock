@@ -86,12 +86,12 @@ stages:
       1000 --cv-folds 5 --verbose 0 --no-print-warnings
     deps:
     - path: data/reizman_suzuki/ord
-      md5: e4d8a72cf6ed315163bc7ec442299418.dir
+      md5: bb3e3ba74b7d17b4574c5934ffc148e4.dir
       size: 585221
       nfiles: 8
     - path: multitask/suzuki_benchmark_training.py
-      md5: 2322347bbf69a3cf1d9f382d0c5af0ef
-      size: 5233
+      md5: 47385a488a2173638be4e53caaa8e3ee
+      size: 5243
     - path: multitask/suzuki_data_utils.py
       md5: 4bc2bf661489e06a3d7d525b326ea900
       size: 5608
@@ -100,12 +100,12 @@ stages:
       size: 2245
     outs:
     - path: data/reizman_suzuki/emulator_case_2/
-      md5: 4e569d043c0439e5a5c7db2b33b63d33.dir
-      size: 156804
+      md5: e2976710b766718c9ccb9d781d1ebb14.dir
+      size: 146295
       nfiles: 6
     - path: figures/reizman_suzuki_case_2_parity_plot.png
-      md5: 101fdd59040aa986d4d4008c2a0002cd
-      size: 184787
+      md5: 6bf687184dcf84701c4d6dd7e30cf98f
+      size: 187800
   reizman_suzuki_benchmark_training@1:
     cmd: python multitask/suzuki_benchmark_training.py data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
       data/reizman_suzuki/emulator_case_1/ figures/ --no-split-catalyst --max-epochs
@@ -135,10 +135,10 @@ stages:
   reizman_suzuki_benchmark_training@3:
     cmd: python multitask/suzuki_benchmark_training.py data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
       data/reizman_suzuki/emulator_case_3/ figures/ --no-split-catalyst --max-epochs
-      1 --cv-folds 5 --verbose 0 --no-print-warnings
+      1000 --cv-folds 5 --verbose 0 --no-print-warnings
     deps:
     - path: data/reizman_suzuki/ord
-      md5: e4d8a72cf6ed315163bc7ec442299418.dir
+      md5: bb3e3ba74b7d17b4574c5934ffc148e4.dir
       size: 585221
       nfiles: 8
     - path: multitask/suzuki_benchmark_training.py
@@ -152,19 +152,19 @@ stages:
       size: 2245
     outs:
     - path: data/reizman_suzuki/emulator_case_3/
-      md5: 908c5ec61b0bcff0002e645daf6341d7.dir
-      size: 156806
+      md5: e3a6cd66f5503179575dbf82a8d7c723.dir
+      size: 156795
       nfiles: 6
     - path: figures/reizman_suzuki_case_3_parity_plot.png
-      md5: a31a8d3772044b29dc37b28644ac4a4e
-      size: 159215
+      md5: 36e2ad61149c90951ffec329b76a69a8
+      size: 196595
   reizman_suzuki_benchmark_training@4:
     cmd: python multitask/suzuki_benchmark_training.py data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
       data/reizman_suzuki/emulator_case_4/ figures/ --no-split-catalyst --max-epochs
       1000 --cv-folds 5 --verbose 0 --no-print-warnings
     deps:
     - path: data/reizman_suzuki/ord
-      md5: e4d8a72cf6ed315163bc7ec442299418.dir
+      md5: bb3e3ba74b7d17b4574c5934ffc148e4.dir
       size: 585221
       nfiles: 8
     - path: multitask/suzuki_benchmark_training.py
@@ -178,20 +178,20 @@ stages:
       size: 2245
     outs:
     - path: data/reizman_suzuki/emulator_case_4/
-      md5: b083ca136c33f60ef9205889499d09ba.dir
-      size: 156800
+      md5: 217a6373b75da741a4b14e87162514b3.dir
+      size: 156798
       nfiles: 6
     - path: figures/reizman_suzuki_case_4_parity_plot.png
-      md5: 13729f278df874a0ad0c5cc93655ef1e
-      size: 203706
+      md5: 4ff4b8f11bce2bff90e9dbe319b6a023
+      size: 213781
   suzuki_stbo_reizman@2:
     cmd: python multitask/suzuki_optimization.py stbo reizman_suzuki_case_2 data/reizman_suzuki/emulator_case_2
       data/reizman_suzuki/results_stbo_case_2/ --max-experiments 20 --batch-size 1
       --repeats 20
     deps:
     - path: data/reizman_suzuki/emulator_case_2
-      md5: 4e569d043c0439e5a5c7db2b33b63d33.dir
-      size: 156804
+      md5: 6662093a0e1c856bf471d5363703f19a.dir
+      size: 156808
       nfiles: 6
     - path: multitask/suzuki_data_utils.py
       md5: 4bc2bf661489e06a3d7d525b326ea900
@@ -200,12 +200,12 @@ stages:
       md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
       size: 2245
     - path: multitask/suzuki_optimization.py
-      md5: 7a0ee2c9805354781520d8c1f7bdda9b
-      size: 3975
+      md5: e1b6e492e322690d93949b1deb9e709c
+      size: 4006
     outs:
     - path: data/reizman_suzuki/results_stbo_case_2/
-      md5: 3e990e544795015c64a29d9f6f9ec913.dir
-      size: 251253
+      md5: 81ef435da964ad9808c23e48a5d7592c.dir
+      size: 252316
       nfiles: 20
   suzuki_stbo_reizman@4:
     cmd: python multitask/suzuki_optimization.py stbo reizman_suzuki_case_4 data/reizman_suzuki/emulator_case_4
@@ -213,22 +213,22 @@ stages:
       --repeats 20
     deps:
     - path: data/reizman_suzuki/emulator_case_4
-      md5: 639c13b7819dfde2fb1fe20b7909de87.dir
-      size: 156796
+      md5: 217a6373b75da741a4b14e87162514b3.dir
+      size: 156798
       nfiles: 6
     - path: multitask/suzuki_data_utils.py
-      md5: 4a455509eb2a5595fc1df69c27bea77b
-      size: 5698
+      md5: 4bc2bf661489e06a3d7d525b326ea900
+      size: 5608
     - path: multitask/suzuki_emulator.py
       md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
       size: 2245
     - path: multitask/suzuki_optimization.py
-      md5: e4c1ca7dcc1b475c3175d4d8d2215d43
-      size: 3578
+      md5: e1b6e492e322690d93949b1deb9e709c
+      size: 4006
     outs:
     - path: data/reizman_suzuki/results_stbo_case_4/
-      md5: 87a07e9fe6797c7fc0f1f3945c597fb7.dir
-      size: 250718
+      md5: 39108b69a97f33fbe1f3010bed79d82f.dir
+      size: 250453
       nfiles: 20
   suzuki_stbo_reizman@3:
     cmd: python multitask/suzuki_optimization.py stbo reizman_suzuki_case_3 data/reizman_suzuki/emulator_case_3

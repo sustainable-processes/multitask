@@ -90,13 +90,14 @@ def mtbo(
     max_iterations += 1 if max_experiments % batch_size != 0 else 0
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
+    opt_task = len(ds_list)
     for i in trange(repeats):
         result = run_mtbo(
             exp,
             ct_data=big_ds,
             max_iterations=max_iterations,
             batch_size=batch_size,
-            task=i + 1,
+            task=opt_task,
         )
         result.save(output_path / f"repeat_{i}.json")
 
