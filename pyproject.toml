@@ -17,6 +17,7 @@ openpyxl = "^3.0.7"
 ord-schema = "^0.3.0"
 rdkit-pypi = "^2021.3.2"
 typer = "^0.3.2"
+tqdm = "^4.61.0"
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^5.5.3"

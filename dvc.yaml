@@ -24,9 +24,8 @@ stages:
   baumgartner_suzuki_benchmark_training:
     desc: "Train a benchmark based on data in the ORD schema format"
     cmd: >-
-      python multitask/suzuki_benchmark_training.py
-      baumgartner_suzuki
-      data/baumgartner_suzuki/ord data/reizman_suzuki/ord
+      python multitask/suzuki_benchmark_optimization.py train-benchmark
+      data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
       data/baumgartner_suzuki/emulator
       figures/
       --${suzuki_benchmark_training.split-catalyst}
@@ -36,9 +35,8 @@ stages:
       --${suzuki_benchmark_training.include-reactant-concentrations}
       --no-print-warnings
     deps:
-      - multitask/suzuki_benchmark_training.py
+      - multitask/suzuki_benchmark_optimization.py
       - data/baumgartner_suzuki/ord/
-      - data/reizman_suzuki/ord
     outs:
     - data/baumgartner_suzuki/emulator/
     - figures/baumgartner_suzuki_parity_plot.png
@@ -52,9 +50,8 @@ stages:
     do:
       desc: "Train a benchmark based on data in the ORD schema format"
       cmd: >-
-        python multitask/suzuki_benchmark_training.py
-        reizman_suzuki_case_${item}
-        data/baumgartner_suzuki/ord data/reizman_suzuki/ord
+        python multitask/suzuki_benchmark_optimization.py train-benchmark
+        data/reizman_suzuki/ord/reizman_suzuki_case_${item}.pb
         data/reizman_suzuki/emulator_case_${item}/
         figures/
         --${suzuki_benchmark_training.split-catalyst}
@@ -63,8 +60,7 @@ stages:
         --verbose ${suzuki_benchmark_training.verbose}
         --no-print-warnings
       deps:
-        - multitask/suzuki_benchmark_training.py
-        - data/baumgartner_suzuki/ord/
+        - multitask/suzuki_benchmark_optimization.py
         - data/reizman_suzuki/ord
       outs:
         - data/reizman_suzuki/emulator_case_${item}/
