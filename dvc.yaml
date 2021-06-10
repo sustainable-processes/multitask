@@ -24,7 +24,7 @@ stages:
   baumgartner_suzuki_benchmark_training:
     desc: "Train a benchmark based on data in the ORD schema format"
     cmd: >-
-      python multitask/suzuki_benchmark_optimization.py train-benchmark
+      python multitask/suzuki_benchmark_training.py
       data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
       data/baumgartner_suzuki/emulator
       figures/
@@ -35,7 +35,9 @@ stages:
       --${suzuki_benchmark_training.include-reactant-concentrations}
       --no-print-warnings
     deps:
-      - multitask/suzuki_benchmark_optimization.py
+      - multitask/suzuki_benchmark_training.py
+      - multitask/suzuki_emulator.py
+      - multitask/suzuki_data_utils.py
       - data/baumgartner_suzuki/ord/
     outs:
     - data/baumgartner_suzuki/emulator/
@@ -50,7 +52,7 @@ stages:
     do:
       desc: "Train a benchmark based on data in the ORD schema format"
       cmd: >-
-        python multitask/suzuki_benchmark_optimization.py train-benchmark
+        python multitask/suzuki_benchmark_training.py
         data/reizman_suzuki/ord/reizman_suzuki_case_${item}.pb
         data/reizman_suzuki/emulator_case_${item}/
         figures/
@@ -60,8 +62,73 @@ stages:
         --verbose ${suzuki_benchmark_training.verbose}
         --no-print-warnings
       deps:
-        - multitask/suzuki_benchmark_optimization.py
+        - multitask/suzuki_benchmark_training.py
+        - multitask/suzuki_emulator.py
+        - multitask/suzuki_data_utils.py
         - data/reizman_suzuki/ord
       outs:
         - data/reizman_suzuki/emulator_case_${item}/
         - figures/reizman_suzuki_case_${item}_parity_plot.png
+
+  suzuki_stbo_reizman:
+    foreach: # cases
+      - 1
+      - 2
+      - 3
+      - 4
+    do:
+      desc: "Optimization of Reizman using Single Task Bayesian Optimization"
+      cmd: >-
+        python multitask/suzuki_optimization.py stbo
+        reizman_suzuki_case_${item}
+        data/reizman_suzuki/emulator_case_${item}
+        data/reizman_suzuki/results_stbo_case_${item}/
+        --max-experiments ${suzuki_optimization.max-experiments}
+        --batch-size ${suzuki_optimization.batch-size}
+        --repeats ${suzuki_optimization.repeats}
+      deps:
+        - multitask/suzuki_optimization.py
+        - multitask/suzuki_emulator.py
+        - multitask/suzuki_data_utils.py
+        - data/reizman_suzuki/emulator_case_${item}
+      outs:
+        - data/reizman_suzuki/results_stbo_case_${item}/
+
+#  suzuki_mtbo:
+#    foreach:
+#      - benchmark: data/baumgartner_suzuki/emulator
+#        dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+#        dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+#        dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+#        dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+#      - benchmark: data/reizman_suzuki/emulator_case_1
+#        dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+#        dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+#        dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+#        dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+#      - benchmark: data/reizman_suzuki/emulator_case_2
+#        dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+#        dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+#        dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+#        dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+#      - benchmark: data/reizman_suzuki/emulator_case_3
+#        dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+#        dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+#        dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+#        dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+#      - benchmark: data/reizman_suzuki/emulator_case_4
+#        dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+#        dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+#        dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+#        dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+#    do:
+#      desc: "Optimization using Multitask Bayesian Optimization"
+#      cmd: >-
+#        python multitask/suzuki_benchmark_optimization.py mtbo-optimization
+#        ${item.benchmark}
+#        ${item.dataset_1} ${item.dataset_2} ${item.dataset_3} ${item.dataset_4}
+#        ${key}
+#        --max-experiments ${suzuki_mtbo.max-experiments}
+#        --batch-size ${suzuki_mtbo.batch-szie}
+#        --repeats ${suzuki_mtbo.repeats}
+#        --no-print-warnings
