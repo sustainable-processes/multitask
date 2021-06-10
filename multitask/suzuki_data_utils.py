@@ -24,11 +24,6 @@ __all__ = ["get_suzuki_dataset", "suzuki_reaction_to_dataframe", "get_suzuki_row
 def get_suzuki_dataset(data_path, split_catalyst=True, print_warnings=True) -> DataSet:
     """
     Get a Suzuki ORD dataset as a Summit DataSet
-
-    :param data_path:
-    :param split_catalyst:
-    :param print_warnings:
-    :return:
     """
     data_path = Path(data_path)
     if not data_path.exists():

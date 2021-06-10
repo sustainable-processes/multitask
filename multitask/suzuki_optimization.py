@@ -59,6 +59,7 @@ def stbo(
 
 @app.command()
 def mtbo(
+    model_name: str,
     benchmark_path: str,
     ct_data_paths: List[str],
     output_path: str,
@@ -69,10 +70,20 @@ def mtbo(
 ):
     """Optimization of a Suzuki benchmark with Multitask Bayesian Optimziation"""
     # Load benchmark
-    exp = SuzukiEmulator.load(benchmark_path)
+    exp = SuzukiEmulator.load(model_name=model_name, save_dir=benchmark_path)
 
     # Load suzuki dataset
-    ds = get_suzuki_dataset(ct_data_path, split_catalyst=exp.split_catalyst)
+    ds_list = [
+        get_suzuki_dataset(
+            ct_data_path,
+            split_catalyst=exp.split_catalyst,
+            print_warnings=print_warnings,
+        )
+        for ct_data_path in ct_data_paths
+    ]
+    for i, ds in enumerate(ds_list):
+        ds["task", "METADATA"] = i
+    big_ds = pd.concat(ds_list)
 
     # Single-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
@@ -80,7 +91,13 @@ def mtbo(
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
     for i in trange(repeats):
-        result = run_mtbo(exp, max_iterations=max_iterations, batch_size=batch_size)
+        result = run_mtbo(
+            exp,
+            ct_data=big_ds,
+            max_iterations=max_iterations,
+            batch_size=batch_size,
+            task=i + 1,
+        )
         result.save(output_path / f"repeat_{i}.json")
 
 
