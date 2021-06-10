@@ -51,7 +51,7 @@ stages:
       size: 16677
     outs:
     - path: data/reizman_suzuki/ord/
-      md5: e4d8a72cf6ed315163bc7ec442299418.dir
+      md5: bb3e3ba74b7d17b4574c5934ffc148e4.dir
       size: 585221
       nfiles: 8
   baumgartner_suzuki_benchmark_training:
