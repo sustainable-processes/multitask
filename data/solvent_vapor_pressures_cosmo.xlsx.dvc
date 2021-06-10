@@ -1,0 +1,4 @@
+outs:
+- md5: 933ae995ea1edb58372984b57a7fa0aa
+  size: 17737
+  path: solvent_vapor_pressures_cosmo.xlsx
