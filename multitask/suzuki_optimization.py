@@ -52,6 +52,9 @@ def stbo(
     # Single-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
     max_iterations += 1 if max_experiments % batch_size != 0 else 0
+    import pdb
+
+    pdb.set_trace()
     for i in trange(repeats):
         result = run_stbo(exp, max_iterations=max_iterations, batch_size=batch_size)
         result.save(output_path / f"repeat_{i}.json")
@@ -85,7 +88,7 @@ def mtbo(
         ds["task", "METADATA"] = i
     big_ds = pd.concat(ds_list)
 
-    # Single-Task Bayesian Optimization
+    # Multi-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
     max_iterations += 1 if max_experiments % batch_size != 0 else 0
     output_path = Path(output_path)

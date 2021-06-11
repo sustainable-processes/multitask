@@ -145,3 +145,42 @@ stages:
         - ${item.benchmark}
       outs:
         - data/multitask_results/results_${key}
+
+  suzuki_mtbo_one_cotraining:
+    foreach:
+      baumgartner_suzuki_reizman_1:
+        model_name: baumgartner_suzuki
+        benchmark: data/baumgartner_suzuki/emulator
+        dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+      baumgartner_suzuki_reizman_2:
+        model_name: baumgartner_suzuki
+        benchmark: data/baumgartner_suzuki/emulator
+        dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+      baumgartner_suzuki_reizman_3:
+        model_name: baumgartner_suzuki
+        benchmark: data/baumgartner_suzuki/emulator
+        dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+      baumgartner_suzuki_reizman_4:
+        model_name: baumgartner_suzuki
+        benchmark: data/baumgartner_suzuki/emulator
+        dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+    do:
+      desc: "Optimization using Multitask Bayesian Optimization"
+      cmd: >-
+        python multitask/suzuki_optimization.py mtbo
+        ${item.model_name}
+        ${item.benchmark}
+        ${item.dataset_1}
+        data/multitask_results/results_${key}
+        --max-experiments ${suzuki_optimization.max-experiments}
+        --batch-size ${suzuki_optimization.batch-size}
+        --repeats ${suzuki_optimization.repeats}
+        --no-print-warnings
+      deps:
+        - multitask/suzuki_optimization.py
+        - multitask/suzuki_emulator.py
+        - multitask/suzuki_data_utils.py
+        - ${item.benchmark}
+        - ${item.dataset_1}
+      outs:
+        - data/multitask_results/results_${key}
