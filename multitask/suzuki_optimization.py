@@ -3,12 +3,14 @@ from multitask.suzuki_data_utils import get_suzuki_dataset
 from summit import *
 
 import typer
+from numpy.random import default_rng
 from tqdm.auto import tqdm, trange
 from pathlib import Path
 from typing import Iterable, Tuple, Dict, Union, List, Optional
 import pandas as pd
 import logging
 import json
+import warnings
 
 
 app = typer.Typer()
@@ -88,6 +90,11 @@ def mtbo(
         ds["task", "METADATA"] = i
     big_ds = pd.concat(ds_list)
 
+    # Temporary fix for issues with inversion of covariance matrix
+    rng = default_rng(10)
+    big_ds["temperature"] += rng.standard_normal() * 0.01
+    big_ds["time"] += rng.standard_normal() * 0.01
+
     # Multi-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
     max_iterations += 1 if max_experiments % batch_size != 0 else 0
@@ -95,13 +102,15 @@ def mtbo(
     output_path.mkdir(exist_ok=True)
     opt_task = len(ds_list)
     for i in trange(repeats):
-        result = run_mtbo(
-            exp,
-            ct_data=big_ds,
-            max_iterations=max_iterations,
-            batch_size=batch_size,
-            task=opt_task,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            result = run_mtbo(
+                exp,
+                ct_data=big_ds,
+                max_iterations=max_iterations,
+                batch_size=batch_size,
+                task=opt_task,
+            )
         result.save(output_path / f"repeat_{i}.json")
 
 
@@ -113,6 +122,7 @@ def run_stbo(
 ):
     """Run Single Task Bayesian Optimization (AKA normal BO)"""
     exp.reset()
+    assert exp.data.shape[0] == 0
     strategy = STBO(exp.domain, categorical_method=categorical_method)
     r = Runner(
         strategy=strategy,
@@ -132,6 +142,8 @@ def run_mtbo(
     task: int = 1,
 ):
     """Run Multitask Bayesian optimization"""
+    exp.reset()
+    assert exp.data.shape[0] == 0
     strategy = MTBO(
         exp.domain, pretraining_data=ct_data, categorical_method="one-hot", task=task
     )

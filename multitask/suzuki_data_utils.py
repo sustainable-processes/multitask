@@ -113,7 +113,7 @@ def get_suzuki_row(reaction: Reaction, split_catalyst: bool = True) -> dict:
                 row["catalyst_concentration"] = conc.to(
                     ureg.moles / ureg.liters
                 ).magnitude
-                row["ligand_ratio"] = 1.0
+                # row["ligand_ratio"] = 1.0
             if component.reaction_role == ReactionRole.REACTANT:
                 if reactants > 2:
                     raise ValueError(
@@ -148,7 +148,7 @@ def get_suzuki_row(reaction: Reaction, split_catalyst: bool = True) -> dict:
     time = reaction.outcomes[0].reaction_time
     units = Time.TimeUnit.Name(time.units)
     time = time.value * ureg(units.lower())
-    row["time"] = time.to(ureg.minute).magnitude
+    row["time"] = time.to(ureg.seconds).magnitude
 
     # Yield
     row["yld"] = get_rxn_yield(reaction.outcomes[0])

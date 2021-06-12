@@ -67,19 +67,19 @@ stages:
       md5: 47385a488a2173638be4e53caaa8e3ee
       size: 5243
     - path: multitask/suzuki_data_utils.py
-      md5: 4bc2bf661489e06a3d7d525b326ea900
-      size: 5608
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
     - path: multitask/suzuki_emulator.py
       md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
       size: 2245
     outs:
     - path: data/baumgartner_suzuki/emulator/
-      md5: ec3cc186110ee07aea621ab21b3b55ea.dir
-      size: 146299
+      md5: 0720d85d16ccebc11a51c08520ecc623.dir
+      size: 146303
       nfiles: 6
     - path: figures/baumgartner_suzuki_parity_plot.png
-      md5: 77cd276b426e9063cd1c588ffd4b8dff
-      size: 235949
+      md5: dfa35f0d20540b820f12228127d15638
+      size: 241453
   reizman_suzuki_benchmark_training@2:
     cmd: python multitask/suzuki_benchmark_training.py data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
       data/reizman_suzuki/emulator_case_2/ figures/ --no-split-catalyst --max-epochs
@@ -93,45 +93,45 @@ stages:
       md5: 47385a488a2173638be4e53caaa8e3ee
       size: 5243
     - path: multitask/suzuki_data_utils.py
-      md5: 4bc2bf661489e06a3d7d525b326ea900
-      size: 5608
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
     - path: multitask/suzuki_emulator.py
       md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
       size: 2245
     outs:
     - path: data/reizman_suzuki/emulator_case_2/
-      md5: e2976710b766718c9ccb9d781d1ebb14.dir
-      size: 146295
+      md5: 8e01f2673902050441bce63b0ab94e12.dir
+      size: 146302
       nfiles: 6
     - path: figures/reizman_suzuki_case_2_parity_plot.png
-      md5: 6bf687184dcf84701c4d6dd7e30cf98f
-      size: 187800
+      md5: 2524bbb81833c79c40875fa09a8f405f
+      size: 189184
   reizman_suzuki_benchmark_training@1:
     cmd: python multitask/suzuki_benchmark_training.py data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
       data/reizman_suzuki/emulator_case_1/ figures/ --no-split-catalyst --max-epochs
-      1 --cv-folds 5 --verbose 0 --no-print-warnings
+      1000 --cv-folds 5 --verbose 0 --no-print-warnings
     deps:
     - path: data/reizman_suzuki/ord
-      md5: e4d8a72cf6ed315163bc7ec442299418.dir
+      md5: bb3e3ba74b7d17b4574c5934ffc148e4.dir
       size: 585221
       nfiles: 8
     - path: multitask/suzuki_benchmark_training.py
-      md5: 2322347bbf69a3cf1d9f382d0c5af0ef
-      size: 5233
+      md5: 47385a488a2173638be4e53caaa8e3ee
+      size: 5243
     - path: multitask/suzuki_data_utils.py
-      md5: 4a455509eb2a5595fc1df69c27bea77b
-      size: 5698
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
     - path: multitask/suzuki_emulator.py
       md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
       size: 2245
     outs:
     - path: data/reizman_suzuki/emulator_case_1/
-      md5: 7b00debf5cad42059b6b6b014064da00.dir
-      size: 156788
+      md5: f39f1453046cd1cdd98ac031f9b55927.dir
+      size: 146294
       nfiles: 6
     - path: figures/reizman_suzuki_case_1_parity_plot.png
-      md5: 154ff2638091318cf98871f3a0b8a0e6
-      size: 154327
+      md5: f5b2da6a16dfbf22f68a721cf0dba94d
+      size: 198592
   reizman_suzuki_benchmark_training@3:
     cmd: python multitask/suzuki_benchmark_training.py data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
       data/reizman_suzuki/emulator_case_3/ figures/ --no-split-catalyst --max-epochs
@@ -145,19 +145,19 @@ stages:
       md5: 47385a488a2173638be4e53caaa8e3ee
       size: 5243
     - path: multitask/suzuki_data_utils.py
-      md5: 4bc2bf661489e06a3d7d525b326ea900
-      size: 5608
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
     - path: multitask/suzuki_emulator.py
       md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
       size: 2245
     outs:
     - path: data/reizman_suzuki/emulator_case_3/
-      md5: 3fd7e3646165246be7db24e9fc207462.dir
-      size: 146295
+      md5: 8d4a0ec0368800fe70b29673cfb61d61.dir
+      size: 146296
       nfiles: 6
     - path: figures/reizman_suzuki_case_3_parity_plot.png
-      md5: 3155c5e3cb791dcaea6e43139e96b84c
-      size: 196850
+      md5: 36422030f70f6f5428f89403a8f7a0c9
+      size: 196570
   reizman_suzuki_benchmark_training@4:
     cmd: python multitask/suzuki_benchmark_training.py data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
       data/reizman_suzuki/emulator_case_4/ figures/ --no-split-catalyst --max-epochs
@@ -168,22 +168,22 @@ stages:
       size: 585221
       nfiles: 8
     - path: multitask/suzuki_benchmark_training.py
-      md5: 2322347bbf69a3cf1d9f382d0c5af0ef
-      size: 5233
+      md5: 47385a488a2173638be4e53caaa8e3ee
+      size: 5243
     - path: multitask/suzuki_data_utils.py
-      md5: 4bc2bf661489e06a3d7d525b326ea900
-      size: 5608
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
     - path: multitask/suzuki_emulator.py
       md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
       size: 2245
     outs:
     - path: data/reizman_suzuki/emulator_case_4/
-      md5: 217a6373b75da741a4b14e87162514b3.dir
-      size: 156798
+      md5: d8a49457d18628cd3d1a27a170b47acf.dir
+      size: 146293
       nfiles: 6
     - path: figures/reizman_suzuki_case_4_parity_plot.png
-      md5: 4ff4b8f11bce2bff90e9dbe319b6a023
-      size: 213781
+      md5: 66a647f90c4c68e9a508206979ed87a3
+      size: 206995
   suzuki_stbo_reizman@2:
     cmd: python multitask/suzuki_optimization.py stbo reizman_suzuki_case_2 data/reizman_suzuki/emulator_case_2
       data/reizman_suzuki/results_stbo_case_2/ --max-experiments 20 --batch-size 1
@@ -353,4 +353,691 @@ stages:
     - path: data/multitask_results/results_baumgartner_suzuki_reizman_3
       md5: b843b7a54a313cca51006d2b9b8204b4.dir
       size: 1166182
+      nfiles: 20
+  generate_mtbo_combos:
+    cmd: python multitask/suzuki_optimization_combinations.py
+    outs:
+    - path: suzuki_optimization_one_params.yaml
+      md5: c42e104fb3d84796d08ef1c12f49d121
+      size: 4892
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_3_cotrain_reizman_suzuki_case2:
+    cmd: echo reizman_suzuki_case_3_cotrain_reizman_suzuki_case2
+    deps:
+    - path: data/reizman_suzuki/emulator_case_3
+      md5: 3fd7e3646165246be7db24e9fc207462.dir
+      size: 146295
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+      md5: 378262eb3a339b5174fc529bd02102b5
+      size: 144332
+    - path: multitask/suzuki_data_utils.py
+      md5: 4bc2bf661489e06a3d7d525b326ea900
+      size: 5608
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: a97d6c22534b77e578ede79697c05b24
+      size: 4041
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_2_cotrain_reizman_suzuki_case3:
+    cmd: echo reizman_suzuki_case_2_cotrain_reizman_suzuki_case3
+    deps:
+    - path: data/reizman_suzuki/emulator_case_2
+      md5: e2976710b766718c9ccb9d781d1ebb14.dir
+      size: 146295
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+      md5: 38f805f503c5ec83363aed4918759c91
+      size: 139756
+    - path: multitask/suzuki_data_utils.py
+      md5: 4bc2bf661489e06a3d7d525b326ea900
+      size: 5608
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: a97d6c22534b77e578ede79697c05b24
+      size: 4041
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_2_cotrain_reizman_suzuki_case1:
+    cmd: echo reizman_suzuki_case_2_cotrain_reizman_suzuki_case1
+    deps:
+    - path: data/reizman_suzuki/emulator_case_2
+      md5: e2976710b766718c9ccb9d781d1ebb14.dir
+      size: 146295
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+      md5: 0192d1eef1fc2721745c271f6746238f
+      size: 146246
+    - path: multitask/suzuki_data_utils.py
+      md5: 4bc2bf661489e06a3d7d525b326ea900
+      size: 5608
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: a97d6c22534b77e578ede79697c05b24
+      size: 4041
+  suzuki_mtbo_one_cotraining@baumgartner_suzuki_cotrain_reizman_suzuki_case_1:
+    cmd: python multitask/suzuki_optimization.py mtbo baumgartner_suzuki data/baumgartner_suzuki/emulator
+      data/reizman_suzuki/ord/reizman_suzuki_case_1.pb data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_case_1
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/emulator
+      md5: 0720d85d16ccebc11a51c08520ecc623.dir
+      size: 146303
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+      md5: 0192d1eef1fc2721745c271f6746238f
+      size: 146246
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_case_1
+      md5: 3c2658eff92f257df9828db7841155c8.dir
+      size: 323593
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@baumgartner_suzuki_cotrain_reizman_suzuki_case_3:
+    cmd: python multitask/suzuki_optimization.py mtbo baumgartner_suzuki data/baumgartner_suzuki/emulator
+      data/reizman_suzuki/ord/reizman_suzuki_case_3.pb data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_case_3
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/emulator
+      md5: 0720d85d16ccebc11a51c08520ecc623.dir
+      size: 146303
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+      md5: 38f805f503c5ec83363aed4918759c91
+      size: 139756
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_case_3
+      md5: 95a0cb677306d2cdade1f532152a64d6.dir
+      size: 322695
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_1_cotrain_reizman_suzuki_case_4:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_1 data/reizman_suzuki/emulator_case_1
+      data/reizman_suzuki/ord/reizman_suzuki_case_4.pb data/multitask_results/results_reizman_suzuki_case_1_cotrain_reizman_suzuki_case_4
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_1
+      md5: f39f1453046cd1cdd98ac031f9b55927.dir
+      size: 146294
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+      md5: 850d0459e00c8ef72f0f2db0a132f24e
+      size: 145106
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_1_cotrain_reizman_suzuki_case_4
+      md5: c22cd9bac55b5717171a700d8e173dd4.dir
+      size: 321358
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_1_cotrain_baumgartner_suzuki:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_1 data/reizman_suzuki/emulator_case_1
+      data/baumgartner_suzuki/ord/baumgartner_suzuki.pb data/multitask_results/results_reizman_suzuki_1_cotrain_baumgartner_suzuki
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+      md5: 4fa841d95ec81eaae280105a18270519
+      size: 441068
+    - path: data/reizman_suzuki/emulator_case_1
+      md5: f39f1453046cd1cdd98ac031f9b55927.dir
+      size: 146294
+      nfiles: 6
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_1_cotrain_baumgartner_suzuki
+      md5: 7db3f37c5f5ac98fedddf8e24d3304b1.dir
+      size: 321390
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_2_cotrain_reizman_suzuki_case_4:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_2 data/reizman_suzuki/emulator_case_2
+      data/reizman_suzuki/ord/reizman_suzuki_case_4.pb data/multitask_results/results_reizman_suzuki_case_2_cotrain_reizman_suzuki_case_4
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_2
+      md5: 8e01f2673902050441bce63b0ab94e12.dir
+      size: 146302
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+      md5: 850d0459e00c8ef72f0f2db0a132f24e
+      size: 145106
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_2_cotrain_reizman_suzuki_case_4
+      md5: 1afcc45e0d38609ec03df7943420a8ce.dir
+      size: 325896
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_1_cotrain_reizman_suzuki_case_3:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_1 data/reizman_suzuki/emulator_case_1
+      data/reizman_suzuki/ord/reizman_suzuki_case_3.pb data/multitask_results/results_reizman_suzuki_case_1_cotrain_reizman_suzuki_case_3
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_1
+      md5: f39f1453046cd1cdd98ac031f9b55927.dir
+      size: 146294
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+      md5: 38f805f503c5ec83363aed4918759c91
+      size: 139756
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_1_cotrain_reizman_suzuki_case_3
+      md5: 4645bc684735152e5ee2c55669bae95b.dir
+      size: 322532
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_3_cotrain_baumgartner_suzuki:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_3 data/reizman_suzuki/emulator_case_3
+      data/baumgartner_suzuki/ord/baumgartner_suzuki.pb data/multitask_results/results_reizman_suzuki_3_cotrain_baumgartner_suzuki
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+      md5: 4fa841d95ec81eaae280105a18270519
+      size: 441068
+    - path: data/reizman_suzuki/emulator_case_3
+      md5: 8d4a0ec0368800fe70b29673cfb61d61.dir
+      size: 146296
+      nfiles: 6
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_3_cotrain_baumgartner_suzuki
+      md5: ae733f67e209912fa905c16da801715a.dir
+      size: 324872
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_3_cotrain_reizman_suzuki_case_2:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_3 data/reizman_suzuki/emulator_case_3
+      data/reizman_suzuki/ord/reizman_suzuki_case_2.pb data/multitask_results/results_reizman_suzuki_case_3_cotrain_reizman_suzuki_case_2
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_3
+      md5: 8d4a0ec0368800fe70b29673cfb61d61.dir
+      size: 146296
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+      md5: 378262eb3a339b5174fc529bd02102b5
+      size: 144332
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_3_cotrain_reizman_suzuki_case_2
+      md5: 0892686f6997b698f5470b2685436177.dir
+      size: 326585
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_4_cotrain_reizman_suzuki_case_4:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_4 data/reizman_suzuki/emulator_case_4
+      data/reizman_suzuki/ord/reizman_suzuki_case_4.pb data/multitask_results/results_reizman_suzuki_case_4_cotrain_reizman_suzuki_case_4
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_4
+      md5: d8a49457d18628cd3d1a27a170b47acf.dir
+      size: 146293
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+      md5: 850d0459e00c8ef72f0f2db0a132f24e
+      size: 145106
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_4_cotrain_reizman_suzuki_case_4
+      md5: 40a28a018171a809437402cc15bc48e1.dir
+      size: 327136
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@baumgartner_suzuki_cotrain_reizman_suzuki_case_4:
+    cmd: python multitask/suzuki_optimization.py mtbo baumgartner_suzuki data/baumgartner_suzuki/emulator
+      data/reizman_suzuki/ord/reizman_suzuki_case_4.pb data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_case_4
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/emulator
+      md5: 0720d85d16ccebc11a51c08520ecc623.dir
+      size: 146303
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+      md5: 850d0459e00c8ef72f0f2db0a132f24e
+      size: 145106
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_case_4
+      md5: 51bfd5007c6bcbd7770044b8acad812a.dir
+      size: 324391
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_3_cotrain_reizman_suzuki_case_4:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_3 data/reizman_suzuki/emulator_case_3
+      data/reizman_suzuki/ord/reizman_suzuki_case_4.pb data/multitask_results/results_reizman_suzuki_case_3_cotrain_reizman_suzuki_case_4
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_3
+      md5: 8d4a0ec0368800fe70b29673cfb61d61.dir
+      size: 146296
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+      md5: 850d0459e00c8ef72f0f2db0a132f24e
+      size: 145106
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_3_cotrain_reizman_suzuki_case_4
+      md5: 83a20037557f1178feb977d29f7ce176.dir
+      size: 328372
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_4_cotrain_reizman_suzuki_case_1:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_4 data/reizman_suzuki/emulator_case_4
+      data/reizman_suzuki/ord/reizman_suzuki_case_1.pb data/multitask_results/results_reizman_suzuki_case_4_cotrain_reizman_suzuki_case_1
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_4
+      md5: d8a49457d18628cd3d1a27a170b47acf.dir
+      size: 146293
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+      md5: 0192d1eef1fc2721745c271f6746238f
+      size: 146246
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_4_cotrain_reizman_suzuki_case_1
+      md5: 976af5944a06c2ec048b5d8c2297ea04.dir
+      size: 322909
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@baumgartner_suzuki_cotrain_reizman_suzuki_case_2:
+    cmd: python multitask/suzuki_optimization.py mtbo baumgartner_suzuki data/baumgartner_suzuki/emulator
+      data/reizman_suzuki/ord/reizman_suzuki_case_2.pb data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_case_2
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/emulator
+      md5: 0720d85d16ccebc11a51c08520ecc623.dir
+      size: 146303
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+      md5: 378262eb3a339b5174fc529bd02102b5
+      size: 144332
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_case_2
+      md5: 80d2dfe899be519c9fee9c16b9436a01.dir
+      size: 322985
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_2_cotrain_reizman_suzuki_case_2:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_2 data/reizman_suzuki/emulator_case_2
+      data/reizman_suzuki/ord/reizman_suzuki_case_2.pb data/multitask_results/results_reizman_suzuki_case_2_cotrain_reizman_suzuki_case_2
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_2
+      md5: 8e01f2673902050441bce63b0ab94e12.dir
+      size: 146302
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+      md5: 378262eb3a339b5174fc529bd02102b5
+      size: 144332
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_2_cotrain_reizman_suzuki_case_2
+      md5: 651abc620bca78cbf26a2822a6e6ee54.dir
+      size: 324160
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_1_cotrain_reizman_suzuki_case_2:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_1 data/reizman_suzuki/emulator_case_1
+      data/reizman_suzuki/ord/reizman_suzuki_case_2.pb data/multitask_results/results_reizman_suzuki_case_1_cotrain_reizman_suzuki_case_2
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_1
+      md5: f39f1453046cd1cdd98ac031f9b55927.dir
+      size: 146294
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+      md5: 378262eb3a339b5174fc529bd02102b5
+      size: 144332
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_1_cotrain_reizman_suzuki_case_2
+      md5: acd6b995456d073d6947e3136810b805.dir
+      size: 323329
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_1_cotrain_reizman_suzuki_case_1:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_1 data/reizman_suzuki/emulator_case_1
+      data/reizman_suzuki/ord/reizman_suzuki_case_1.pb data/multitask_results/results_reizman_suzuki_case_1_cotrain_reizman_suzuki_case_1
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_1
+      md5: f39f1453046cd1cdd98ac031f9b55927.dir
+      size: 146294
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+      md5: 0192d1eef1fc2721745c271f6746238f
+      size: 146246
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_1_cotrain_reizman_suzuki_case_1
+      md5: 01c249f2135e9ddd5b3721c086e0fe58.dir
+      size: 321984
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_4_cotrain_reizman_suzuki_case_3:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_4 data/reizman_suzuki/emulator_case_4
+      data/reizman_suzuki/ord/reizman_suzuki_case_3.pb data/multitask_results/results_reizman_suzuki_case_4_cotrain_reizman_suzuki_case_3
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_4
+      md5: d8a49457d18628cd3d1a27a170b47acf.dir
+      size: 146293
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+      md5: 38f805f503c5ec83363aed4918759c91
+      size: 139756
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_4_cotrain_reizman_suzuki_case_3
+      md5: e0c29a2e5dc2d9d542d8ffdcfcd3954c.dir
+      size: 322614
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_2_cotrain_baumgartner_suzuki:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_2 data/reizman_suzuki/emulator_case_2
+      data/baumgartner_suzuki/ord/baumgartner_suzuki.pb data/multitask_results/results_reizman_suzuki_2_cotrain_baumgartner_suzuki
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+      md5: 4fa841d95ec81eaae280105a18270519
+      size: 441068
+    - path: data/reizman_suzuki/emulator_case_2
+      md5: 8e01f2673902050441bce63b0ab94e12.dir
+      size: 146302
+      nfiles: 6
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_2_cotrain_baumgartner_suzuki
+      md5: 63063d64e078b159bd9826d2aea9a9b1.dir
+      size: 324774
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_2_cotrain_reizman_suzuki_case_1:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_2 data/reizman_suzuki/emulator_case_2
+      data/reizman_suzuki/ord/reizman_suzuki_case_1.pb data/multitask_results/results_reizman_suzuki_case_2_cotrain_reizman_suzuki_case_1
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_2
+      md5: 8e01f2673902050441bce63b0ab94e12.dir
+      size: 146302
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+      md5: 0192d1eef1fc2721745c271f6746238f
+      size: 146246
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_2_cotrain_reizman_suzuki_case_1
+      md5: bc046cc7327b6bf8fc21a3e6f64e0154.dir
+      size: 325022
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_3_cotrain_reizman_suzuki_case_3:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_3 data/reizman_suzuki/emulator_case_3
+      data/reizman_suzuki/ord/reizman_suzuki_case_3.pb data/multitask_results/results_reizman_suzuki_case_3_cotrain_reizman_suzuki_case_3
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_3
+      md5: 8d4a0ec0368800fe70b29673cfb61d61.dir
+      size: 146296
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+      md5: 38f805f503c5ec83363aed4918759c91
+      size: 139756
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_3_cotrain_reizman_suzuki_case_3
+      md5: 81017257fd1fafcb33a0248c6291a08c.dir
+      size: 324502
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_4_cotrain_baumgartner_suzuki:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_4 data/reizman_suzuki/emulator_case_4
+      data/baumgartner_suzuki/ord/baumgartner_suzuki.pb data/multitask_results/results_reizman_suzuki_4_cotrain_baumgartner_suzuki
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+      md5: 4fa841d95ec81eaae280105a18270519
+      size: 441068
+    - path: data/reizman_suzuki/emulator_case_4
+      md5: d8a49457d18628cd3d1a27a170b47acf.dir
+      size: 146293
+      nfiles: 6
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_4_cotrain_baumgartner_suzuki
+      md5: 7381841df1214f04a77720699ee32fbc.dir
+      size: 322585
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_3_cotrain_reizman_suzuki_case_1:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_3 data/reizman_suzuki/emulator_case_3
+      data/reizman_suzuki/ord/reizman_suzuki_case_1.pb data/multitask_results/results_reizman_suzuki_case_3_cotrain_reizman_suzuki_case_1
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_3
+      md5: 8d4a0ec0368800fe70b29673cfb61d61.dir
+      size: 146296
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+      md5: 0192d1eef1fc2721745c271f6746238f
+      size: 146246
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_3_cotrain_reizman_suzuki_case_1
+      md5: 58bc5daeff1674eaf343de37c824d593.dir
+      size: 326252
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_2_cotrain_reizman_suzuki_case_3:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_2 data/reizman_suzuki/emulator_case_2
+      data/reizman_suzuki/ord/reizman_suzuki_case_3.pb data/multitask_results/results_reizman_suzuki_case_2_cotrain_reizman_suzuki_case_3
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_2
+      md5: 8e01f2673902050441bce63b0ab94e12.dir
+      size: 146302
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+      md5: 38f805f503c5ec83363aed4918759c91
+      size: 139756
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_2_cotrain_reizman_suzuki_case_3
+      md5: a5d3cd3fb92ca9a166d7835857bacb58.dir
+      size: 323510
+      nfiles: 20
+  suzuki_mtbo_one_cotraining@reizman_suzuki_case_4_cotrain_reizman_suzuki_case_2:
+    cmd: python multitask/suzuki_optimization.py mtbo reizman_suzuki_case_4 data/reizman_suzuki/emulator_case_4
+      data/reizman_suzuki/ord/reizman_suzuki_case_2.pb data/multitask_results/results_reizman_suzuki_case_4_cotrain_reizman_suzuki_case_2
+      --max-experiments 20 --batch-size 1 --repeats 20 --no-print-warnings
+    deps:
+    - path: data/reizman_suzuki/emulator_case_4
+      md5: d8a49457d18628cd3d1a27a170b47acf.dir
+      size: 146293
+      nfiles: 6
+    - path: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+      md5: 378262eb3a339b5174fc529bd02102b5
+      size: 144332
+    - path: multitask/suzuki_data_utils.py
+      md5: d92ac847557a7d58ee1d46214e6f2558
+      size: 5611
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: b7e13a86d22d4513a2950beb5c6a9def
+      size: 4493
+    outs:
+    - path: data/multitask_results/results_reizman_suzuki_case_4_cotrain_reizman_suzuki_case_2
+      md5: 96bb50fc3d804c1d452d006eb860fb3e.dir
+      size: 324641
       nfiles: 20
