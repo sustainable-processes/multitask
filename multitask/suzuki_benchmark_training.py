@@ -122,7 +122,7 @@ def create_suzuki_domain(
     )
 
     domain += ContinuousVariable(
-        name="time", description="Reaction time in seconds", bounds=[60, 120 * 60]
+        name="time", description="Reaction time in seconds", bounds=[60, 600]
     )
 
     # Objectives

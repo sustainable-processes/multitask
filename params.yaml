@@ -37,10 +37,6 @@ suzuki_one_experiments:
     benchmark: data/reizman_suzuki/emulator_case_4
     dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
     model_name: reizman_suzuki_case_4
-  reizman_suzuki_case_1_cotrain_reizman_suzuki_case_1:
-    benchmark: data/reizman_suzuki/emulator_case_1
-    dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
-    model_name: reizman_suzuki_case_1
   reizman_suzuki_case_1_cotrain_reizman_suzuki_case_2:
     benchmark: data/reizman_suzuki/emulator_case_1
     dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
@@ -56,10 +52,6 @@ suzuki_one_experiments:
   reizman_suzuki_case_2_cotrain_reizman_suzuki_case_1:
     benchmark: data/reizman_suzuki/emulator_case_2
     dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
-    model_name: reizman_suzuki_case_2
-  reizman_suzuki_case_2_cotrain_reizman_suzuki_case_2:
-    benchmark: data/reizman_suzuki/emulator_case_2
-    dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
     model_name: reizman_suzuki_case_2
   reizman_suzuki_case_2_cotrain_reizman_suzuki_case_3:
     benchmark: data/reizman_suzuki/emulator_case_2
@@ -77,10 +69,6 @@ suzuki_one_experiments:
     benchmark: data/reizman_suzuki/emulator_case_3
     dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
     model_name: reizman_suzuki_case_3
-  reizman_suzuki_case_3_cotrain_reizman_suzuki_case_3:
-    benchmark: data/reizman_suzuki/emulator_case_3
-    dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
-    model_name: reizman_suzuki_case_3
   reizman_suzuki_case_3_cotrain_reizman_suzuki_case_4:
     benchmark: data/reizman_suzuki/emulator_case_3
     dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
@@ -96,10 +84,6 @@ suzuki_one_experiments:
   reizman_suzuki_case_4_cotrain_reizman_suzuki_case_3:
     benchmark: data/reizman_suzuki/emulator_case_4
     dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
-    model_name: reizman_suzuki_case_4
-  reizman_suzuki_case_4_cotrain_reizman_suzuki_case_4:
-    benchmark: data/reizman_suzuki/emulator_case_4
-    dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
     model_name: reizman_suzuki_case_4
 suzuki_optimization:
   batch-size: 1
