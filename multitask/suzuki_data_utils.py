@@ -113,7 +113,7 @@ def get_suzuki_row(reaction: Reaction, split_catalyst: bool = True) -> dict:
                 row["catalyst_concentration"] = conc.to(
                     ureg.moles / ureg.liters
                 ).magnitude
-                # row["ligand_ratio"] = 1.0
+                row["ligand_ratio"] = 1.0
             if component.reaction_role == ReactionRole.REACTANT:
                 if reactants > 2:
                     raise ValueError(
@@ -138,6 +138,10 @@ def get_suzuki_row(reaction: Reaction, split_catalyst: bool = True) -> dict:
             if component.reaction_role == ReactionRole.SOLVENT:
                 row["solvent"] = get_smiles(component)
 
+    cat_loading = row["catalyst_concentration"] / min(
+        row["electrophile_concentration"], row["nucleophile_concentration"]
+    )
+    row["catalyst_loading"] = cat_loading
     # Temperature
     sp = reaction.conditions.temperature.setpoint
     units = Temperature.TemperatureUnit.Name(sp.units)
