@@ -116,6 +116,12 @@ def create_suzuki_domain(
     # )
 
     domain += ContinuousVariable(
+        name="reagent_concentration",
+        description="Molar concentration of DBU in the reaction",
+        bounds=[0, 0.5],
+    )
+
+    domain += ContinuousVariable(
         name="temperature",
         description="Reaction temperature in deg C",
         bounds=[20, 120],
