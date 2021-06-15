@@ -5,20 +5,18 @@ python etl_reizman_suzuki.py ../data/reizman_suzuki/c8re00032h2.xlsx ../data/rei
 
 """
 
+from multitask.utils import *
 from ord_schema.proto.reaction_pb2 import *
 from ord_schema.proto.dataset_pb2 import *
 from ord_schema.message_helpers import find_submessages
 from ord_schema import validations
 
 import typer
-from pint import UnitRegistry
 from tqdm.auto import tqdm
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import json
-
-ureg = UnitRegistry()
 
 
 def main(input_path: str, output_path: str):
@@ -33,14 +31,14 @@ def main(input_path: str, output_path: str):
 
         # Transform
         tqdm.pandas(desc="Converting to ORD")
-        case = i+1
+        case = i + 1
         reactions = df.progress_apply(inner_loop, axis=1, args=(case,))
 
         # Create dataset
         dataset = Dataset()
         dataset.name = "Reizman Suzuki Cross-Coupling"
         dataset.reactions.extend(reactions)
-        dataset.dataset_id = str(2+i)
+        dataset.dataset_id = str(2 + i)
 
         # Validate dataset
         validation_output = validations.validate_message(dataset)
@@ -103,27 +101,13 @@ def add_thf_solvent(
     thf.amount.volume.value = final_solute_conc * droplet_volume / stock_conc
     thf.amount.volume_includes_solutes = True
 
+
 electrophiles_by_case = {
-    1: {
-        "name": "3-bromoquinoline",
-        "smiles": r"Brc1cnc2ccccc2c1"
-    },
-    2: {
-        "name": "3-Chloropyridine",
-        "smiles": r"C1=CC(=CN=C1)Cl"
-    },
-    3: {
-        "name": "2-Chloropyridine",
-        "smiles": r"Clc1ccccn1"
-    },
-    3: {
-        "name": "2-Chloropyridine",
-        "smiles": r"Clc1ccccn1"
-    },
-    4: {
-        "name": "2-Chloropyridine",
-        "smiles": r"Clc1ccccn1"
-    }
+    1: {"name": "3-bromoquinoline", "smiles": r"Brc1cnc2ccccc2c1"},
+    2: {"name": "3-Chloropyridine", "smiles": r"C1=CC(=CN=C1)Cl"},
+    3: {"name": "2-Chloropyridine", "smiles": r"Clc1ccccn1"},
+    3: {"name": "2-Chloropyridine", "smiles": r"Clc1ccccn1"},
+    4: {"name": "2-Chloropyridine", "smiles": r"Clc1ccccn1"},
 }
 
 
@@ -136,9 +120,7 @@ def add_electrophile(case: int, reaction: Reaction, row: pd.Series):
     electrophile = electrophile_stock.components.add()
     electrophile.reaction_role = ReactionRole.REACTANT
     details = electrophiles_by_case[case]
-    electrophile.identifiers.add(
-        value=details["name"], type=CompoundIdentifier.NAME
-    )
+    electrophile.identifiers.add(value=details["name"], type=CompoundIdentifier.NAME)
     electrophile.identifiers.add(
         value=details["smiles"], type=CompoundIdentifier.SMILES
     )
@@ -163,24 +145,20 @@ def add_electrophile(case: int, reaction: Reaction, row: pd.Series):
     # Solvent
     add_thf_solvent(electrophile_stock, electrophile_conc, stock_conc=1.4)
 
+
 nucleophiles_by_case = {
     1: {
         "name": "3,5-Dimethylisoxazole-4-boronic acid pinacol ester",
-        "smiles": r"Cc1noc(C)c1B2OC(C)(C)C(C)(C)O2"
+        "smiles": r"Cc1noc(C)c1B2OC(C)(C)C(C)(C)O2",
     },
     2: {
         "name": "3,5-Dimethylisoxazole-4-boronic acid pinacol ester",
-        "smiles": r"Cc1noc(C)c1B2OC(C)(C)C(C)(C)O2"
+        "smiles": r"Cc1noc(C)c1B2OC(C)(C)C(C)(C)O2",
     },
-    3: {
-        "name": "2-benzofuranboronic acid",
-        "smiles": r"OB(O)c1cc2ccccc2o1"
-    },
-    4: {
-        "name": "N-Boc-2-pyrroleboronic acid",
-        "smiles": r"CC(C)(C)OC(=O)n1cccc1B(O)O"
-    },
+    3: {"name": "2-benzofuranboronic acid", "smiles": r"OB(O)c1cc2ccccc2o1"},
+    4: {"name": "N-Boc-2-pyrroleboronic acid", "smiles": r"CC(C)(C)OC(=O)n1cccc1B(O)O"},
 }
+
 
 def add_nucleophile(case, reaction: Reaction, row: pd.Series):
     # Pinacol ester
@@ -255,7 +233,7 @@ def add_catalyst(reaction: Reaction, row: pd.Series):
     name, smiles = catalyst_details(pre_cat, lig)
     catalyst.identifiers.add(value=name, type=CompoundIdentifier.NAME)
     catalyst.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
-    cat_conc = row["catalyst_loading"]/100*0.167
+    cat_conc = row["catalyst_loading"] / 100 * 0.167
     catalyst.amount.moles.units = Moles.MICROMOLE
     catalyst.amount.moles.value = cat_conc * 14.0
 
@@ -269,7 +247,8 @@ def add_solvent(reaction: Reaction, row: pd.Series):
     solvent_mix.addition_order = 1
 
     # Calculate volume of solvent needed for 40 microliter droplet
-    reactants_volume = calculate_total_volume(reaction, include_workup=False)
+    reactants_volume = calculate_total_volume(reaction.inputs, include_workup=False)
+    reactants_volume = reactants_volume.to(ureg.microliters).magnitude
     solvent_volume = 14.0 - reactants_volume
     thf_volume = 5 / 6 * solvent_volume
     water_volume = 1 / 6 * solvent_volume
@@ -301,7 +280,7 @@ def add_base(reaction: Reaction, row: pd.Series):
     base.reaction_role = ReactionRole.REAGENT
     base.identifiers.add(value="DBU", type=CompoundIdentifier.NAME)
     base.identifiers.add(value=r"N\2=C1\N(CCCCC1)CCC/2", type=CompoundIdentifier.SMILES)
-    base.amount.moles.value = 0.333 * 14.0
+    base.amount.moles.value = 1.66 * 3.5
     base.amount.moles.units = Moles.MICROMOLE
 
     # Solvent
@@ -337,41 +316,9 @@ def specify_flow_conditions(reaction: Reaction, row: pd.Series):
     flow_conditions.tubing.diameter.units = Length.METER
 
 
-def get_pint(amount: Amount):
-    """Get an amount in terms of pint units"""
-    kind = amount.WhichOneof("kind")
-    units = getattr(amount, kind).units
-    value = getattr(amount, kind).value
-    pint_value = None
-    if kind == "moles":
-        units_str = Moles.MolesUnit.Name(units)
-    elif kind == "volume":
-        units_str = Volume.VolumeUnit.Name(units)
-    elif kind == "mass":
-        units_str = Mass.MassUnit.Name(units)
-    return value * ureg(units_str.lower())
-
-
-def calculate_total_volume(reaction, include_workup=False):
-    # Calculate total reaction volume in microliters
-    total_volume = 0.0 * ureg.ml
-    rxn_inputs = reaction.inputs
-    for k in rxn_inputs:
-        for component in rxn_inputs[k].components:
-            amount = component.amount
-            include_workup = (
-                True
-                if include_workup
-                else component.reaction_role != ReactionRole.WORKUP
-            )
-            if amount.WhichOneof("kind") == "volume" and include_workup:
-                total_volume += get_pint(amount)
-    return total_volume.to(ureg.microliter).magnitude
-
-
 def cross_checks(reaction: Reaction, row: pd.Series):
     # Check that reaction volume adds up properly
-    vol = calculate_total_volume(reaction)
+    vol = calculate_total_volume(reaction.inputs).to(ureg.microliters).magnitude
     try:
         assert np.isclose(vol, 17.5, rtol=1e-2)
     except AssertionError:
@@ -396,7 +343,7 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
     # Quench
     quench = reaction.inputs["Quench"]
     quench.addition_order = 3
-    reaction_volume = calculate_total_volume(reaction)
+    reaction_volume = calculate_total_volume(reaction.inputs)
 
     # Acetone
     acetone = quench.components.add()
@@ -416,7 +363,7 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
 
     # Workup specification
     workup = reaction.workups.add()
-    workup.amount.volume.value = reaction_volume
+    workup.amount.volume.value = reaction_volume.to(ureg.microliter).magnitude
     workup.amount.volume.units = Volume.MICROLITER
     workup.type = ReactionWorkup.ADDITION
     details = (
@@ -433,25 +380,26 @@ def define_measurement(measurement: ProductMeasurement, row: pd.Series):
     measurement.type = ProductMeasurement.YIELD
     measurement.percentage.value = row["yld"]
 
+
 products_by_case = {
     1: {
         "name": "3,5-dimethyl-4-(quinolin-3-yl)isoxazole",
-        "smiles": r"CC1=C(C2=CC(C=CC=C3)=C3N=C2)C(C)=NO1"
+        "smiles": r"CC1=C(C2=CC(C=CC=C3)=C3N=C2)C(C)=NO1",
     },
     2: {
         "name": "3,5-dimethyl-4-(quinolin-3-yl)isoxazole",
-        "smiles": r"CC1=C(C2=CC=CN=C2)C(C)=NO1"
+        "smiles": r"CC1=C(C2=CC=CN=C2)C(C)=NO1",
     },
     3: {
         "name": "3-(benzofuran-2-yl)pyridine",
-        "smiles": r"C1(C2=CC(C=CC=C3)=C3O2)=CC=CN=C1"
+        "smiles": r"C1(C2=CC(C=CC=C3)=C3O2)=CC=CN=C1",
     },
     4: {
         "name": "tert-butyl 2-(pyridin-2-yl)-1H-pyrrole-1-carboxylate",
-        "smiles": r"CC(OC(N1C=CC=C1C2=CC=CC=N2)=O)(C)C"
-    }
-
+        "smiles": r"CC(OC(N1C=CC=C1C2=CC=CC=N2)=O)(C)C",
+    },
 }
+
 
 def specify_outcome(case, reaction: Reaction, row: pd.Series):
     # Reaction Outcome
@@ -466,12 +414,8 @@ def specify_outcome(case, reaction: Reaction, row: pd.Series):
     # Product
     product = outcome.products.add()
     details = products_by_case[case]
-    product.identifiers.add(
-        value=details["name"], type=CompoundIdentifier.NAME
-    )
-    product.identifiers.add(
-        value=details["smiles"], type=CompoundIdentifier.SMILES
-    )
+    product.identifiers.add(value=details["name"], type=CompoundIdentifier.NAME)
+    product.identifiers.add(value=details["smiles"], type=CompoundIdentifier.SMILES)
     product.is_desired_product = True
     product.reaction_role = ReactionRole.PRODUCT
 
