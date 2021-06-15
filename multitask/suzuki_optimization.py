@@ -55,7 +55,9 @@ def stbo(
     max_iterations = max_experiments // batch_size
     max_iterations += 1 if max_experiments % batch_size != 0 else 0
     for i in trange(repeats):
-        result = run_stbo(exp, max_iterations=max_iterations, batch_size=batch_size)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            result = run_stbo(exp, max_iterations=max_iterations, batch_size=batch_size)
         result.save(output_path / f"repeat_{i}.json")
 
 
