@@ -88,6 +88,25 @@ stages:
     outs:
       - data/baumgartner_suzuki/results_stbo
 
+  suzuki_stbo_baumgartner_mixed:
+    desc: "Optimization of Baumgartner using Mixed Domain Single Task Bayesian Optimization"
+    cmd: >-
+      python multitask/suzuki_optimization.py stbo
+      baumgartner_suzuki
+      data/baumgartner_suzuki/emulator
+      data/baumgartner_suzuki/results_stbo_mixed_domain
+      --brute-force-categorical
+      --max-experiments ${suzuki_optimization.max-experiments}
+      --batch-size ${suzuki_optimization.batch-size}
+      --repeats ${suzuki_optimization.repeats}
+    deps:
+      - multitask/suzuki_optimization.py
+      - multitask/suzuki_emulator.py
+      - multitask/suzuki_data_utils.py
+      - data/baumgartner_suzuki/emulator
+    outs:
+      - data/baumgartner_suzuki/results_stbo_mixed_domain
+
   suzuki_stbo_reizman:
     foreach: # cases
       - 1
@@ -111,6 +130,31 @@ stages:
         - data/reizman_suzuki/emulator_case_${item}
       outs:
         - data/reizman_suzuki/results_stbo_case_${item}/
+
+  suzuki_stbo_reizman_mixed:
+    foreach: # cases
+      - 1
+      - 2
+      - 3
+      - 4
+    do:
+      desc: "Optimization of Reizman using Mixed Domain Single Task Bayesian Optimization"
+      cmd: >-
+        python multitask/suzuki_optimization.py stbo
+        reizman_suzuki_case_${item}
+        data/reizman_suzuki/emulator_case_${item}
+        data/reizman_suzuki/results_stbo_mixed_case_${item}/
+        --brute-force-categorical
+        --max-experiments ${suzuki_optimization.max-experiments}
+        --batch-size ${suzuki_optimization.batch-size}
+        --repeats ${suzuki_optimization.repeats}
+      deps:
+        - multitask/suzuki_optimization.py
+        - multitask/suzuki_emulator.py
+        - multitask/suzuki_data_utils.py
+        - data/reizman_suzuki/emulator_case_${item}
+      outs:
+        - data/reizman_suzuki/results_stbo_mixed_case_${item}/
 
   suzuki_mtbo_one_cotraining:
     foreach: ${suzuki_one_experiments}

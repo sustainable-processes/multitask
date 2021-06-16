@@ -1,5 +1,6 @@
 from multitask.suzuki_emulator import SuzukiEmulator
 from multitask.suzuki_data_utils import get_suzuki_dataset
+from multitask.mt import NewSTBO
 from summit import *
 
 import typer
@@ -23,6 +24,7 @@ def stbo(
     output_path: str,
     max_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
+    brute_force_categorical: Optional[bool] = False,
     repeats: Optional[int] = 20,
 ):
     """Optimization of a Suzuki benchmark with Single-Task Bayesian Optimziation
@@ -54,10 +56,20 @@ def stbo(
     # Single-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
     max_iterations += 1 if max_experiments % batch_size != 0 else 0
+    if brute_force_categorical:
+        categorical_method = None
+    else:
+        categorical_method = "one-hot"
     for i in trange(repeats):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            result = run_stbo(exp, max_iterations=max_iterations, batch_size=batch_size)
+            result = run_stbo(
+                exp,
+                max_iterations=max_iterations,
+                batch_size=batch_size,
+                brute_force_categorical=brute_force_categorical,
+                categorical_method=categorical_method,
+            )
         result.save(output_path / f"repeat_{i}.json")
 
 
@@ -116,13 +128,18 @@ def mtbo(
 def run_stbo(
     exp: Experiment,
     max_iterations: int = 10,
-    batch_size=1,
+    batch_size: int = 1,
+    brute_force_categorical: bool = False,
     categorical_method: str = "one-hot",
 ):
     """Run Single Task Bayesian Optimization (AKA normal BO)"""
     exp.reset()
     assert exp.data.shape[0] == 0
-    strategy = STBO(exp.domain, categorical_method=categorical_method)
+    strategy = NewSTBO(
+        exp.domain,
+        brute_force_categorical=brute_force_categorical,
+        categorical_method=categorical_method,
+    )
     r = Runner(
         strategy=strategy,
         experiment=exp,

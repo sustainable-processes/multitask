@@ -12,12 +12,13 @@ numpy = "^1.20.2"
 pint = "^0.17"
 cheminventory = "^0.2.3"
 python-dotenv = "^0.17.0"
-summit = "^0.8.1"
 openpyxl = "^3.0.7"
 ord-schema = "^0.3.0"
 rdkit-pypi = "^2021.3.2"
 typer = "^0.3.2"
 tqdm = "^4.61.0"
+summit = {git = "https://github.com/sustainable-processes/summit"}
+botorch = {git = "https://github.com/pytorch/botorch.git"}
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^5.5.3"
