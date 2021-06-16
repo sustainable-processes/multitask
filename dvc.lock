@@ -1166,3 +1166,26 @@ stages:
       md5: 3fc179070d29c3ccff17b95b2ed4e371.dir
       size: 335169
       nfiles: 20
+  suzuki_stbo_baumgartner:
+    cmd: python multitask/suzuki_optimization.py stbo baumgartner_suzuki data/baumgartner_suzuki/emulator
+      data/baumgartner_suzuki/results_stbo --max-experiments 20 --batch-size 1 --repeats
+      20
+    deps:
+    - path: data/baumgartner_suzuki/emulator
+      md5: c2ae0d2aab7172c775fe88625b2a3bdc.dir
+      size: 145853
+      nfiles: 6
+    - path: multitask/suzuki_data_utils.py
+      md5: d864c7a78b2b7ff397ed05b2c2342d46
+      size: 5788
+    - path: multitask/suzuki_emulator.py
+      md5: 7e823e1e9e8e7ddd620c2abc6a4296fc
+      size: 2245
+    - path: multitask/suzuki_optimization.py
+      md5: 125167a6f55fdb8456b3bb003d85118b
+      size: 4545
+    outs:
+    - path: data/baumgartner_suzuki/results_stbo
+      md5: be8626c65132fed7edf98e434471f471.dir
+      size: 237109
+      nfiles: 20

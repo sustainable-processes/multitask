@@ -70,6 +70,24 @@ stages:
         - data/reizman_suzuki/emulator_case_${item}/
         - figures/reizman_suzuki_case_${item}_parity_plot.png
 
+  suzuki_stbo_baumgartner:
+    desc: "Optimization of Baumgartner using Single Task Bayesian Optimization"
+    cmd: >-
+      python multitask/suzuki_optimization.py stbo
+      baumgartner_suzuki
+      data/baumgartner_suzuki/emulator
+      data/baumgartner_suzuki/results_stbo
+      --max-experiments ${suzuki_optimization.max-experiments}
+      --batch-size ${suzuki_optimization.batch-size}
+      --repeats ${suzuki_optimization.repeats}
+    deps:
+      - multitask/suzuki_optimization.py
+      - multitask/suzuki_emulator.py
+      - multitask/suzuki_data_utils.py
+      - data/baumgartner_suzuki/emulator
+    outs:
+      - data/baumgartner_suzuki/results_stbo
+
   suzuki_stbo_reizman:
     foreach: # cases
       - 1
