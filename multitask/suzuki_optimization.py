@@ -1,6 +1,6 @@
 from multitask.suzuki_emulator import SuzukiEmulator
 from multitask.suzuki_data_utils import get_suzuki_dataset
-from multitask.mt import NewSTBO
+from multitask.mt import NewSTBO, NewMTBO
 from summit import *
 
 import typer
@@ -83,6 +83,7 @@ def mtbo(
     batch_size: Optional[int] = 1,
     repeats: Optional[int] = 20,
     print_warnings: Optional[bool] = True,
+    brute_force_categorical: bool = False,
 ):
     """Optimization of a Suzuki benchmark with Multitask Bayesian Optimziation"""
     # Load benchmark
@@ -112,6 +113,10 @@ def mtbo(
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
     opt_task = len(ds_list)
+    if brute_force_categorical:
+        categorical_method = None
+    else:
+        categorical_method = "one-hot"
     for i in trange(repeats):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -121,6 +126,8 @@ def mtbo(
                 max_iterations=max_iterations,
                 batch_size=batch_size,
                 task=opt_task,
+                brute_force_categorical=brute_force_categorical,
+                categorical_method=categorical_method,
             )
         result.save(output_path / f"repeat_{i}.json")
 
@@ -156,12 +163,18 @@ def run_mtbo(
     max_iterations: int = 10,
     batch_size=1,
     task: int = 1,
+    brute_force_categorical: bool = False,
+    categorical_method: str = "one-hot",
 ):
     """Run Multitask Bayesian optimization"""
     exp.reset()
     assert exp.data.shape[0] == 0
-    strategy = MTBO(
-        exp.domain, pretraining_data=ct_data, categorical_method="one-hot", task=task
+    strategy = NewMTBO(
+        exp.domain,
+        pretraining_data=ct_data,
+        task=task,
+        brute_force_categorical=brute_force_categorical,
+        categorical_method=categorical_method,
     )
     r = Runner(
         strategy=strategy,

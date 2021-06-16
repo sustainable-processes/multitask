@@ -1,3 +1,4 @@
+from .mixed_gp_regression import MixedMultiTaskGP
 from summit import *
 from summit.benchmarks.experimental_emulator import numpy_to_tensor
 from summit.strategies.base import Strategy, Transform
@@ -80,7 +81,7 @@ class NewMTBO(Strategy):
         self.pretraining_data = pretraining_data
         self.task = task
         self.categorical_method = categorical_method
-        if self.categorical_method not in ["one-hot", "descriptors"]:
+        if self.categorical_method not in ["one-hot", "descriptors", None]:
             raise ValueError(
                 "categorical_method must be one of 'one-hot' or 'descriptors'."
             )
@@ -165,6 +166,16 @@ class NewMTBO(Strategy):
             standardize_outputs=True,
         )
 
+        if self.categorical_method is None:
+            cat_mappings = {}
+            cat_dimensions = []
+            for i, v in enumerate(self.domain.input_variables):
+                if v.variable_type == "categorical":
+                    cat_mapping = {l: i for i, l in enumerate(v.levels)}
+                    inputs[v.name] = inputs[v.name].replace(cat_mapping)
+                    cat_mappings[v.name] = cat_mapping
+                    cat_dimensions.append(i)
+
         # Add column to inputs indicating task
         task_data = data["task"].dropna().to_numpy()
         if data.shape[0] != data.shape[0]:
@@ -175,12 +186,21 @@ class NewMTBO(Strategy):
         )
 
         # Train model
-        self.model = MultiTaskGP(
-            torch.tensor(inputs_task).float(),
-            torch.tensor(output.data_to_numpy()).float(),
-            task_feature=-1,
-            output_tasks=[self.task],
-        )
+        if self.brute_force_categorical:
+            self.model = MixedMultiTaskGP(
+                torch.tensor(inputs_task).float(),
+                torch.tensor(output.data_to_numpy()).float(),
+                cat_dims=cat_dimensions,
+                task_feature=-1,
+                output_tasks=[self.task],
+            )
+        else:
+            self.model = MultiTaskGP(
+                torch.tensor(inputs_task).float(),
+                torch.tensor(output.data_to_numpy()).float(),
+                task_feature=-1,
+                output_tasks=[self.task],
+            )
         mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
         fit_gpytorch_model(mll)
 
@@ -202,27 +222,18 @@ class NewMTBO(Strategy):
         # Optimize acquisition function
         if self.brute_force_categorical:
             self.ei = EI(self.model, best_f=fbest_scaled, maximize=maximize)
-            combos = self.domain.get_categorical_combinations()
-            fixed_features_list = []
-            k = 0
-            for v in self.domain.input_variables:
-                # One-hot encoding
-                if v.variable_type == "categorical":
-                    encoded_combos = self.transform.encoders[v.name].transform(
-                        combos[v.name]
-                    )
-                    for i in range(encoded_combos.shape[1]):
-                        fixed_features_list.append({k: encoded_combos[i, :]})
-                        k += 1
-                else:
-                    k += 1
+            if self.categorical_method is None:
+                combos = np.arange(0, len(cat_mapping))
+                fixed_features_list = [{0: float(combo)} for combo in combos]
+            else:
+                fixed_features_list = self._get_fixed_features()
             results, _ = optimize_acqf_mixed(
                 acq_function=self.ei,
                 bounds=self._get_bounds(),
                 num_restarts=20,
                 fixed_features_list=fixed_features_list,
                 q=num_experiments,
-                raw_samples=100,
+                raw_samples=20,
             )
         else:
             self.ei = CategoricalEI(
@@ -243,6 +254,11 @@ class NewMTBO(Strategy):
         )
 
         # Untransform
+        if self.categorical_method is None:
+            cat_mapping = {
+                i: l for i, l in enumerate(self.domain["catalyst_smiles"].levels)
+            }
+            result["catalyst_smiles"] = result["catalyst_smiles"].replace(cat_mapping)
         result = self.transform.un_transform(
             result, categorical_method=self.categorical_method, standardize_inputs=True
         )
@@ -251,6 +267,30 @@ class NewMTBO(Strategy):
         result[("strategy", "METADATA")] = "MTBO"
         result[("task", "METADATA")] = self.task
         return result
+
+    def _get_fixed_features(self):
+        combos = self.domain.get_categorical_combinations()
+        encoded_combos = {
+            v.name: self.transform.encoders[v.name].transform(combos[[v.name]])
+            for v in self.domain.input_variables
+            if v.variable_type == "categorical"
+        }
+        fixed_features_list = []
+        for i, combo in enumerate(combos):
+            fixed_features = {}
+            k = 0
+            for v in self.domain.input_variables:
+                # One-hot encoding
+                if v.variable_type == "categorical":
+                    for j in range(encoded_combos[v.name].shape[1]):
+                        fixed_features[k] = numpy_to_tensor(
+                            encoded_combos[v.name][i, j]
+                        )
+                        k += 1
+                else:
+                    k += 1
+            fixed_features_list.append(fixed_features)
+        return fixed_features_list
 
     def _get_bounds(self):
         bounds = []
@@ -266,6 +306,8 @@ class NewMTBO(Strategy):
                 and self.categorical_method == "one-hot"
             ):
                 bounds += [[0, 1] for _ in v.levels]
+            elif isinstance(v, CategoricalVariable) and self.categorical_method is None:
+                bounds.append([0, len(v.levels)])
         return torch.tensor(bounds).T.float()
 
     def reset(self):
