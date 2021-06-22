@@ -230,7 +230,7 @@ class NewMTBO(Strategy):
             results, _ = optimize_acqf_mixed(
                 acq_function=self.ei,
                 bounds=self._get_bounds(),
-                num_restarts=20,
+                num_restarts=5,
                 fixed_features_list=fixed_features_list,
                 q=num_experiments,
                 raw_samples=20,

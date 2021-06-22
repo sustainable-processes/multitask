@@ -272,7 +272,7 @@ stages:
         ${item.benchmark}
         ${item.dataset_1} ${item.dataset_2} ${item.dataset_3} ${item.dataset_4}
         data/multitask_results/results_multitask_four_cotraining_mixed_domain_${key}
-        --brute-force-categorical:
+        --brute-force-categorical
         --max-experiments ${suzuki_optimization.max-experiments}
         --batch-size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}

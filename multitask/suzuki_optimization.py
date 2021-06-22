@@ -75,7 +75,7 @@ def stbo(
                         categorical_method=categorical_method,
                     )
                     break
-                except gpytorch.utils.NotPSDError:
+                except gpytorch.utils.errors.NotPSDError:
                     continue
             print(
                 f"Not able to find semi-positive definite matrix at {j} tries. Skipping repeat {i}"
@@ -136,7 +136,7 @@ def mtbo(
                         brute_force_categorical=brute_force_categorical,
                         categorical_method=categorical_method,
                     )
-                except gpytorch.utils.NotPSDError:
+                except gpytorch.utils.errors.NotPSDError:
                     continue
             print(
                 f"Not able to find semi-positive definite matrix at {j} tries. Skipping repeat {i}"
