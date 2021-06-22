@@ -2,6 +2,7 @@ from multitask.suzuki_emulator import SuzukiEmulator
 from multitask.suzuki_data_utils import get_suzuki_dataset
 from multitask.mt import NewSTBO, NewMTBO
 from summit import *
+import gpytorch
 
 import typer
 from numpy.random import default_rng
@@ -15,6 +16,7 @@ import warnings
 
 
 app = typer.Typer()
+N_REPEATS = 3
 
 
 @app.command()
@@ -61,14 +63,22 @@ def stbo(
     else:
         categorical_method = "one-hot"
     for i in trange(repeats):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            result = run_stbo(
-                exp,
-                max_iterations=max_iterations,
-                batch_size=batch_size,
-                brute_force_categorical=brute_force_categorical,
-                categorical_method=categorical_method,
+        for j in range(N_REPEATS):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                try:
+                    result = run_stbo(
+                        exp,
+                        max_iterations=max_iterations,
+                        batch_size=batch_size,
+                        brute_force_categorical=brute_force_categorical,
+                        categorical_method=categorical_method,
+                    )
+                    break
+                except gpytorch.utils.NotPSDError:
+                    continue
+            print(
+                f"Not able to find semi-positive definite matrix at {j} tries. Skipping repeat {i}"
             )
         result.save(output_path / f"repeat_{i}.json")
 
@@ -102,11 +112,6 @@ def mtbo(
         ds["task", "METADATA"] = i
     big_ds = pd.concat(ds_list)
 
-    # Temporary fix for issues with inversion of covariance matrix
-    rng = default_rng(10)
-    big_ds["temperature"] += rng.standard_normal() * 0.01
-    big_ds["time"] += rng.standard_normal() * 0.01
-
     # Multi-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
     max_iterations += 1 if max_experiments % batch_size != 0 else 0
@@ -118,16 +123,23 @@ def mtbo(
     else:
         categorical_method = "one-hot"
     for i in trange(repeats):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            result = run_mtbo(
-                exp,
-                ct_data=big_ds,
-                max_iterations=max_iterations,
-                batch_size=batch_size,
-                task=opt_task,
-                brute_force_categorical=brute_force_categorical,
-                categorical_method=categorical_method,
+        for j in range(N_REPEATS):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                try:
+                    result = run_mtbo(
+                        exp,
+                        ct_data=big_ds,
+                        max_iterations=max_iterations,
+                        batch_size=batch_size,
+                        task=opt_task,
+                        brute_force_categorical=brute_force_categorical,
+                        categorical_method=categorical_method,
+                    )
+                except gpytorch.utils.NotPSDError:
+                    continue
+            print(
+                f"Not able to find semi-positive definite matrix at {j} tries. Skipping repeat {i}"
             )
         result.save(output_path / f"repeat_{i}.json")
 
