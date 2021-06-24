@@ -18,7 +18,12 @@ import pandas as pd
 import logging
 import json
 
-__all__ = ["get_suzuki_dataset", "suzuki_reaction_to_dataframe", "get_suzuki_row"]
+__all__ = [
+    "get_suzuki_dataset",
+    "suzuki_reaction_to_dataframe",
+    "get_suzuki_row",
+    "split_cat_ligand",
+]
 
 
 def get_suzuki_dataset(data_path, split_catalyst=True, print_warnings=True) -> DataSet:
@@ -87,6 +92,20 @@ def contains_boron(smiles: str) -> bool:
         return True
     else:
         False
+
+
+def split_cat_ligand(smiles: str):
+    compounds = smiles.split(".")
+    pre_catalyst = ""
+    ligand = ""
+    for compound in compounds:
+        # Pre-catalyst always contain Pd
+        if "Pd" in compound:
+            pre_catalyst = compound
+        # Only considering organophosphorus lignads
+        elif "P" in compound and "Pd" not in compound:
+            ligand = compound
+    return pre_catalyst, ligand
 
 
 def get_suzuki_row(reaction: Reaction, split_catalyst: bool = True) -> dict:

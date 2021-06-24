@@ -18,10 +18,9 @@ ureg = UnitRegistry()
 __all__ = [
     "get_pint_amount",
     "get_smiles",
-    "split_cat_ligand",
     "calculate_total_volume",
     "get_rxn_yield",
-    "ureg"
+    "ureg",
 ]
 
 
@@ -47,20 +46,6 @@ def get_smiles(compound: Compound, canonicalize=True):
             return Chem.CanonSmiles(smiles)
 
 
-def split_cat_ligand(smiles: str):
-    compounds = smiles.split(".")
-    pre_catalyst = ""
-    ligand = ""
-    for compound in compounds:
-        # Pre-catalyst always contain Pd
-        if "Pd" in compound:
-            pre_catalyst = compound
-        # Only considering organophosphorus lignads
-        elif "P" in compound and "Pd" not in compound:
-            ligand = compound
-    return pre_catalyst, ligand
-
-
 def calculate_total_volume(rxn_inputs, include_workup=False):
     # Calculate total reaction volume
     total_volume = 0.0 * ureg.ml
@@ -83,9 +68,10 @@ def get_rxn_yield(outcome):
         for measurement in product.measurements:
             if measurement.type == ProductMeasurement.YIELD:
                 yields.append(measurement.percentage.value)
-    if len(yields)>1:
-        raise ValueError("More than one product with a yield in reaction outcome. This is ambiguous.")
-    elif len(yields)==0:
+    if len(yields) > 1:
+        raise ValueError(
+            "More than one product with a yield in reaction outcome. This is ambiguous."
+        )
+    elif len(yields) == 0:
         raise ValueError("No reaction yield found in reaction outcome.")
     return yields[0]
-
