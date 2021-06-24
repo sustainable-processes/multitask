@@ -74,13 +74,14 @@ def stbo(
                         brute_force_categorical=brute_force_categorical,
                         categorical_method=categorical_method,
                     )
+                    result.save(output_path / f"repeat_{i}.json")
                     break
                 except gpytorch.utils.errors.NotPSDError:
                     continue
-            print(
-                f"Not able to find semi-positive definite matrix at {j} tries. Skipping repeat {i}"
-            )
-        result.save(output_path / f"repeat_{i}.json")
+            if j == N_REPEATS-1:
+                print(
+                    f"Not able to find semi-positive definite matrix after {j} tries. Skipping repeat {i}"
+                )
 
 
 @app.command()
@@ -134,14 +135,15 @@ def mtbo(
                         batch_size=batch_size,
                         task=opt_task,
                         brute_force_categorical=brute_force_categorical,
-                        categorical_method=categorical_method,
-                    )
-                except gpytorch.utils.errors.NotPSDError:
+                        categorical_method=categorical_method)
+                    result.save(output_path / f"repeat_{i}.json")
+                    break
+                except (RuntimeError, gpytorch.utils.errors.NotPSDError):
                     continue
-            print(
-                f"Not able to find semi-positive definite matrix at {j} tries. Skipping repeat {i}"
-            )
-        result.save(output_path / f"repeat_{i}.json")
+            if j == N_REPEATS-1:
+                print(
+                    f"Not able to find semi-positive definite matrix at {j} tries. Skipping repeat {i}"
+                )
 
 
 def run_stbo(
