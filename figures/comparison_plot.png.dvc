@@ -1,0 +1,4 @@
+outs:
+- md5: 05cfc68a2f6fe45780f04eea76183454
+  size: 48441
+  path: comparison_plot.png
