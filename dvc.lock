@@ -1429,3 +1429,17 @@ stages:
       md5: 132200b0ede88a28b1b83503783125bd.dir
       size: 231818
       nfiles: 14
+  perera_etl:
+    cmd: python multitask/etl_perera.py data/perera_suzuki/perera.pb data/perera_suzuki/ord
+    deps:
+    - path: data/perera_suzuki/perera.pb
+      md5: f5e63ec990dfcd1ec6186872566816cb
+      size: 10069678
+    - path: multitask/etl_perera.py
+      md5: 9fb626433727e263519986610adc5d46
+      size: 2359
+    outs:
+    - path: data/perera_suzuki/ord
+      md5: 9c48ad44a74935b4b1107de1fa58f256.dir
+      size: 10070127
+      nfiles: 15

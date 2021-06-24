@@ -10,7 +10,7 @@ from rdkit import Chem
 from pint import UnitRegistry
 
 from pathlib import Path
-from typing import Iterable
+from typing import List
 import pandas as pd
 
 ureg = UnitRegistry()
@@ -21,6 +21,7 @@ __all__ = [
     "calculate_total_volume",
     "get_rxn_yield",
     "ureg",
+    "get_reactant_smiles",
 ]
 
 
@@ -75,3 +76,21 @@ def get_rxn_yield(outcome):
     elif len(yields) == 0:
         raise ValueError("No reaction yield found in reaction outcome.")
     return yields[0]
+
+
+def get_reactant_smiles(reaction: Reaction) -> List[str]:
+    inputs = reaction.inputs
+    reactants = []
+    for inp in inputs:
+        components = inputs[inp].components
+        for c in components:
+            if c is not None:
+                if c.reaction_role == ReactionRole.REACTANT:
+                    reactants.extend(
+                        [
+                            id_.value
+                            for id_ in c.identifiers
+                            if id_.type == CompoundIdentifier.SMILES
+                        ]
+                    )
+    return reactants
