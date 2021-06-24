@@ -1,0 +1,4 @@
+outs:
+- md5: 1e0f41bd09f8dfdfb16fe31e5564e628
+  size: 54511
+  path: comparison_plot_twenty.png
