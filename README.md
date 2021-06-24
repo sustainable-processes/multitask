@@ -34,15 +34,15 @@ Quantification
 * Suzuki-Miyura Reaction
     - [x] [Reizman](https://gosummit.readthedocs.io/en/latest/experiments_benchmarks/implemented_benchmarks.html#summit.benchmarks.ReizmanSuzukiEmulator): 4 cases with varying catalysts, temperature, residence time, catalyst loading and optimizing yield and TON
     - [x] [Baumgartner Suzuki](https://pubs.rsc.org/en/content/articlelanding/2018/RE/C8RE00032H#!divAbstract): 3 cases varying catalyst complex, catalyst loading, temperature, and residence time and optimizing yield and TON
-    - [ ] [Perera](http://www.sciencemag.org/lookup/doi/10.1126/science.aap9112): HT screening 9 cases (3 electrophiles, 3 nucelophiles) varying ligand, base, solvent
+    - [x] [Perera](http://www.sciencemag.org/lookup/doi/10.1126/science.aap9112): HT screening 9 cases (3 electrophiles, 3 nucelophiles) varying ligand, base, solvent
     - [ ] [Christensen](https://pubs.rsc.org/en/content/articlelanding/2019/re/c9re00086k#!divAbstract): Kinetic profiling, only looking at different species over time, probably not the best for our application
     - [ ] [Christensen](https://chemrxiv.org/articles/preprint/Data-science_driven_autonomous_process_optimization/13146404): 1 case varying ligand, temperature, catalyst loading and ligand ratio to optimize formation of one product over two others
 
 * C-N Cross Coupling Reaction
-    - [Baumgartner C-N](https://pubs.acs.org/doi/10.1021/acs.oprd.9b00236): 4 cases with varying catalysts, bases, temperature, residence time, base equivalents and optimizing yield and TON
-    - [Ahneman](https://science.sciencemag.org/content/360/6385/186): HT screening 15 cases with varying additives, catalysts, bases
-    - [Buitrago-Santinilla](https://science.sciencemag.org/content/347/6217/49): HT Screening 5 cases varying  catalyst, catalyst loading, base, and base loading.
-    - [Bédard](https://science.sciencemag.org/content/361/6408/1220.full) - 1 case varying temperature, mol% of catlayst, and flowrates of different pumps to optimize conversion to product (see page 71 of the [SI](https://science.sciencemag.org/content/sci/suppl/2018/09/19/361.6408.1220.DC1/aat0650_Bedard_SM.pdf))
+    - [ ] [Baumgartner C-N](https://pubs.acs.org/doi/10.1021/acs.oprd.9b00236): 4 cases with varying catalysts, bases, temperature, residence time, base equivalents and optimizing yield and TON
+    - [x] [Ahneman](https://science.sciencemag.org/content/360/6385/186): HT screening 15 cases with varying additives, catalysts, bases
+    - [x] [Buitrago-Santinilla](https://science.sciencemag.org/content/347/6217/49): HT Screening 5 cases varying  catalyst, catalyst loading, base, and base loading.
+    - [ ] [Bédard](https://science.sciencemag.org/content/361/6408/1220.full) - 1 case varying temperature, mol% of catlayst, and flowrates of different pumps to optimize conversion to product (see page 71 of the [SI](https://science.sciencemag.org/content/sci/suppl/2018/09/19/361.6408.1220.DC1/aat0650_Bedard_SM.pdf))
     
 * Asymmetric Hydrogenation
     - [Amar](https://pubs.rsc.org/en/content/articlehtml/2019/sc/c9sc01844a)
