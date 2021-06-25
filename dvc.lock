@@ -1436,10 +1436,10 @@ stages:
       md5: f5e63ec990dfcd1ec6186872566816cb
       size: 10069678
     - path: multitask/etl_perera.py
-      md5: 9fb626433727e263519986610adc5d46
-      size: 2359
+      md5: 45779d80716d9cfc30a0eff50acd28d2
+      size: 1794
     outs:
     - path: data/perera_suzuki/ord
-      md5: 9c48ad44a74935b4b1107de1fa58f256.dir
+      md5: fc7bd3111f0e78aba47d6a28a7af8755.dir
       size: 10070127
       nfiles: 15

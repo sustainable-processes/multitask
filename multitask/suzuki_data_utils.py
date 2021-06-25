@@ -114,6 +114,11 @@ def get_suzuki_row(reaction: Reaction, split_catalyst: bool = True) -> dict:
     rxn_inputs = reaction.inputs
     reactants = 0
     total_volume = calculate_total_volume(rxn_inputs, include_workup=False)
+    row["pre_catalyst_smiles"] = ""
+    row["catalyst_concentration"] = 0.0
+    row["catalyst_smiles"] = ""
+    row["ligand_smiles"] = ""
+    row["ligand_concentration"] = 0.0
     # Components and concentrations
     for k in rxn_inputs:
         for component in rxn_inputs[k].components:
@@ -123,16 +128,18 @@ def get_suzuki_row(reaction: Reaction, split_catalyst: bool = True) -> dict:
             if component.reaction_role == ReactionRole.CATALYST:
                 # TODO: make sure the catalyst and ligand are one of the approved ones
                 smiles = get_smiles(component)
-                if split_catalyst:
-                    pre_catalyst, ligand = split_cat_ligand(smiles)
+                pre_catalyst, ligand = split_cat_ligand(smiles)
+                if pre_catalyst != "":
                     row["pre_catalyst_smiles"] = pre_catalyst
+                    row["catalyst_concentration"] = conc.to(
+                        ureg.moles / ureg.liters
+                    ).magnitude
+                if ligand != "":
                     row["ligand_smiles"] = ligand
-                else:
-                    row["catalyst_smiles"] = smiles
-                row["catalyst_concentration"] = conc.to(
-                    ureg.moles / ureg.liters
-                ).magnitude
-                row["ligand_ratio"] = 1.0
+                    row["ligand_concentration"] = conc.to(
+                        ureg.moles / ureg.liters
+                    ).magnitude
+                row["catalyst_smiles"] += "." + smiles
             if component.reaction_role == ReactionRole.REACTANT:
                 if reactants > 2:
                     raise ValueError(
@@ -157,10 +164,14 @@ def get_suzuki_row(reaction: Reaction, split_catalyst: bool = True) -> dict:
             if component.reaction_role == ReactionRole.SOLVENT:
                 row["solvent"] = get_smiles(component)
 
+    # Catalyst loading
+    row["catalyst_smiles"] = row["catalyst_smiles"].lstrip(".")
     cat_loading = row["catalyst_concentration"] / min(
         row["electrophile_concentration"], row["nucleophile_concentration"]
     )
     row["catalyst_loading"] = cat_loading
+    row["ligand_ratio"] = row["ligand_concentration"] / row["catalyst_concentration"]
+
     # Temperature
     sp = reaction.conditions.temperature.setpoint
     units = Temperature.TemperatureUnit.Name(sp.units)
