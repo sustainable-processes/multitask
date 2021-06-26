@@ -156,11 +156,9 @@ def get_suzuki_row(reaction: Reaction, split_catalyst: bool = True) -> dict:
                 reactants += 1
             if component.reaction_role == ReactionRole.REAGENT:
                 # TODO: make base is one of the approved bases
-                row[f"reagent"] = get_smiles(component)
+                row[f"base_smiles"] = get_smiles(component)
                 conc = get_pint_amount(component.amount) / total_volume
-                row[f"reagent_concentration"] = conc.to(
-                    ureg.moles / ureg.liters
-                ).magnitude
+                row[f"base_concentration"] = conc.to(ureg.moles / ureg.liters).magnitude
             if component.reaction_role == ReactionRole.SOLVENT:
                 row["solvent"] = get_smiles(component)
 
