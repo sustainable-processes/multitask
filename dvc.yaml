@@ -188,6 +188,30 @@ stages:
       outs:
         - data/multitask_results/results_${key}
 
+  suzuki_mtbo_mixed_one_cotraining:
+    foreach: ${suzuki_one_experiments}
+    do:
+      desc: "Optimization using Multitask Bayesian Optimization with one co-training task"
+      cmd: >-
+        python multitask/suzuki_optimization.py mtbo
+        ${item.model_name}
+        ${item.benchmark}
+        ${item.dataset_1}
+        --brute-force-categorical
+        data/multitask_results/results_${key}
+        --max-experiments ${suzuki_optimization.max-experiments}
+        --batch-size ${suzuki_optimization.batch-size}
+        --repeats ${suzuki_optimization.repeats}
+        --no-print-warnings
+      deps:
+        - multitask/suzuki_optimization.py
+        - multitask/suzuki_emulator.py
+        - multitask/suzuki_data_utils.py
+        - ${item.benchmark}
+        - ${item.dataset_1}
+      outs:
+        - data/multitask_results/results_${key}
+
   suzuki_mtbo_four_cotraining:
     foreach:
       baumgartner_suzuki:
