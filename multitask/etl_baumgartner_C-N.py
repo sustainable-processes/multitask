@@ -46,16 +46,13 @@ import json
 ureg = UnitRegistry()
 
 
-def main(input_file: str, output_path: str):
+def main(input_file: str, output_path: str, sheet_name="Reaction data"):
     """Entrypoint for running ETL job"""
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
 
     # Extract data
     reactions = []
-
-    sheet_name = "Reaction data"
-    #case = sheet_name.replace(" ", "-").lower()
     df = pd.read_excel(input_file, sheet_name=sheet_name)
 
     # Transform
@@ -116,17 +113,25 @@ nucleophiles = {
     "Phenethylamine": {"SMILES": "NCCc1ccccc1", "name": "Phenethylamine"},
     "Morpholine": {"SMILES": "C1CNCCO1", "name": "Morpholine"},
 }
-    
-    
+
+
 ligands = {
-    "EPhos": {"SMILES": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=C(C(=CC=C2)OC(C)C)P(C3CCCCC3)C4CCCCC4)C(C)C", 
-           "name": "EPhos"},
-    "tBuXPhos": {"SMILES": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=CC=CC=C2P(C(C)(C)C)C(C)(C)C)C(C)C", 
-           "name": "tBuXPhos"},
-    "tBuBrettPhos": {"SMILES": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=C(C=CC(=C2P(C(C)(C)C)C(C)(C)C)OC)OC)C(C)C", 
-           "name": "tBuBrettPhos"},
-    "AlPhos": {"SMILES": "CCCCC1=C(C(=C(C(=C1F)F)C2=C(C=C(C(=C2C(C)C)C3=C(C(=CC=C3)OC)P(C45CC6CC(C4)CC(C6)C5)C78CC9CC(C7)CC(C9)C8)C(C)C)C(C)C)F)F",
-           "name": "AlPhos"},
+    "EPhos": {
+        "SMILES": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=C(C(=CC=C2)OC(C)C)P(C3CCCCC3)C4CCCCC4)C(C)C",
+        "name": "EPhos",
+    },
+    "tBuXPhos": {
+        "SMILES": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=CC=CC=C2P(C(C)(C)C)C(C)(C)C)C(C)C",
+        "name": "tBuXPhos",
+    },
+    "tBuBrettPhos": {
+        "SMILES": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=C(C=CC(=C2P(C(C)(C)C)C(C)(C)C)OC)OC)C(C)C",
+        "name": "tBuBrettPhos",
+    },
+    "AlPhos": {
+        "SMILES": "CCCCC1=C(C(=C(C(=C1F)F)C2=C(C=C(C(=C2C(C)C)C3=C(C(=CC=C3)OC)P(C45CC6CC(C4)CC(C6)C5)C78CC9CC(C7)CC(C9)C8)C(C)C)C(C)C)F)F",
+        "name": "AlPhos",
+    },
 }
 
 solvents = {
@@ -149,30 +154,38 @@ bases = {
 # however, since the electrophile is always the same, we can
 # use the nucleophile as key to link the the appropriate product
 products = {
-    "Aniline": {"SMILES": "CC1=CC=C(C=C1)NC2=CC=CC=C2", "name": "4-methyl-N-phenylaniline"},
-    "Benzamide": {"SMILES": "CC1=CC=C(C=C1)NC(=O)C2=CC=CC=C2", "name": "N-(4-Methylphenyl)benzamide"},
-    "Phenethylamine": {"SMILES": "CC1=CC=C(C=C1)NCCC2=CC=CC=C2", "name": "4-methyl-N-phenethylaniline"},
+    "Aniline": {
+        "SMILES": "CC1=CC=C(C=C1)NC2=CC=CC=C2",
+        "name": "4-methyl-N-phenylaniline",
+    },
+    "Benzamide": {
+        "SMILES": "CC1=CC=C(C=C1)NC(=O)C2=CC=CC=C2",
+        "name": "N-(4-Methylphenyl)benzamide",
+    },
+    "Phenethylamine": {
+        "SMILES": "CC1=CC=C(C=C1)NCCC2=CC=CC=C2",
+        "name": "4-methyl-N-phenethylaniline",
+    },
     "Morpholine": {"SMILES": "CC1=CC=C(C=C1)N2CCOCC2", "name": "4-(p-tolyl)morpholine"},
 }
 
+
 def stock_concentration(Reagent_Name: str, row: pd.Series) -> (float):
-    opt_run = row["Optimization"] #Optimization run
-    nuc_id, precat_id = opt_run.split(' - ') #cat_id_nucleophile, precatalyst_id
-    precat_id = precat_id.replace(" (Preliminary)","")
+    opt_run = row["Optimization"]  # Optimization run
+    nuc_id, precat_id = opt_run.split(" - ")  # cat_id_nucleophile, precatalyst_id
+    precat_id = precat_id.replace(" (Preliminary)", "")
 
     Substrate = nuc_id
     Precatalyst = precat_id
-    
-    input_file = '../data/baumgartner_C-N/op9b00236_si_002.xlsx'
-    sheet_name = "Stock solutions"
+
     df = pd.read_excel(input_file, sheet_name=sheet_name)
-    df = df.loc[df['Substrate / campaign'].isin([Substrate])]
-    df = df.loc[df['Precatalyst'].isin([Precatalyst])]
+    df = df.loc[df["Substrate / campaign"].isin([Substrate])]
+    df = df.loc[df["Precatalyst"].isin([Precatalyst])]
     if Reagent_Name == "Aryl triflate":
         df = df.iloc[0]
     elif True:
-        df = df.loc[df['Reagent Name'].isin([Reagent_Name])]
-    return df['Reagent Conc (M)']
+        df = df.loc[df["Reagent Name"].isin([Reagent_Name])]
+    return df["Reagent Conc (M)"]
 
 
 def solvent_details(solvent_id: str) -> (str, str):
@@ -180,6 +193,7 @@ def solvent_details(solvent_id: str) -> (str, str):
     smiles = sol["SMILES"]
     name = sol["name"]
     return name, smiles
+
 
 def specify_solvent(
     stock: ReactionInput,
@@ -194,19 +208,17 @@ def specify_solvent(
     """
     droplet_volume = row["Quench Outlet Injection (uL)"]
 
-    #do we need these lines?
-    #solvent = reaction.inputs["Solvent"]
-    #solvent.addition_order = 1
-    
-    
-    
+    # do we need these lines?
+    # solvent = reaction.inputs["Solvent"]
+    # solvent.addition_order = 1
+
     solvent = stock.components.add()
     solvent.reaction_role = ReactionRole.SOLVENT
     sol_id = row["Make-Up Solvent ID"]
     name, smiles = solvent_details(sol_id)
     solvent.identifiers.add(value=name, type=CompoundIdentifier.NAME)
     solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
-    
+
     solvent.amount.volume.units = Volume.MICROLITER
     solvent.amount.volume.value = final_solute_conc * droplet_volume / stock_conc
     solvent.amount.volume_includes_solutes = True
@@ -229,9 +241,7 @@ def add_electrophile(reaction: Reaction, row: pd.Series):
     # Reactant
     pTTf = pTTf_stock.components.add()
     pTTf.reaction_role = ReactionRole.REACTANT
-    pTTf.identifiers.add(
-        value="p-Tolyl triflate", type=CompoundIdentifier.NAME
-    )
+    pTTf.identifiers.add(value="p-Tolyl triflate", type=CompoundIdentifier.NAME)
     pTTf.identifiers.add(
         value=r"CC1=CC=C(C=C1)OS(=O)(=O)C(F)(F)F", type=CompoundIdentifier.SMILES
     )
@@ -244,23 +254,27 @@ def add_electrophile(reaction: Reaction, row: pd.Series):
     # Internal standard
     internal_std = pTTf_stock.components.add()
     internal_std.reaction_role = ReactionRole.INTERNAL_STANDARD
-    internal_std.identifiers.add(value="1-fluoronaphthalene", type=CompoundIdentifier.NAME)
+    internal_std.identifiers.add(
+        value="1-fluoronaphthalene", type=CompoundIdentifier.NAME
+    )
     internal_std.identifiers.add(
         value=r"C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.SMILES
     )
     istd_conc = row["Internal Standard Concentration 1-fluoronaphthalene (g/L)"]
     amount = internal_std.amount
     amount.mass.units = Mass.MICROGRAM
-    amount.mass.value = istd_conc * droplet_volume 
+    amount.mass.value = istd_conc * droplet_volume
 
     # Solvent
     specify_solvent(pTTf_stock, row, pTTf_conc, pTTf_stock_conc)
+
 
 def nucleophile_details(nucleophile_id: str) -> (str, str):
     nuc = nucleophiles[nucleophile_id]
     smiles = nuc["SMILES"]
     name = nuc["name"]
     return name, smiles
+
 
 def add_nucleophile(reaction: Reaction, row: pd.Series):
     droplet_volume = row["Quench Outlet Injection (uL)"]
@@ -272,9 +286,9 @@ def add_nucleophile(reaction: Reaction, row: pd.Series):
     nucleophile = nucleophile_stock.components.add()
     nucleophile.reaction_role = ReactionRole.REACTANT
 
-    opt_run = row["Optimization"] #Optimization run
-    nuc_id, precat_id = opt_run.split(' - ') #cat_id_nucleophile, precatalyst_id
-    precat_id = precat_id.replace(" (Preliminary)","")
+    opt_run = row["Optimization"]  # Optimization run
+    nuc_id, precat_id = opt_run.split(" - ")  # cat_id_nucleophile, precatalyst_id
+    precat_id = precat_id.replace(" (Preliminary)", "")
 
     name, smiles = nucleophile_details(nuc_id)
     nucleophile.identifiers.add(value=name, type=CompoundIdentifier.NAME)
@@ -289,11 +303,12 @@ def add_nucleophile(reaction: Reaction, row: pd.Series):
     # Solvent
     specify_solvent(nucleophile_stock, row, nuc_conc, nuc_stock_conc)
 
+
 def catalyst_details(ligand_id: str) -> (str, str):
-    #https://www.strem.com/catalog/v/46-0308/51/palladium_225931-80-6
-    pre_cat = {"SMILES": "C1CC=CCCC=C1.C[Si](C)(C)C[Pd]C[Si](C)(C)C", "name": "cycloPd" }
+    # https://www.strem.com/catalog/v/46-0308/51/palladium_225931-80-6
+    pre_cat = {"SMILES": "C1CC=CCCC=C1.C[Si](C)(C)C[Pd]C[Si](C)(C)C", "name": "cycloPd"}
     additive = {"SMILES": "CC1=CC=C(C=C1)Cl", "name": "4-Chlorotoluene"}
-    ligand = ligands[ligand_id] 
+    ligand = ligands[ligand_id]
     smiles = f"""{pre_cat["SMILES"]}.{ligand["SMILES"]}.{additive["SMILES"]}"""
     name = pre_cat["name"] + " " + ligand["name"] + " " + additive["name"]
     return name, smiles
@@ -307,25 +322,23 @@ def add_catalyst(reaction: Reaction, row: pd.Series):
     # Solute
     catalyst = catalyst_stock.components.add()
     catalyst.reaction_role = ReactionRole.CATALYST
-    opt_run = row["Optimization"] #optimization run
-    nuc_id, precat_id = opt_run.split(' - ') #nucleophile_id, precatalyst_id
-    precat_id = precat_id.replace(" (Preliminary)","")
+    opt_run = row["Optimization"]  # optimization run
+    nuc_id, precat_id = opt_run.split(" - ")  # nucleophile_id, precatalyst_id
+    precat_id = precat_id.replace(" (Preliminary)", "")
     name, smiles = catalyst_details(precat_id)
     catalyst.identifiers.add(value=name, type=CompoundIdentifier.NAME)
     catalyst.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
     cat_mol_percent = row["Precatalyst loading in mol%"]
     aryl_triflate_conc = row["Aryl triflate concentration (M)"]
     droplet_volume = row["Quench Outlet Injection (uL)"]
-    catalyst.amount.moles.units = Moles.MICROMOLE 
+    catalyst.amount.moles.units = Moles.MICROMOLE
     # cat_mol = cat_mol% * moles of limiting reagent (aryl triflate)
-    # moles of aryl triflate = aryl_triflate_conc * droplet volume 
-    catalyst.amount.moles.value = cat_mol_percent * aryl_triflate_conc * droplet_volume 
-
-
+    # moles of aryl triflate = aryl_triflate_conc * droplet volume
+    catalyst.amount.moles.value = cat_mol_percent * aryl_triflate_conc * droplet_volume
 
     # Solvent
-    #There's no stock solution of precatalyst?
-    #specify_solvent(catalyst_stock, row, cat_mol_percent, stock_conc=??)
+    # There's no stock solution of precatalyst?
+    # specify_solvent(catalyst_stock, row, cat_mol_percent, stock_conc=??)
 
 
 def add_solvent(reaction: Reaction, row: pd.Series):
@@ -340,20 +353,22 @@ def add_solvent(reaction: Reaction, row: pd.Series):
 
     # specify solvent
     solvent = solvent_stock.components.add()
-    solvent.reaction_role = ReactionRole.SOLVENT    
+    solvent.reaction_role = ReactionRole.SOLVENT
     sol_id = row["Make-Up Solvent ID"]
     name, smiles = solvent_details(sol_id)
     solvent.identifiers.add(value=name, type=CompoundIdentifier.NAME)
     solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
-    
+
     solvent.amount.volume.units = Volume.MICROLITER
     solvent.amount.volume.value = solvent_volume
+
 
 def base_details(base_id: str) -> (str, str):
     base = bases[base_id]
     smiles = base["SMILES"]
     name = base["name"]
     return name, smiles
+
 
 def add_base(reaction: Reaction, row: pd.Series):
     droplet_volume = row["Quench Outlet Injection (uL)"]
@@ -375,13 +390,13 @@ def add_base(reaction: Reaction, row: pd.Series):
     # specify solvent
     solvent_stock = reaction.inputs["Solvent"]
     solvent = solvent_stock.components.add()
-    solvent.reaction_role = ReactionRole.SOLVENT    
+    solvent.reaction_role = ReactionRole.SOLVENT
     sol_id = row["Make-Up Solvent ID"]
     name, smiles = solvent_details(sol_id)
     solvent.identifiers.add(value=name, type=CompoundIdentifier.NAME)
     solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
-    
-    # Calculate volume of solvent needed 
+
+    # Calculate volume of solvent needed
     reactants_volume = calculate_total_volume(reaction, include_workup=False)
     solvent_volume = droplet_volume - reactants_volume
 
@@ -452,7 +467,7 @@ def cross_checks(reaction: Reaction, row: pd.Series):
     droplet_volume = row["Quench Outlet Injection (uL)"]
     vol = calculate_total_volume(reaction)
     try:
-        assert np.isclose(vol, droplet_volume, rtol=1e-2) 
+        assert np.isclose(vol, droplet_volume, rtol=1e-2)
     except AssertionError:
         raise ValueError(
             f"Total volume expected to be {droplet_volume}. µL but it is actually {vol}µL."
@@ -470,10 +485,11 @@ def cross_checks(reaction: Reaction, row: pd.Series):
             f", but it is actually {catalyst.amount.moles.value} micromols."
         )
 
+
 def quench_reaction(reaction: Reaction, row: pd.Series):
     """
     The injected solvent volume was set equal to that of the
-    reaction droplet, resulting in a 1:1 dilution. We assumed 
+    reaction droplet, resulting in a 1:1 dilution. We assumed
     that this dilution and cooling effectively quenched the reaction.
     """
     # Quench
@@ -493,7 +509,7 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
 
     # Workup specification
     workup = reaction.workups.add()
-    workup.amount.volume.value = reaction_volume*2
+    workup.amount.volume.value = reaction_volume * 2
     workup.amount.volume.units = Volume.MICROLITER
     workup.type = ReactionWorkup.ADDITION
     details = (
@@ -522,7 +538,7 @@ def add_standard(measurement: ProductMeasurement, row: pd.Series):
     # )
     # int_standard.reaction_role = ReactionRole.INTERNAL_STANDARD
     # int_standard_prep = standard.preparations.add()
-    # # it seems that the "CompoundPreparation" has to be "CompoundPreparation.SYNTHESIZED" from an error message 
+    # # it seems that the "CompoundPreparation" has to be "CompoundPreparation.SYNTHESIZED" from an error message
     # # I got in terminal when writing "CompoundPreparation.PURCHASED"
     # int_standard_prep.type = CompoundPreparation.SYNTHESIZED
     # int_details = (
@@ -533,13 +549,13 @@ def add_standard(measurement: ProductMeasurement, row: pd.Series):
     # )
     # int_standard_prep.details = int_details
 
-    #Authentic standard is the product of the experiment
+    # Authentic standard is the product of the experiment
     auth_standard = measurement.authentic_standard
     # Product
 
-    opt_run = row["Optimization"] #Optimization run
-    nuc_id, precat_id = opt_run.split(' - ') #cat_id_nucleophile, precatalyst_id
-    precat_id = precat_id.replace(" (Preliminary)","")
+    opt_run = row["Optimization"]  # Optimization run
+    nuc_id, precat_id = opt_run.split(" - ")  # cat_id_nucleophile, precatalyst_id
+    precat_id = precat_id.replace(" (Preliminary)", "")
 
     name, smiles = specify_outcome_details(nuc_id)
     auth_standard.identifiers.add(value=name, type=CompoundIdentifier.NAME)
@@ -547,12 +563,10 @@ def add_standard(measurement: ProductMeasurement, row: pd.Series):
     auth_standard.reaction_role = ReactionRole.AUTHENTIC_STANDARD
     auth_standard_prep = auth_standard.preparations.add()
     auth_standard_prep.type = CompoundPreparation.SYNTHESIZED
-    auth_details = (
-        """
+    auth_details = """
         S2: Purchased
         S1, S3-S5: According to literature precedent
         """
-    )
     auth_standard_prep.details = auth_details
 
 
@@ -561,20 +575,21 @@ def define_measurement(measurement: ProductMeasurement, row: pd.Series):
     measurement.type = ProductMeasurement.YIELD
     rxn_yield = row["Reaction Yield"]
     try:
-        rxn_yield  = rxn_yield.replace("≥","")
-        rxn_yield  = rxn_yield.replace("%","")
-        rxn_yield = float(rxn_yield)/100
+        rxn_yield = rxn_yield.replace("≥", "")
+        rxn_yield = rxn_yield.replace("%", "")
+        rxn_yield = float(rxn_yield) / 100
     except AttributeError:
         rxn_yield = rxn_yield
     measurement.percentage.value = rxn_yield * 100
-    
-    #measurement.retention_time.value = row[
-    #    "2-Fluoro-3,3'-bipyridine Retention time in min"
-    #]
-    #measurement.retention_time.units = Time.MINUTE
 
-#nucleophile ID must be given. Since electrophile stays constant, the product
-#can be inferred from the nucleophile alone
+    # measurement.retention_time.value = row[
+    #    "2-Fluoro-3,3'-bipyridine Retention time in min"
+    # ]
+    # measurement.retention_time.units = Time.MINUTE
+
+
+# nucleophile ID must be given. Since electrophile stays constant, the product
+# can be inferred from the nucleophile alone
 def specify_outcome_details(nuc_id: str) -> (str, str):
     prod = products[nuc_id]
     smiles = prod["SMILES"]
@@ -595,9 +610,9 @@ def specify_outcome(reaction: Reaction, row: pd.Series):
     # Product
     product = outcome.products.add()
 
-    opt_run = row["Optimization"] #Optimization run
-    nuc_id, precat_id = opt_run.split(' - ') #cat_id_nucleophile, precatalyst_id
-    precat_id = precat_id.replace(" (Preliminary)","")
+    opt_run = row["Optimization"]  # Optimization run
+    nuc_id, precat_id = opt_run.split(" - ")  # cat_id_nucleophile, precatalyst_id
+    precat_id = precat_id.replace(" (Preliminary)", "")
 
     name, smiles = specify_outcome_details(nuc_id)
     product.identifiers.add(value=name, type=CompoundIdentifier.NAME)
@@ -613,7 +628,6 @@ def specify_outcome(reaction: Reaction, row: pd.Series):
     measurement = product.measurements.add()
     define_measurement(measurement, row)
     add_standard(measurement, row)
-
 
 
 def add_provenance(reaction: Reaction):
