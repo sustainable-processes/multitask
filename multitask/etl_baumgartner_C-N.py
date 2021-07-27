@@ -14,22 +14,27 @@ NB 2: droplet_volume = row["Quench Outlet Injection (uL)"]
 NB 3: There seems to be a mistake in the spreadsheet.
     The 'Optimization' column is in the format '{nucleophile} - {precatalyst}'
     The 'N-H nucleophile' column is in the format '{nucleophile}'
-    The nucleophile in the Optimization and N-H nucleophile should thus be the same (and indeed they are for almost all
-    rows), however in rows 252-285 the optimization nucleophile is Phenethylamine, while the N-H nucleophile is Benzamide.
-    I trust the Optimization column to be correct.
+    The nucleophile in the Optimization and N-H nucleophile should thus be the same (and indeed 
+    they are for almost all rows), however in rows 252-285 the optimization nucleophile is 
+    Phenethylamine, while the N-H nucleophile is Benzamide. I trust the Optimization column to be correct.
 
 NB 4: Twice in the spreadsheet does "TEA" appear as "Triethylamine"
 
-NB 5: Validation within main disabled.
+NB 5: Row 368 and 371 are part of the "Morpholine - tBuBrettPhos (Preliminary)" campaign. In these rows, the base specified is 'Triethylamine'.
+    However, in the 'Stock solutions' sheet, there is no stock solution for 'Triethylamine' with 'Morpholine - tBuBrettPhos'. I noticed that the
+    stock solution of TEA was constant with all campaigns (around 7.17), so I set the stock solution conc for these two rows to the same number.
 
-Questions 
-    1: Stock concentrations for base and catalyst have not been defined, necessary?
-    2: How do I give 'input_file' to a function outside main? (need to give to the function
-         "stock_concentration(...)")
-    3: It seems I'm not allowed to specify an internal standard within the add_standard function
+NB 6: There are warnings about some reaction yields being very low (e.g. 0.27% yield, validation script thinks this is a yield mistakenly written
+    as a decimal rather than percentage) and very high (ie. above 100%) however this is what's actually in the dataset!
+
+NB 7: No stock concentrations specified for the  precatalyst/catalyst
+
+NB 8: It seems I'm not allowed to specify an internal standard within the add_standard function
 
 """
 
+from typing import Type
+from typing_extensions import final
 from ord_schema.proto.reaction_pb2 import *
 from ord_schema.proto.dataset_pb2 import *
 from ord_schema.message_helpers import find_submessages
@@ -46,18 +51,19 @@ import json
 ureg = UnitRegistry()
 
 
-def main(input_file: str, output_path: str, sheet_name="Reaction data"):
+def main(input_file: str, output_path: str, rxn_sheet_name="Reaction data", stock_sheet_name="Stock solutions"):
     """Entrypoint for running ETL job"""
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
 
     # Extract data
     reactions = []
-    df = pd.read_excel(input_file, sheet_name=sheet_name)
+    df_rxn_data = pd.read_excel(input_file, sheet_name=rxn_sheet_name)
+    df_stock_solutions = pd.read_excel(input_file, sheet_name=stock_sheet_name)
 
     # Transform
     tqdm.pandas(desc="Converting to ORD")
-    reactions.extend(df.progress_apply(inner_loop, axis=1))
+    reactions.extend(df_rxn_data.progress_apply(inner_loop, axis=1, args = (df_stock_solutions,)))
 
     # Create dataset
     dataset = Dataset()
@@ -65,31 +71,31 @@ def main(input_file: str, output_path: str, sheet_name="Reaction data"):
     dataset.reactions.extend(reactions)
     dataset.dataset_id = str(1)
 
-    # # Validate dataset
-    # validation_output = validations.validate_message(dataset)
-    # print(
-    #     f"First 5 Warnings. See {output_path / f'warnings_baumgartner_C-N.json'} for full output"
-    # )
-    # print(validation_output.warnings[:5])
-    # with open(output_path / f"warnings_baumgartner_C-N.json", "w") as f:
-    #     json.dump(validation_output.warnings, f)
+    # Validate dataset
+    validation_output = validations.validate_message(dataset)
+    print(
+        f"First 5 Warnings. See {output_path / f'warnings_baumgartner_C-N.json'} for full output"
+    )
+    print(validation_output.warnings[:5])
+    with open(output_path / f"warnings_baumgartner_C-N.json", "w") as f:
+        json.dump(validation_output.warnings, f)
 
-    # # Load back
-    # with open(output_path / f"baumgartner_C-N.pb", "wb") as f:
-    #     f.write(dataset.SerializeToString())
+    # Load back
+    with open(output_path / f"baumgartner_C-N.pb", "wb") as f:
+        f.write(dataset.SerializeToString())
 
 
-def inner_loop(row: pd.Series) -> Reaction:
+def inner_loop(row: pd.Series, stock_df: pd.DataFrame) -> Reaction:
     """Innter loop for creating a Reaction object for each row in the spreadsheet"""
     # Create reaction
     reaction = Reaction()
     reaction.identifiers.add(value=r"C-N Coupling", type=5)
     # Add reactants
-    add_electrophile(reaction, row)
-    add_nucleophile(reaction, row)
+    add_electrophile(reaction, row, stock_df)
+    add_nucleophile(reaction, row, stock_df)
     add_catalyst(reaction, row)
+    add_base(reaction, row, stock_df)
     add_solvent(reaction, row)
-    add_base(reaction, row)
 
     # Specify conditions
     specify_temperature(reaction, row)
@@ -170,7 +176,7 @@ products = {
 }
 
 
-def stock_concentration(Reagent_Name: str, row: pd.Series) -> (float):
+def stock_concentration(Reagent_Name: str, row: pd.Series, stock_df) -> (float):
     opt_run = row["Optimization"]  # Optimization run
     nuc_id, precat_id = opt_run.split(" - ")  # cat_id_nucleophile, precatalyst_id
     precat_id = precat_id.replace(" (Preliminary)", "")
@@ -178,14 +184,18 @@ def stock_concentration(Reagent_Name: str, row: pd.Series) -> (float):
     Substrate = nuc_id
     Precatalyst = precat_id
 
-    df = pd.read_excel(input_file, sheet_name=sheet_name)
-    df = df.loc[df["Substrate / campaign"].isin([Substrate])]
-    df = df.loc[df["Precatalyst"].isin([Precatalyst])]
+    # Please see header for explanation
+    if Reagent_Name == 'Triethylamine':
+        return 7.17462199822117
+
+    stock_df = stock_df.loc[stock_df["Substrate / campaign"].isin([Substrate])]
+    stock_df = stock_df.loc[stock_df["Precatalyst"].isin([Precatalyst])]
     if Reagent_Name == "Aryl triflate":
-        df = df.iloc[0]
+        stock_df = stock_df.iloc[0]
     elif True:
-        df = df.loc[df["Reagent Name"].isin([Reagent_Name])]
-    return df["Reagent Conc (M)"]
+        stock_df = stock_df.loc[stock_df["Reagent Name"].isin([Reagent_Name])]
+
+    return stock_df["Reagent Conc (M)"]
 
 
 def solvent_details(solvent_id: str) -> (str, str):
@@ -220,15 +230,17 @@ def specify_solvent(
     solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
 
     solvent.amount.volume.units = Volume.MICROLITER
-    solvent.amount.volume.value = final_solute_conc * droplet_volume / stock_conc
+    solvent.amount.volume.value = final_solute_conc * droplet_volume / stock_conc    
+
     solvent.amount.volume_includes_solutes = True
+        
 
     # # Alternative way of calculating solvent volume
     # reactants_volume = calculate_total_volume(reaction, include_workup=False)
     # solvent.amount.volume.value = droplet_volume - reactants_volume
 
 
-def add_electrophile(reaction: Reaction, row: pd.Series):
+def add_electrophile(reaction: Reaction, row: pd.Series, stock_df):
     droplet_volume = row["Quench Outlet Injection (uL)"]
     # p-Tolyl triflate
     pTTf_stock = reaction.inputs["Electrophile"]
@@ -236,7 +248,7 @@ def add_electrophile(reaction: Reaction, row: pd.Series):
 
     # Stock concentration
     Reagent_Name = "Aryl triflate"
-    pTTf_stock_conc = stock_concentration(Reagent_Name, row)
+    pTTf_stock_conc = stock_concentration(Reagent_Name, row, stock_df)
 
     # Reactant
     pTTf = pTTf_stock.components.add()
@@ -276,7 +288,7 @@ def nucleophile_details(nucleophile_id: str) -> (str, str):
     return name, smiles
 
 
-def add_nucleophile(reaction: Reaction, row: pd.Series):
+def add_nucleophile(reaction: Reaction, row: pd.Series, stock_df):
     droplet_volume = row["Quench Outlet Injection (uL)"]
     # nucleophiles
     nucleophile_stock = reaction.inputs["Nucleophile"]
@@ -298,7 +310,7 @@ def add_nucleophile(reaction: Reaction, row: pd.Series):
     nucleophile.amount.moles.value = nuc_conc * droplet_volume
 
     # Stock concentration
-    nuc_stock_conc = stock_concentration(nuc_id, row)
+    nuc_stock_conc = stock_concentration(nuc_id, row, stock_df)
 
     # Solvent
     specify_solvent(nucleophile_stock, row, nuc_conc, nuc_stock_conc)
@@ -342,14 +354,16 @@ def add_catalyst(reaction: Reaction, row: pd.Series):
 
 
 def add_solvent(reaction: Reaction, row: pd.Series):
+    injection_volume = row['N-H nucleophile Inlet Injection (uL)']
     droplet_volume = row["Quench Outlet Injection (uL)"]
+    total_volume = injection_volume + droplet_volume
     # Solvent
     solvent_stock = reaction.inputs["Solvent"]
     solvent_stock.addition_order = 1
 
     # Calculate volume of solvent needed
     reactants_volume = calculate_total_volume(reaction, include_workup=False)
-    solvent_volume = droplet_volume - reactants_volume
+    solvent_volume = total_volume - reactants_volume
 
     # specify solvent
     solvent = solvent_stock.components.add()
@@ -361,6 +375,8 @@ def add_solvent(reaction: Reaction, row: pd.Series):
 
     solvent.amount.volume.units = Volume.MICROLITER
     solvent.amount.volume.value = solvent_volume
+    # import pdb
+    # pdb.set_trace()
 
 
 def base_details(base_id: str) -> (str, str):
@@ -370,7 +386,7 @@ def base_details(base_id: str) -> (str, str):
     return name, smiles
 
 
-def add_base(reaction: Reaction, row: pd.Series):
+def add_base(reaction: Reaction, row: pd.Series, stock_df):
     droplet_volume = row["Quench Outlet Injection (uL)"]
     # Base
     base_stock = reaction.inputs["Base"]
@@ -387,21 +403,9 @@ def add_base(reaction: Reaction, row: pd.Series):
     base.amount.moles.value = base_conc * droplet_volume
     base.amount.moles.units = Moles.MICROMOLE
 
-    # specify solvent
-    solvent_stock = reaction.inputs["Solvent"]
-    solvent = solvent_stock.components.add()
-    solvent.reaction_role = ReactionRole.SOLVENT
-    sol_id = row["Make-Up Solvent ID"]
-    name, smiles = solvent_details(sol_id)
-    solvent.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
-
-    # Calculate volume of solvent needed
-    reactants_volume = calculate_total_volume(reaction, include_workup=False)
-    solvent_volume = droplet_volume - reactants_volume
-
-    solvent.amount.volume.units = Volume.MICROLITER
-    solvent.amount.volume.value = solvent_volume
+    base_stock_conc = stock_concentration(base_id,row, stock_df)
+    
+    specify_solvent(base_stock, row, base_conc, base_stock_conc)
 
 
 def specify_temperature(reaction: Reaction, row: pd.Series):
@@ -459,18 +463,23 @@ def calculate_total_volume(reaction, include_workup=False):
             )
             if amount.WhichOneof("kind") == "volume" and include_workup:
                 total_volume += get_pint(amount)
+
     return total_volume.to(ureg.microliter).magnitude
+
 
 
 def cross_checks(reaction: Reaction, row: pd.Series):
     # Check that reaction volume adds up properly
+
+    injection_volume = row['N-H nucleophile Inlet Injection (uL)']
     droplet_volume = row["Quench Outlet Injection (uL)"]
+    expected_vol = injection_volume + droplet_volume
     vol = calculate_total_volume(reaction)
     try:
-        assert np.isclose(vol, droplet_volume, rtol=1e-2)
+        assert np.isclose(vol, expected_vol, rtol=1e-2)
     except AssertionError:
         raise ValueError(
-            f"Total volume expected to be {droplet_volume}. µL but it is actually {vol}µL."
+            f"Total volume expected to be {expected_vol}µL but it is actually {vol}µL."
         )
 
     # Cross-check concentration calculations using catalyst mol%
@@ -483,7 +492,7 @@ def cross_checks(reaction: Reaction, row: pd.Series):
         raise ValueError(
             f"Inconsistent amounts. Catalyst should be: {cat_mols_check} micromols"
             f", but it is actually {catalyst.amount.moles.value} micromols."
-        )
+         )
 
 
 def quench_reaction(reaction: Reaction, row: pd.Series):
@@ -511,7 +520,7 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
     workup = reaction.workups.add()
     workup.amount.volume.value = reaction_volume * 2
     workup.amount.volume.units = Volume.MICROLITER
-    workup.type = ReactionWorkup.ADDITION
+    workup.type = ReactionWorkup.CUSTOM
     details = (
         "As soon as the slug leaves the reactor and is detected at PS2,"
         "the quenching solvent of volume equal to the reaction slug volume"
@@ -528,7 +537,7 @@ def add_standard(measurement: ProductMeasurement, row: pd.Series):
     measurement.uses_internal_standard = True
     measurement.uses_authentic_standard = True
 
-    ## Seems I'm not allowed to specify an internal standard within this function
+    # # Seems I'm not allowed to specify an internal standard within this function
     # int_standard = measurement.internal_standard
     # int_standard.identifiers.add(
     #     value="1-fluoronaphthalene", type=CompoundIdentifier.NAME
@@ -576,10 +585,16 @@ def define_measurement(measurement: ProductMeasurement, row: pd.Series):
     rxn_yield = row["Reaction Yield"]
     try:
         rxn_yield = rxn_yield.replace("≥", "")
+    except:
+        pass
+    try:
         rxn_yield = rxn_yield.replace("%", "")
-        rxn_yield = float(rxn_yield) / 100
-    except AttributeError:
-        rxn_yield = rxn_yield
+    except:
+        pass
+    try:
+        rxn_yield = float(rxn_yield)
+    except:
+        pass
     measurement.percentage.value = rxn_yield * 100
 
     # measurement.retention_time.value = row[
