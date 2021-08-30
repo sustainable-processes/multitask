@@ -39,7 +39,7 @@ Quantification
     - [ ] [Christensen](https://chemrxiv.org/articles/preprint/Data-science_driven_autonomous_process_optimization/13146404): 1 case varying ligand, temperature, catalyst loading and ligand ratio to optimize formation of one product over two others
 
 * C-N Cross Coupling Reaction
-    - [ ] [Baumgartner C-N](https://pubs.acs.org/doi/10.1021/acs.oprd.9b00236): 4 cases with varying catalysts, bases, temperature, residence time, base equivalents and optimizing yield and TON
+    - [x] [Baumgartner C-N](https://pubs.acs.org/doi/10.1021/acs.oprd.9b00236): 4 cases with varying catalysts, bases, temperature, residence time, base equivalents and optimizing yield and TON
     - [x] [Ahneman](https://science.sciencemag.org/content/360/6385/186): HT screening 15 cases with varying additives, catalysts, bases
     - [x] [Buitrago-Santinilla](https://science.sciencemag.org/content/347/6217/49): HT Screening 5 cases varying  catalyst, catalyst loading, base, and base loading.
     - [ ] [Bédard](https://science.sciencemag.org/content/361/6408/1220.full) - 1 case varying temperature, mol% of catlayst, and flowrates of different pumps to optimize conversion to product (see page 71 of the [SI](https://science.sciencemag.org/content/sci/suppl/2018/09/19/361.6408.1220.DC1/aat0650_Bedard_SM.pdf))
