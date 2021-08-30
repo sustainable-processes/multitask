@@ -212,6 +212,7 @@ def specify_solvent(
     stock_conc: float,
 ) -> None:
     """
+    This function isn't being called anywhere anymore.
     final_solute_conc is in molar
     droplet volume in microliters
     stock_conc in molar
@@ -239,7 +240,6 @@ def specify_solvent(
     # reactants_volume = calculate_total_volume(reaction, include_workup=False)
     # solvent.amount.volume.value = droplet_volume - reactants_volume
 
-
 def add_electrophile(reaction: Reaction, row: pd.Series, stock_df):
     droplet_volume = row["Quench Outlet Injection (uL)"]
     # p-Tolyl triflate
@@ -250,35 +250,33 @@ def add_electrophile(reaction: Reaction, row: pd.Series, stock_df):
     Reagent_Name = "Aryl triflate"
     pTTf_stock_conc = stock_concentration(Reagent_Name, row, stock_df)
 
+    
     # Reactant
     pTTf = pTTf_stock.components.add()
     pTTf.reaction_role = ReactionRole.REACTANT
     pTTf.identifiers.add(value="p-Tolyl triflate", type=CompoundIdentifier.NAME)
     pTTf.identifiers.add(
-        value=r"CC1=CC=C(C=C1)OS(=O)(=O)C(F)(F)F", type=CompoundIdentifier.SMILES
+        value = "CC1=CC=C(C=C1)OS(=O)(=O)C(F)(F)F", type=CompoundIdentifier.SMILES
     )
     pTTf_conc = row["Aryl triflate concentration (M)"]
-    amount = pTTf.amount
-    amount.moles.units = Moles.MICROMOLE
-    amount.moles.value = pTTf_conc * droplet_volume
+    pTTf.amount.moles.units = Moles.MICROMOLE
+    pTTf.amount.moles.value = pTTf_conc * droplet_volume
     pTTf.is_limiting = True
 
     # Internal standard
-    internal_std = pTTf_stock.components.add()
+    FNaph_stock = reaction.inputs["Internal_Standard"] #1-Fluoronaphtalene
+    internal_std = FNaph_stock.components.add()
     internal_std.reaction_role = ReactionRole.INTERNAL_STANDARD
-    internal_std.identifiers.add(
-        value="1-fluoronaphthalene", type=CompoundIdentifier.NAME
-    )
-    internal_std.identifiers.add(
-        value=r"C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.SMILES
-    )
+    
+    internal_std.identifiers.add(value="1-fluoronaphthalene", type=CompoundIdentifier.NAME)
+    internal_std.identifiers.add(value="C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.SMILES)
     istd_conc = row["Internal Standard Concentration 1-fluoronaphthalene (g/L)"]
     amount = internal_std.amount
     amount.mass.units = Mass.MICROGRAM
     amount.mass.value = istd_conc * droplet_volume
 
     # Solvent
-    specify_solvent(pTTf_stock, row, pTTf_conc, pTTf_stock_conc)
+    #specify_solvent(pTTf_stock, row, pTTf_conc, pTTf_stock_conc)
 
 
 def nucleophile_details(nucleophile_id: str) -> (str, str):
@@ -313,7 +311,7 @@ def add_nucleophile(reaction: Reaction, row: pd.Series, stock_df):
     nuc_stock_conc = stock_concentration(nuc_id, row, stock_df)
 
     # Solvent
-    specify_solvent(nucleophile_stock, row, nuc_conc, nuc_stock_conc)
+    #specify_solvent(nucleophile_stock, row, nuc_conc, nuc_stock_conc)
 
 
 def catalyst_details(ligand_id: str) -> (str, str):
@@ -405,7 +403,7 @@ def add_base(reaction: Reaction, row: pd.Series, stock_df):
 
     base_stock_conc = stock_concentration(base_id,row, stock_df)
     
-    specify_solvent(base_stock, row, base_conc, base_stock_conc)
+    #specify_solvent(base_stock, row, base_conc, base_stock_conc)
 
 
 def specify_temperature(reaction: Reaction, row: pd.Series):
@@ -583,18 +581,26 @@ def define_measurement(measurement: ProductMeasurement, row: pd.Series):
     measurement.analysis_key = "LCMS"
     measurement.type = ProductMeasurement.YIELD
     rxn_yield = row["Reaction Yield"]
+
     try:
         rxn_yield = rxn_yield.replace("≥", "")
-    except:
-        pass
-    try:
         rxn_yield = rxn_yield.replace("%", "")
-    except:
-        pass
-    try:
         rxn_yield = float(rxn_yield)
+        rxn_yield = rxn_yield/100
     except:
         pass
+    # try:
+    #     rxn_yield = rxn_yield.replace("≥", "")
+    # except:
+    #     pass
+    # try:
+    #     rxn_yield = rxn_yield.replace("%", "")
+    # except:
+    #     pass
+    # try:
+    #     rxn_yield = float(rxn_yield)
+    # except:
+    #     pass
     measurement.percentage.value = rxn_yield * 100
 
     # measurement.retention_time.value = row[
