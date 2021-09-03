@@ -329,3 +329,13 @@ class MixedMultiTaskGP(
 
         inputs["task_covar_prior"] = prior
         return inputs
+
+
+class LCMMultitask(ExactGP, MultiTaskGPyTorchModel):
+    """Use LCM kernel instead of ICM and see performance
+
+    https://docs.gpytorch.ai/en/stable/kernels.html#gpytorch.kernels.LCMKernel
+
+    """
+
+    pass
