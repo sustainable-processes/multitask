@@ -51,7 +51,12 @@ import json
 ureg = UnitRegistry()
 
 
-def main(input_file: str, output_path: str, rxn_sheet_name="Reaction data", stock_sheet_name="Stock solutions"):
+def main(
+    input_file: str,
+    output_path: str,
+    rxn_sheet_name="Reaction data",
+    stock_sheet_name="Stock solutions",
+):
     """Entrypoint for running ETL job"""
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
@@ -63,7 +68,9 @@ def main(input_file: str, output_path: str, rxn_sheet_name="Reaction data", stoc
 
     # Transform
     tqdm.pandas(desc="Converting to ORD")
-    reactions.extend(df_rxn_data.progress_apply(inner_loop, axis=1, args = (df_stock_solutions,)))
+    reactions.extend(
+        df_rxn_data.progress_apply(inner_loop, axis=1, args=(df_stock_solutions,))
+    )
 
     # Create dataset
     dataset = Dataset()
@@ -185,7 +192,7 @@ def stock_concentration(Reagent_Name: str, row: pd.Series, stock_df) -> (float):
     Precatalyst = precat_id
 
     # Please see header for explanation
-    if Reagent_Name == 'Triethylamine':
+    if Reagent_Name == "Triethylamine":
         return 7.17462199822117
 
     stock_df = stock_df.loc[stock_df["Substrate / campaign"].isin([Substrate])]
@@ -198,7 +205,7 @@ def stock_concentration(Reagent_Name: str, row: pd.Series, stock_df) -> (float):
     return stock_df["Reagent Conc (M)"]
 
 
-def solvent_details(solvent_id: str) -> (str, str):
+def solvent_details(solvent_id: str):
     sol = solvents[solvent_id]
     smiles = sol["SMILES"]
     name = sol["name"]
@@ -231,14 +238,14 @@ def specify_solvent(
     solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
 
     solvent.amount.volume.units = Volume.MICROLITER
-    solvent.amount.volume.value = final_solute_conc * droplet_volume / stock_conc    
+    solvent.amount.volume.value = final_solute_conc * droplet_volume / stock_conc
 
     solvent.amount.volume_includes_solutes = True
-        
 
     # # Alternative way of calculating solvent volume
     # reactants_volume = calculate_total_volume(reaction, include_workup=False)
     # solvent.amount.volume.value = droplet_volume - reactants_volume
+
 
 def add_electrophile(reaction: Reaction, row: pd.Series, stock_df):
     droplet_volume = row["Quench Outlet Injection (uL)"]
@@ -250,13 +257,12 @@ def add_electrophile(reaction: Reaction, row: pd.Series, stock_df):
     Reagent_Name = "Aryl triflate"
     pTTf_stock_conc = stock_concentration(Reagent_Name, row, stock_df)
 
-    
     # Reactant
     pTTf = pTTf_stock.components.add()
     pTTf.reaction_role = ReactionRole.REACTANT
     pTTf.identifiers.add(value="p-Tolyl triflate", type=CompoundIdentifier.NAME)
     pTTf.identifiers.add(
-        value = "CC1=CC=C(C=C1)OS(=O)(=O)C(F)(F)F", type=CompoundIdentifier.SMILES
+        value="CC1=CC=C(C=C1)OS(=O)(=O)C(F)(F)F", type=CompoundIdentifier.SMILES
     )
     pTTf_conc = row["Aryl triflate concentration (M)"]
     pTTf.amount.moles.units = Moles.MICROMOLE
@@ -264,22 +270,26 @@ def add_electrophile(reaction: Reaction, row: pd.Series, stock_df):
     pTTf.is_limiting = True
 
     # Internal standard
-    FNaph_stock = reaction.inputs["Internal_Standard"] #1-Fluoronaphtalene
+    FNaph_stock = reaction.inputs["Internal_Standard"]  # 1-Fluoronaphtalene
     internal_std = FNaph_stock.components.add()
     internal_std.reaction_role = ReactionRole.INTERNAL_STANDARD
-    
-    internal_std.identifiers.add(value="1-fluoronaphthalene", type=CompoundIdentifier.NAME)
-    internal_std.identifiers.add(value="C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.SMILES)
+
+    internal_std.identifiers.add(
+        value="1-fluoronaphthalene", type=CompoundIdentifier.NAME
+    )
+    internal_std.identifiers.add(
+        value="C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.SMILES
+    )
     istd_conc = row["Internal Standard Concentration 1-fluoronaphthalene (g/L)"]
     amount = internal_std.amount
     amount.mass.units = Mass.MICROGRAM
     amount.mass.value = istd_conc * droplet_volume
 
     # Solvent
-    #specify_solvent(pTTf_stock, row, pTTf_conc, pTTf_stock_conc)
+    # specify_solvent(pTTf_stock, row, pTTf_conc, pTTf_stock_conc)
 
 
-def nucleophile_details(nucleophile_id: str) -> (str, str):
+def nucleophile_details(nucleophile_id: str):
     nuc = nucleophiles[nucleophile_id]
     smiles = nuc["SMILES"]
     name = nuc["name"]
@@ -311,10 +321,10 @@ def add_nucleophile(reaction: Reaction, row: pd.Series, stock_df):
     nuc_stock_conc = stock_concentration(nuc_id, row, stock_df)
 
     # Solvent
-    #specify_solvent(nucleophile_stock, row, nuc_conc, nuc_stock_conc)
+    # specify_solvent(nucleophile_stock, row, nuc_conc, nuc_stock_conc)
 
 
-def catalyst_details(ligand_id: str) -> (str, str):
+def catalyst_details(ligand_id: str):
     # https://www.strem.com/catalog/v/46-0308/51/palladium_225931-80-6
     pre_cat = {"SMILES": "C1CC=CCCC=C1.C[Si](C)(C)C[Pd]C[Si](C)(C)C", "name": "cycloPd"}
     additive = {"SMILES": "CC1=CC=C(C=C1)Cl", "name": "4-Chlorotoluene"}
@@ -352,7 +362,7 @@ def add_catalyst(reaction: Reaction, row: pd.Series):
 
 
 def add_solvent(reaction: Reaction, row: pd.Series):
-    injection_volume = row['N-H nucleophile Inlet Injection (uL)']
+    injection_volume = row["N-H nucleophile Inlet Injection (uL)"]
     droplet_volume = row["Quench Outlet Injection (uL)"]
     total_volume = injection_volume + droplet_volume
     # Solvent
@@ -377,7 +387,7 @@ def add_solvent(reaction: Reaction, row: pd.Series):
     # pdb.set_trace()
 
 
-def base_details(base_id: str) -> (str, str):
+def base_details(base_id: str):
     base = bases[base_id]
     smiles = base["SMILES"]
     name = base["name"]
@@ -401,9 +411,9 @@ def add_base(reaction: Reaction, row: pd.Series, stock_df):
     base.amount.moles.value = base_conc * droplet_volume
     base.amount.moles.units = Moles.MICROMOLE
 
-    base_stock_conc = stock_concentration(base_id,row, stock_df)
-    
-    #specify_solvent(base_stock, row, base_conc, base_stock_conc)
+    base_stock_conc = stock_concentration(base_id, row, stock_df)
+
+    # specify_solvent(base_stock, row, base_conc, base_stock_conc)
 
 
 def specify_temperature(reaction: Reaction, row: pd.Series):
@@ -465,11 +475,10 @@ def calculate_total_volume(reaction, include_workup=False):
     return total_volume.to(ureg.microliter).magnitude
 
 
-
 def cross_checks(reaction: Reaction, row: pd.Series):
     # Check that reaction volume adds up properly
 
-    injection_volume = row['N-H nucleophile Inlet Injection (uL)']
+    injection_volume = row["N-H nucleophile Inlet Injection (uL)"]
     droplet_volume = row["Quench Outlet Injection (uL)"]
     expected_vol = injection_volume + droplet_volume
     vol = calculate_total_volume(reaction)
@@ -490,7 +499,7 @@ def cross_checks(reaction: Reaction, row: pd.Series):
         raise ValueError(
             f"Inconsistent amounts. Catalyst should be: {cat_mols_check} micromols"
             f", but it is actually {catalyst.amount.moles.value} micromols."
-         )
+        )
 
 
 def quench_reaction(reaction: Reaction, row: pd.Series):
@@ -586,7 +595,7 @@ def define_measurement(measurement: ProductMeasurement, row: pd.Series):
         rxn_yield = rxn_yield.replace("≥", "")
         rxn_yield = rxn_yield.replace("%", "")
         rxn_yield = float(rxn_yield)
-        rxn_yield = rxn_yield/100
+        rxn_yield = rxn_yield / 100
     except:
         pass
     # try:
@@ -611,7 +620,7 @@ def define_measurement(measurement: ProductMeasurement, row: pd.Series):
 
 # nucleophile ID must be given. Since electrophile stays constant, the product
 # can be inferred from the nucleophile alone
-def specify_outcome_details(nuc_id: str) -> (str, str):
+def specify_outcome_details(nuc_id: str):
     prod = products[nuc_id]
     smiles = prod["SMILES"]
     name = prod["name"]

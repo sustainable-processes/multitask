@@ -192,7 +192,7 @@ ligands = {
 }
 
 
-def catalyst_details(pre_catalyst_id: str, ligand_id: str) -> (str, str):
+def catalyst_details(pre_catalyst_id: str, ligand_id: str):
     pre_cat = pre_catalysts[pre_catalyst_id]
     ligand = ligands[ligand_id]
     smiles = f"""{pre_cat["SMILES"]}.{ligand["SMILES"]}"""

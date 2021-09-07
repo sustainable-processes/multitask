@@ -331,7 +331,7 @@ class MixedMultiTaskGP(
         return inputs
 
 
-class LCMMultitask(ExactGP, MultiTaskGPyTorchModel):
+class LCMMultitaskGP(ExactGP, MultiTaskGPyTorchModel):
     """Use LCM kernel instead of ICM and see performance
 
     https://docs.gpytorch.ai/en/stable/kernels.html#gpytorch.kernels.LCMKernel
