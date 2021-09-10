@@ -160,6 +160,23 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "chemicals"
+version = "1.0.11"
+description = "Chemical properties component of Chemical Engineering Design Library (ChEDL)"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+fluids = ">=1.0.9"
+numpy = "*"
+pandas = "*"
+scipy = "*"
+
+[package.extras]
+"Coverage documentation" = ["wsgiref (>=0.1.2)", "coverage (>=4.0.3)"]
+
+[[package]]
 name = "cheminventory"
 version = "0.2.3"
 description = "A CLI and SDK for ChemInventory"
@@ -320,7 +337,7 @@ watch = ["pyinotify"]
 
 [[package]]
 name = "dvc"
-version = "2.4.1"
+version = "2.6.4"
 description = "Git for data scientists - manage your code and data together"
 category = "dev"
 optional = false
@@ -335,33 +352,32 @@ diskcache = ">=5.2.1"
 distro = ">=1.3.0"
 dpath = ">=2.0.1,<3"
 dulwich = ">=0.20.23"
-flatten-dict = ">=0.3.0,<1"
+flatten-dict = ">=0.4.1,<1"
 "flufl.lock" = ">=3.2,<4"
-fsspec = "2021.6.0"
+fsspec = ">=2021.7.0"
 funcy = ">=1.14"
 gitpython = ">3"
 grandalf = "0.6"
-jsonpath-ng = ">=1.5.1"
+importlib-metadata = {version = ">=1.4", markers = "python_version < \"3.8\""}
 nanotime = ">=0.5.2"
-networkx = ">=2.5,<3.0"
+networkx = ">=2.5"
 packaging = ">=19.0"
-pathspec = ">=0.6.0"
+pathspec = ">=0.6.0,<0.9.0"
 ply = ">=3.9"
 psutil = ">=5.8.0"
 pyasn1 = ">=0.4.1"
 pydot = ">=1.2.4"
-pydrive2 = {version = ">=1.8.1", optional = true, markers = "extra == \"gdrive\""}
+pydrive2 = {version = ">=1.9.1", extras = ["fsspec"], optional = true, markers = "extra == \"gdrive\""}
 pygit2 = ">=1.5.0"
-pygtrie = "2.3.2"
+pygtrie = ">=2.3.2"
 pyparsing = "2.4.7"
 python-benedict = ">=0.21.1"
-pywin32 = {version = ">=225", markers = "sys_platform == \"win32\""}
+pywin32 = {version = ">=225", markers = "sys_platform == \"win32\" and python_version < \"3.10\""}
 requests = ">=2.22.0"
 rich = ">=10.0.0"
-"ruamel.yaml" = ">=0.16.1"
+"ruamel.yaml" = ">=0.17.11"
 shortuuid = ">=0.5.0"
 shtab = ">=1.3.4,<2"
-six = {version = ">=1.13.0", optional = true, markers = "extra == \"gdrive\""}
 speedcopy = {version = ">=2.0.1", markers = "python_version < \"3.8\" and sys_platform == \"win32\""}
 tabulate = ">=0.8.7"
 toml = ">=0.10.1"
@@ -372,17 +388,17 @@ win-unicode-console = {version = ">=0.5", markers = "sys_platform == \"win32\""}
 "zc.lockfile" = ">=1.2.1"
 
 [package.extras]
-all = ["gcsfs (==2021.6.0)", "s3fs (==2021.6.0)", "aiobotocore[boto3] (==1.3.0)", "adlfs (==0.7.1)", "azure-identity (>=1.4.0)", "knack", "paramiko[invoke] (>=2.7.0)", "oss2 (==2.6.1)", "pycryptodome (>=3.10)", "pydrive2 (>=1.8.1)", "six (>=1.13.0)", "pyarrow (>=2.0.0)", "hdfs (==2.5.8)", "webdav4 (>=0.8.1)"]
-azure = ["adlfs (==0.7.1)", "azure-identity (>=1.4.0)", "knack"]
-gdrive = ["pydrive2 (>=1.8.1)", "six (>=1.13.0)"]
-gs = ["gcsfs (==2021.6.0)"]
+all = ["gcsfs (==2021.7.0)", "s3fs (==2021.8.0)", "aiobotocore[boto3] (>1.0.1)", "adlfs (==2021.7.1)", "azure-identity (>=1.4.0)", "knack", "sshfs (>=2021.7.1)", "ossfs (==2021.7.5)", "pydrive2[fsspec] (>=1.9.1)", "hdfs (==2.5.8)", "webdav4 (>=0.9.0)", "pyarrow (>=2.0.0)"]
+azure = ["adlfs (==2021.7.1)", "azure-identity (>=1.4.0)", "knack"]
+gdrive = ["pydrive2[fsspec] (>=1.9.1)"]
+gs = ["gcsfs (==2021.7.0)"]
 hdfs = ["pyarrow (>=2.0.0)"]
-oss = ["oss2 (==2.6.1)", "pycryptodome (>=3.10)"]
-s3 = ["s3fs (==2021.6.0)", "aiobotocore[boto3] (==1.3.0)"]
-ssh = ["paramiko[invoke] (>=2.7.0)"]
-ssh_gssapi = ["paramiko[invoke,gssapi] (>=2.7.0)"]
-tests = ["wheel (==0.36.2)", "pytest (==6.2.4)", "pytest-cov (==2.12.1)", "pytest-xdist (==2.3.0)", "pytest-mock (==3.6.1)", "pytest-lazy-fixture (==0.6.3)", "pytest-timeout (==1.4.2)", "pytest-docker (==0.10.3)", "flaky (==3.7.0)", "mock (==4.0.3)", "rangehttpserver (==1.2.0)", "mock-ssh-server (==0.9.0)", "beautifulsoup4 (==4.9.3)", "wget (==3.2)", "filelock (==3.0.12)", "wsgidav (==3.1.0)", "crc32c (==2.2)", "xmltodict (==0.12.0)", "google-compute-engine (==2.8.13)", "google-cloud-storage (==1.38.0)", "urllib3 (==1.26.5)", "Pygments (==2.9.0)", "collective.checkdocs (==0.2)", "pydocstyle (==6.1.1)", "jaraco.windows (==5.5.0)", "pylint (==2.8.3)", "pylint-pytest (==1.0.3)", "pylint-plugin-utils (==0.6)", "mypy (==0.902)", "types-requests", "types-paramiko", "types-tabulate", "types-toml"]
-webdav = ["webdav4 (>=0.8.1)"]
+oss = ["ossfs (==2021.7.5)"]
+s3 = ["s3fs (==2021.8.0)", "aiobotocore[boto3] (>1.0.1)"]
+ssh = ["sshfs (>=2021.7.1)"]
+ssh_gssapi = ["sshfs[gssapi] (>=2021.7.1)"]
+tests = ["wheel (==0.37.0)", "pytest (==6.2.4)", "pytest-cov (==2.12.1)", "pytest-xdist (==2.3.0)", "pytest-mock (==3.6.1)", "pytest-lazy-fixture (==0.6.3)", "pytest-timeout (==1.4.2)", "pytest-docker (==0.10.3)", "flaky (==3.7.0)", "mock (==4.0.3)", "rangehttpserver (==1.2.0)", "mock-ssh-server (==0.9.0)", "beautifulsoup4 (==4.9.3)", "wget (==3.2)", "filelock (==3.0.12)", "wsgidav (==3.1.1)", "crc32c (==2.2.post0)", "xmltodict (==0.12.0)", "google-compute-engine (==2.8.13)", "google-cloud-storage (==1.42.0)", "urllib3 (==1.26.6)", "Pygments (==2.10.0)", "collective.checkdocs (==0.2)", "pydocstyle (==6.1.1)", "jaraco.windows (==5.6.0)", "pylint (==2.9.6)", "pylint-pytest (==1.0.3)", "pylint-plugin-utils (==0.6)", "mypy (==0.910)", "types-requests", "types-paramiko", "types-tabulate", "types-toml"]
+webdav = ["webdav4 (>=0.9.0)"]
 webhdfs = ["hdfs (==2.5.8)"]
 
 [[package]]
@@ -403,13 +419,14 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "flatten-dict"
-version = "0.4.0"
+version = "0.4.2"
 description = "A flexible utility for flattening and unflattening dict-like objects in Python."
 category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [package.dependencies]
+importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
 six = ">=1.12,<2.0"
 
 [[package]]
@@ -424,8 +441,23 @@ python-versions = "*"
 atpublic = "*"
 
 [[package]]
+name = "fluids"
+version = "1.0.9"
+description = "Fluid dynamics component of Chemical Engineering Design Library (ChEDL)"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+numpy = ">=1.5.0"
+scipy = ">=0.9.0"
+
+[package.extras]
+"Coverage documentation" = ["wsgiref (>=0.1.2)", "coverage (>=4.0.3)", "pint"]
+
+[[package]]
 name = "fsspec"
-version = "2021.6.0"
+version = "2021.8.1"
 description = "File-system specification"
 category = "dev"
 optional = false
@@ -797,19 +829,6 @@ description = "Lightweight pipelining with Python functions"
 category = "main"
 optional = false
 python-versions = ">=3.6"
-
-[[package]]
-name = "jsonpath-ng"
-version = "1.5.2"
-description = "A final implementation of JSONPath for Python that aims to be standard compliant, including arithmetic and binary comparison operators and providing clear AST for metaprogramming."
-category = "dev"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-decorator = "*"
-ply = "*"
-six = "*"
 
 [[package]]
 name = "jupyter-client"
@@ -1214,20 +1233,24 @@ pyparsing = ">=2.1.4"
 
 [[package]]
 name = "pydrive2"
-version = "1.8.3"
+version = "1.9.2"
 description = "Google Drive API made easy. Maintained fork of PyDrive."
 category = "dev"
 optional = false
 python-versions = "*"
 
 [package.dependencies]
+fsspec = {version = ">=2021.07.0", optional = true, markers = "extra == \"fsspec\""}
+funcy = {version = ">=1.14", optional = true, markers = "extra == \"fsspec\""}
 google-api-python-client = ">=1.12.5"
 oauth2client = ">=4.0.0"
 pyOpenSSL = ">=19.1.0"
 PyYAML = ">=3.0"
 six = ">=1.13.0"
+tqdm = {version = ">=4.0.0", optional = true, markers = "extra == \"fsspec\""}
 
 [package.extras]
+fsspec = ["fsspec (>=2021.07.0)", "tqdm (>=4.0.0)", "funcy (>=1.14)"]
 tests = ["pytest (>=4.6.0)", "timeout-decorator", "funcy (>=1.14)", "flake8", "flake8-docstrings", "black (==19.10b0)"]
 
 [[package]]
@@ -1506,7 +1529,7 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "ruamel.yaml"
-version = "0.17.7"
+version = "0.17.16"
 description = "ruamel.yaml is a YAML parser/emitter that supports roundtrip preservation of comments, seq/map flow style, and map key order"
 category = "dev"
 optional = false
@@ -1642,7 +1665,7 @@ SQCommon = "*"
 
 [[package]]
 name = "summit"
-version = "0.8.2"
+version = "0.8.3"
 description = "Tools for optimizing chemical processes"
 category = "main"
 optional = false
@@ -1676,7 +1699,7 @@ docs = ["sphinx (>=3.2.1,<4.0.0)", "nbsphinx (>=0.8.5,<0.9.0)", "sphinx-rtd-them
 type = "git"
 url = "https://github.com/sustainable-processes/summit"
 reference = "master"
-resolved_reference = "d3f0a7d0c59b9daee6772cb7ee40054c3273a414"
+resolved_reference = "04ea006baf40165057112e1ecc89fe3234eb77f2"
 
 [[package]]
 name = "tabulate"
@@ -1696,6 +1719,23 @@ description = "The most basic Text::Unidecode port"
 category = "dev"
 optional = false
 python-versions = "*"
+
+[[package]]
+name = "thermo"
+version = "0.2.9"
+description = "Chemical properties component of Chemical Engineering Design Library (ChEDL)"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+chemicals = ">=1.0.11"
+fluids = ">=1.0.9"
+pandas = "*"
+scipy = "*"
+
+[package.extras]
+"Coverage documentation" = ["wsgiref (>=0.1.2)", "coverage (>=4.0.3)"]
 
 [[package]]
 name = "threadpoolctl"
@@ -1872,7 +1912,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7.1"
-content-hash = "ae0989465d1ba84bfd26bf4e1686bddaa3c35f093b1b985615211f0054d69074"
+content-hash = "4a81a208fa3cd9ebd128c8aa3a0395987ee8ce1f22f104ed361a52917a696fc0"
 
 [metadata.files]
 appdirs = [
@@ -1960,6 +2000,9 @@ cffi = [
 chardet = [
     {file = "chardet-4.0.0-py2.py3-none-any.whl", hash = "sha256:f864054d66fd9118f2e67044ac8981a54775ec5b67aed0441892edb553d21da5"},
     {file = "chardet-4.0.0.tar.gz", hash = "sha256:0d6f53a15db4120f2b08c94f11e7d93d2c911ee118b6b30a04ec3ee8310179fa"},
+]
+chemicals = [
+    {file = "chemicals-1.0.11.tar.gz", hash = "sha256:23a8aca810598256411b996b424a5014db731939373d500f1412fff9baee5b3d"},
 ]
 cheminventory = [
     {file = "cheminventory-0.2.3-py3-none-any.whl", hash = "sha256:441a81892651af11182d0078b8b1660b0ed9c57761c8cdc964824718e83a558c"},
@@ -2079,8 +2122,8 @@ dulwich = [
     {file = "dulwich-0.20.23.tar.gz", hash = "sha256:402e56b5c07f040479d1188e5c2f406e2c006aa3943080155d4c6d05e5fca865"},
 ]
 dvc = [
-    {file = "dvc-2.4.1-py2.py3-none-any.whl", hash = "sha256:d1982f1b1628a6b5a0bbc562b560c5efd97da149655a0fda99183595c2b900c8"},
-    {file = "dvc-2.4.1.tar.gz", hash = "sha256:6fd5cd2b347ff16d91931de2db4b0ed70f5e352235732dbcb55acd75650c9c67"},
+    {file = "dvc-2.6.4-py3-none-any.whl", hash = "sha256:e62e8331704bdc03de59ec175c09e4d56c287fb80721e109bb9e37bcafc2c50f"},
+    {file = "dvc-2.6.4.tar.gz", hash = "sha256:008e3c6c47766524c06e996081adcf38c337ffea5876ce0d3d7ccfaad2d1b2bd"},
 ]
 et-xmlfile = [
     {file = "et_xmlfile-1.1.0-py3-none-any.whl", hash = "sha256:a2ba85d1d6a74ef63837eed693bcb89c3f752169b0e3e7ae5b16ca5e1b3deada"},
@@ -2091,15 +2134,18 @@ fastprogress = [
     {file = "fastprogress-0.2.6.tar.gz", hash = "sha256:163ec01c0b4262cfa2fe3a5d3b59bd6d5f784d4c99939e3720cd67ac411cf38d"},
 ]
 flatten-dict = [
-    {file = "flatten-dict-0.4.0.tar.gz", hash = "sha256:e687a07c03fe3f65cce5bcbf348612facd4f7fddd08d1761a5fee4456d17ccd4"},
-    {file = "flatten_dict-0.4.0-py2.py3-none-any.whl", hash = "sha256:dfc0413c243d42178c2bfb16156af837a8f47c04cc97533cffec668e9ca02c50"},
+    {file = "flatten-dict-0.4.2.tar.gz", hash = "sha256:506a96b6e6f805b81ae46a0f9f31290beb5fa79ded9d80dbe1b7fa236ab43076"},
+    {file = "flatten_dict-0.4.2-py2.py3-none-any.whl", hash = "sha256:7e245b20c4c718981212210eec4284a330c9f713e632e98765560e05421e48ad"},
 ]
 "flufl.lock" = [
     {file = "flufl.lock-3.2.tar.gz", hash = "sha256:a8d66accc9ab41f09961cd8f8db39f9c28e97e2769659a3567c63930a869ff5b"},
 ]
+fluids = [
+    {file = "fluids-1.0.9.tar.gz", hash = "sha256:041ea43e63ee287b9d42bbfec780a4fe257fff6c5d69037d55b7b9bf1478d3c5"},
+]
 fsspec = [
-    {file = "fsspec-2021.6.0-py3-none-any.whl", hash = "sha256:e926b66c074ff3fc732d7678187a294e4a0bf112ccb51594fa9dff5a9fbdc4a1"},
-    {file = "fsspec-2021.6.0.tar.gz", hash = "sha256:931961514c67acab86519ca16985491e639ebf992dbc3a1aae24d44202b52426"},
+    {file = "fsspec-2021.8.1-py3-none-any.whl", hash = "sha256:30f27c059a414d1f434b14b2d0e75c8d9c3dd473ad8daeccb444d9d4069b9f03"},
+    {file = "fsspec-2021.8.1.tar.gz", hash = "sha256:af125917788b77782899bbd4484d29e5407f53d2bb04cdfa025fe4931201a555"},
 ]
 ftfy = [
     {file = "ftfy-6.0.3.tar.gz", hash = "sha256:ba71121a9c8d7790d3e833c6c1021143f3e5c4118293ec3afb5d43ed9ca8e72b"},
@@ -2213,10 +2259,6 @@ jedi = [
 joblib = [
     {file = "joblib-1.0.1-py3-none-any.whl", hash = "sha256:feeb1ec69c4d45129954f1b7034954241eedfd6ba39b5e9e4b6883be3332d5e5"},
     {file = "joblib-1.0.1.tar.gz", hash = "sha256:9c17567692206d2f3fb9ecf5e991084254fe631665c450b443761c4186a613f7"},
-]
-jsonpath-ng = [
-    {file = "jsonpath-ng-1.5.2.tar.gz", hash = "sha256:144d91379be14d9019f51973bd647719c877bfc07dc6f3f5068895765950c69d"},
-    {file = "jsonpath_ng-1.5.2-py3-none-any.whl", hash = "sha256:93d1f248be68e485eb6635c3a01b2d681f296dc349d71e37c8755837b8944d36"},
 ]
 jupyter-client = [
     {file = "jupyter_client-6.2.0-py3-none-any.whl", hash = "sha256:9715152067e3f7ea3b56f341c9a0f9715c8c7cc316ee0eb13c3c84f5ca0065f5"},
@@ -2572,8 +2614,8 @@ pydot = [
     {file = "pydot-1.4.2.tar.gz", hash = "sha256:248081a39bcb56784deb018977e428605c1c758f10897a339fce1dd728ff007d"},
 ]
 pydrive2 = [
-    {file = "PyDrive2-1.8.3-py2.py3-none-any.whl", hash = "sha256:5b8cf13d825bafaf6ea7d8161ea2da34c40200f59633de9077db63695b6b7f3a"},
-    {file = "PyDrive2-1.8.3.tar.gz", hash = "sha256:d2217ba2feabcd13c97269b7e83ac975e33c1110bc2f4bd7d36b3e74349c011d"},
+    {file = "PyDrive2-1.9.2-py3-none-any.whl", hash = "sha256:9537d1a274352d95727ae4389bc2420f99a62403f8a602759978702123697f88"},
+    {file = "PyDrive2-1.9.2.tar.gz", hash = "sha256:3936077b3ebb114978633226376346b1df06e8737d2fdd45984aa05045682ce9"},
 ]
 pygit2 = [
     {file = "pygit2-1.6.0-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:2b7eff2d27c91938ac999c9b06e759f7c35d3918198bfe775822eb8f3b6f50f7"},
@@ -2789,8 +2831,8 @@ rsa = [
     {file = "rsa-4.7.2.tar.gz", hash = "sha256:9d689e6ca1b3038bc82bf8d23e944b6b6037bc02301a574935b2dd946e0353b9"},
 ]
 "ruamel.yaml" = [
-    {file = "ruamel.yaml-0.17.7-py3-none-any.whl", hash = "sha256:25c3eaf4f0c52bd15c50c39b100a32168891240f4d2177a4690d5d9b85944bbe"},
-    {file = "ruamel.yaml-0.17.7.tar.gz", hash = "sha256:5c3fa739bbedd2f23769656784e671c6335d17a5bf163c3c3901d8663c0af287"},
+    {file = "ruamel.yaml-0.17.16-py3-none-any.whl", hash = "sha256:ea21da1198c4b41b8e7a259301cc9710d3b972bf8ba52f06218478e6802dd1f1"},
+    {file = "ruamel.yaml-0.17.16.tar.gz", hash = "sha256:1a771fc92d3823682b7f0893ad56cb5a5c87c48e62b5399d6f42c8759a583b33"},
 ]
 "ruamel.yaml.clib" = [
     {file = "ruamel.yaml.clib-0.2.2-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:28116f204103cb3a108dfd37668f20abe6e3cafd0d3fd40dba126c732457b3cc"},
@@ -2920,6 +2962,9 @@ tabulate = [
 text-unidecode = [
     {file = "text-unidecode-1.3.tar.gz", hash = "sha256:bad6603bb14d279193107714b288be206cac565dfa49aa5b105294dd5c4aab93"},
     {file = "text_unidecode-1.3-py2.py3-none-any.whl", hash = "sha256:1311f10e8b895935241623731c2ba64f4c455287888b18189350b67134a822e8"},
+]
+thermo = [
+    {file = "thermo-0.2.9.tar.gz", hash = "sha256:7cbcd0823b6af4be0d8fdaa6045c75333fcb9e45d6954a5f7588d9d912c8e078"},
 ]
 threadpoolctl = [
     {file = "threadpoolctl-2.1.0-py3-none-any.whl", hash = "sha256:38b74ca20ff3bb42caca8b00055111d74159ee95c4370882bbff2b93d24da725"},

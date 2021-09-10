@@ -50,10 +50,6 @@ def generate_mit_case_1_data(n_points):
     return pt_data
 
 
-n_aux = [5, 10, 50]
-aux_datasets = [generate_mit_case_1_data(n) for n in n_aux]
-
-
 app = typer.Typer()
 N_REPEATS = 3
 

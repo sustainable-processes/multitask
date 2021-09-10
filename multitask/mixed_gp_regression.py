@@ -329,3 +329,256 @@ class MixedMultiTaskGP(
 
         inputs["task_covar_prior"] = prior
         return inputs
+
+
+class LCMMultitaskGP(ExactGP, MultiTaskGPyTorchModel):
+    """Use LCM kernel instead of ICM and see performance
+
+    https://docs.gpytorch.ai/en/stable/kernels.html#gpytorch.kernels.LCMKernel
+
+    """
+
+    r"""Mixed Multi-Task GP model using an LCM kernel, inferring observation noise.
+    """
+
+    def __init__(
+        self,
+        train_X: Tensor,
+        train_Y: Tensor,
+        task_feature: int,
+        cat_dims: List[int],
+        num_independent_kernels: int,
+        cont_kernel_factory: Optional[Callable[[int, List[int]], Kernel]] = None,
+        task_covar_prior: Optional[Prior] = None,
+        output_tasks: Optional[List[int]] = None,
+        rank: Optional[int] = None,
+        input_transform: Optional[InputTransform] = None,
+    ) -> None:
+        r"""Mixed Multi-Task GP model using an ICM kernel, inferring observation noise.
+        Args:
+            train_X: A `n x (d + 1)` or `b x n x (d + 1)` (batch mode) tensor
+                of training data. One of the columns should contain the task
+                features (see `task_feature` argument).
+            train_Y: A `n` or `b x n` (batch mode) tensor of training observations.
+            task_feature: The index of the task feature (`-d <= task_feature <= d`).
+            cat_dims: A list of indices corresponding to the columns of
+                the input `X` that should be considered categorical features.
+            cont_kernel_factory: A method that accepts `ard_num_dims` and
+                `active_dims` arguments and returns an instatiated GPyTorch
+                `Kernel` object to be used as the ase kernel for the continuous
+                dimensions. If omitted, this model uses a Matern-2.5 kernel as
+                the kernel for the ordinal parameters.
+            output_tasks: A list of task indices for which to compute model
+                outputs for. If omitted, return outputs for all task indices.
+            rank: The rank to be used for the index kernel. If omitted, use a
+                full rank (i.e. number of tasks) kernel.
+            task_covar_prior : A Prior on the task covariance matrix. Must operate
+                on p.s.d. matrices. A common prior for this is the `LKJ` prior.
+            input_transform: An input transform that is applied in the model's
+                forward pass.
+        Example:
+            >>> X1, X2 = torch.rand(10, 2), torch.rand(20, 2)
+            >>> i1, i2 = torch.zeros(10, 1), torch.ones(20, 1)
+            >>> train_X = torch.cat([
+            >>>     torch.cat([X1, i1], -1), torch.cat([X2, i2], -1),
+            >>> ])
+            >>> train_Y = torch.cat(f1(X1), f2(X2)).unsqueeze(-1)
+            >>> model = MultiTaskGP(train_X, train_Y, task_feature=-1)
+        """
+        if input_transform is not None:
+            input_transform.to(train_X)
+        with torch.no_grad():
+            transformed_X = self.transform_inputs(
+                X=train_X, input_transform=input_transform
+            )
+        self._validate_tensor_args(X=transformed_X, Y=train_Y)
+        all_tasks, task_feature, d = self.get_all_tasks(
+            transformed_X, task_feature, output_tasks
+        )
+        input_batch_shape, aug_batch_shape = self.get_batch_dimensions(
+            train_X=train_X, train_Y=train_Y
+        )
+        # squeeze output dim
+        train_Y = train_Y.squeeze(-1)
+        if output_tasks is None:
+            output_tasks = all_tasks
+        else:
+            if set(output_tasks) - set(all_tasks):
+                raise RuntimeError("All output tasks must be present in input data.")
+        self._output_tasks = output_tasks
+        self._num_outputs = len(output_tasks)
+
+        # TODO (T41270962): Support task-specific noise levels in likelihood
+        min_noise = 1e-5 if train_X.dtype == torch.float else 1e-6
+        likelihood = GaussianLikelihood(
+            noise_prior=GammaPrior(0.9, 10.0),
+            noise_constraint=GreaterThan(min_noise, transform=None, initial_value=1e-3),
+        )
+
+        # construct indexer to be used in forward
+        self._task_feature = task_feature
+        self._base_idxr = torch.arange(d)
+        self._base_idxr[task_feature:] += 1  # exclude task feature
+
+        super().__init__(
+            train_inputs=train_X, train_targets=train_Y, likelihood=likelihood
+        )
+
+        if cont_kernel_factory is None:
+
+            def cont_kernel_factory(
+                batch_shape: torch.Size, ard_num_dims: int, active_dims: List[int]
+            ) -> MaternKernel:
+                return MaternKernel(
+                    nu=2.5,
+                    batch_shape=batch_shape,
+                    ard_num_dims=ard_num_dims,
+                    active_dims=active_dims,
+                )
+
+        self.mean_module = ConstantMean()
+        cat_dims = normalize_indices(indices=cat_dims, d=d)
+        ord_dims = sorted(set(range(d)) - set(cat_dims))
+        if len(ord_dims) == 0:
+            self.covar_module = ScaleKernel(
+                CategoricalKernel(
+                    batch_shape=aug_batch_shape,
+                    ard_num_dims=len(cat_dims),
+                )
+            )
+        else:
+            self.covar_modules = [
+                self._create_covar_module(
+                    cont_kernel_factory=cont_kernel_factory,
+                    aug_batch_shape=aug_batch_shape,
+                    ord_dims=ord_dims,
+                    cat_dims=cat_dims,
+                )
+                for _ in range(num_independent_kernels)
+            ]
+
+        num_tasks = len(all_tasks)
+        self._rank = rank if rank is not None else num_tasks
+
+        self.task_covar_module = IndexKernel(
+            num_tasks=num_tasks, rank=self._rank, prior=task_covar_prior
+        )
+        if input_transform is not None:
+            self.input_transform = input_transform
+        self.to(train_X)
+
+    @staticmethod
+    def _create_covar_module(
+        cont_kernel_factory: callable,
+        aug_batch_shape: tuple,
+        ord_dims: list,
+        cat_dims: list,
+    ):
+        sum_kernel = ScaleKernel(
+            cont_kernel_factory(
+                batch_shape=aug_batch_shape,
+                ard_num_dims=len(ord_dims),
+                active_dims=ord_dims,
+            )
+            + ScaleKernel(
+                CategoricalKernel(
+                    batch_shape=aug_batch_shape,
+                    ard_num_dims=len(cat_dims),
+                    active_dims=cat_dims,
+                )
+            )
+        )
+        prod_kernel = ScaleKernel(
+            cont_kernel_factory(
+                batch_shape=aug_batch_shape,
+                ard_num_dims=len(ord_dims),
+                active_dims=ord_dims,
+            )
+            * CategoricalKernel(
+                batch_shape=aug_batch_shape,
+                ard_num_dims=len(cat_dims),
+                active_dims=cat_dims,
+            )
+        )
+        return sum_kernel + prod_kernel
+
+    def _split_inputs(self, x: Tensor) -> Tuple[Tensor, Tensor]:
+        r"""Extracts base features and task indices from input data.
+        Args:
+            x: The full input tensor with trailing dimension of size `d + 1`.
+                Should be of float/double data type.
+        Returns:
+            2-element tuple containing
+            - A `q x d` or `b x q x d` (batch mode) tensor with trailing
+            dimension made up of the `d` non-task-index columns of `x`, arranged
+            in the order as specified by the indexer generated during model
+            instantiation.
+            - A `q` or `b x q` (batch mode) tensor of long data type containing
+            the task indices.
+        """
+        batch_shape, d = x.shape[:-2], x.shape[-1]
+        x_basic = x[..., self._base_idxr].view(batch_shape + torch.Size([-1, d - 1]))
+        task_idcs = (
+            x[..., self._task_feature]
+            .view(batch_shape + torch.Size([-1, 1]))
+            .to(dtype=torch.long)
+        )
+        return x_basic, task_idcs
+
+    def forward(self, x: Tensor) -> MultivariateNormal:
+        if self.training:
+            x = self.transform_inputs(x)
+        x_basic, task_idcs = self._split_inputs(x)
+        # Compute base mean
+        mean_x = self.mean_module(x_basic)
+        covar = None
+        for m in self.covar_modules:
+            # Compute base covariance
+            covar_x = m(x_basic)
+            # Compute task covariances
+            covar_i = self.task_covar_module(task_idcs)
+            # Combine the two in an ICM fashion
+            if covar is None:
+                covar = covar_x.mul(covar_i)
+            else:
+                covar += covar_x.mul(covar_i)
+        return MultivariateNormal(mean_x, covar)
+
+    @classmethod
+    def get_all_tasks(
+        cls,
+        train_X: Tensor,
+        task_feature: int,
+        output_tasks: Optional[List[int]] = None,
+    ) -> Tuple[List[int], int, int]:
+        if train_X.ndim != 2:
+            # Currently, batch mode MTGPs are blocked upstream in GPyTorch
+            raise ValueError(f"Unsupported shape {train_X.shape} for train_X.")
+        d = train_X.shape[-1] - 1
+        if not (-d <= task_feature <= d):
+            raise ValueError(f"Must have that -{d} <= task_feature <= {d}")
+        task_feature = task_feature % (d + 1)
+        all_tasks = train_X[:, task_feature].unique().to(dtype=torch.long).tolist()
+        return all_tasks, task_feature, d
+
+    @staticmethod
+    def get_batch_dimensions(
+        train_X: Tensor, train_Y: Tensor
+    ) -> Tuple[torch.Size, torch.Size]:
+        r"""Get the raw batch shape and output-augmented batch shape of the inputs.
+        Args:
+            train_X: A `n x d` or `batch_shape x n x d` (batch mode) tensor of training
+                features.
+            train_Y: A `n x m` or `batch_shape x n x m` (batch mode) tensor of
+                training observations.
+        Returns:
+            2-element tuple containing
+            - The `input_batch_shape`
+            - The output-augmented batch shape: `input_batch_shape x (m)`
+        """
+        input_batch_shape = train_X.shape[:-2]
+        aug_batch_shape = input_batch_shape
+        num_outputs = train_Y.shape[-1]
+        if num_outputs > 1:
+            aug_batch_shape += torch.Size([num_outputs])
+        return input_batch_shape, aug_batch_shape
