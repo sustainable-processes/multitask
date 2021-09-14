@@ -422,12 +422,10 @@ class CategoricalqNEI(qNEI):
         self,
         domain: Domain,
         model,
-        best_f,
-        objective=None,
-        maximize: bool = True,
+        X_baseline,
         **kwargs,
     ) -> None:
-        super().__init__(model, best_f, objective, maximize, **kwargs)
+        super().__init__(model, X_baseline, **kwargs)
         self._domain = domain
 
     def forward(self, X):
