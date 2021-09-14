@@ -20,6 +20,7 @@ RUN pip install \
     rdkit-pypi>="2021.3.2" \
     typer>="0.3.2" \
     tqdm>="4.61.0" \
+    git+git://github.com/marcosfelt/typer@master#egg=typer \
     git+git://github.com/sustainable-processes/summit@master#egg=summit \
     absl-py>=0.9.0 \
     flask>=1.1.2 \
