@@ -4,6 +4,7 @@ from summit.benchmarks.experimental_emulator import numpy_to_tensor
 from summit.strategies.base import Strategy, Transform
 
 from botorch.acquisition import ExpectedImprovement as EI
+from botorch.acquisition import qNoisyExpectedImprovement as qNEI
 
 import numpy as np
 from typing import Type, Tuple, Union, Optional
@@ -31,9 +32,12 @@ class NewMTBO(Strategy):
         on the input variables or objectives.
     task : int, optional
         The index of the task being optimized. Defaults to 1.
+    brute_force_categorical : bool, optional
+        Whether or not to use the categorical kernel and "brute-force" enumeration of
+        all categorical combinations.
     categorical_method : str, optional
-        The method for transforming categorical variables. Either
-        "one-hot" or "descriptors". Descriptors must be included in the
+        The method for transforming categorical variables. Pass None along with brute_force_categorical=True
+        to use the categorical kenrel. Otherwise pass "one-hot" or "descriptors". Descriptors must be included in the
         categorical variables for the later.
 
     Notes
@@ -75,6 +79,7 @@ class NewMTBO(Strategy):
         transform: Transform = None,
         task: int = 1,
         categorical_method: str = "one-hot",
+        acquisition_function: str = "EI",
         **kwargs,
     ):
         Strategy.__init__(self, domain, transform, **kwargs)
@@ -86,6 +91,7 @@ class NewMTBO(Strategy):
                 "categorical_method must be one of 'one-hot' or 'descriptors'."
             )
         self.brute_force_categorical = kwargs.get("brute_force_categorical", False)
+        self.acquistion_function = acquisition_function
         self.reset()
 
     def suggest_experiments(self, num_experiments, prev_res: DataSet = None, **kwargs):
@@ -185,8 +191,21 @@ class NewMTBO(Strategy):
             np.float
         )
 
+        # Max/Min
+        objective = self.domain.output_variables[0]
+        output_task = output.copy()
+        output_task["task"] = task_data
+        if objective.maximize:
+            y = -1.0 * torch.tensor(output.data_to_numpy()).float()
+            maximize = True
+        else:
+            maximize = False
+        fbest_scaled = output_task[output_task["task"] == self.task].min()[
+            objective.name
+        ]
+
         # Train model
-        if self.brute_force_categorical:
+        if self.brute_force_categorical and self.categorical_method is None:
             self.model = MixedMultiTaskGP(
                 torch.tensor(inputs_task).float(),
                 torch.tensor(output.data_to_numpy()).float(),
@@ -204,31 +223,25 @@ class NewMTBO(Strategy):
         mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
         fit_gpytorch_model(mll)
 
-        # Create acquisition function
-        objective = self.domain.output_variables[0]
-        output_task = output.copy()
-        output_task["task"] = task_data
-        if objective.maximize:
-            fbest_scaled = output_task[output_task["task"] == self.task].max()[
-                objective.name
-            ]
-            maximize = True
-        else:
-            fbest_scaled = output_task[output_task["task"] == self.task].min()[
-                objective.name
-            ]
-            maximize = False
-
         # Optimize acquisition function
         if self.brute_force_categorical:
-            self.ei = EI(self.model, best_f=fbest_scaled, maximize=maximize)
+            if self.acquistion_function == "EI":
+                self.acq = EI(self.model, best_f=fbest_scaled, maximize=False)
+            elif self.acquistion_function == "qNEI":
+                self.acq = qNEI(
+                    self.model, X_baseline=torch.tensor(inputs_task).float()
+                )
+            else:
+                raise ValueError(
+                    f"{self.acquistion_function} not a valid acquisition function"
+                )
             if self.categorical_method is None:
                 combos = np.arange(0, len(cat_mapping))
                 fixed_features_list = [{0: float(combo)} for combo in combos]
             else:
                 fixed_features_list = self._get_fixed_features()
             results, _ = optimize_acqf_mixed(
-                acq_function=self.ei,
+                acq_function=self.acq,
                 bounds=self._get_bounds(),
                 num_restarts=5,
                 fixed_features_list=fixed_features_list,
@@ -236,11 +249,22 @@ class NewMTBO(Strategy):
                 raw_samples=20,
             )
         else:
-            self.ei = CategoricalEI(
-                self.domain, self.model, best_f=fbest_scaled, maximize=maximize
-            )
+            if self.acquistion_function == "EI":
+                self.acq = CategoricalEI(
+                    self.domain, self.model, best_f=fbest_scaled, maximize=False
+                )
+            elif self.acquistion_function == "qNEI":
+                self.acq = CategoricalqNEI(
+                    self.domain,
+                    self.model,
+                    X_baseline=torch.tensor(inputs_task).float(),
+                )
+            else:
+                raise ValueError(
+                    f"{self.acquistion_function} not a valid acquisition function"
+                )
             results, _ = optimize_acqf(
-                acq_function=self.ei,
+                acq_function=self.acq,
                 bounds=self._get_bounds(),
                 num_restarts=20,
                 q=num_experiments,
@@ -255,6 +279,7 @@ class NewMTBO(Strategy):
 
         # Untransform
         if self.categorical_method is None:
+            raise NotImplementedError()
             cat_mapping = {
                 i: l for i, l in enumerate(self.domain["catalyst_smiles"].levels)
             }
@@ -262,6 +287,8 @@ class NewMTBO(Strategy):
         result = self.transform.un_transform(
             result, categorical_method=self.categorical_method, standardize_inputs=True
         )
+        if maximize:
+            result[objective.name, "DATA"] = -1.0 * result[objective.name]
 
         # Add metadata
         result[("strategy", "METADATA")] = "MTBO"
@@ -390,6 +417,52 @@ class CategoricalEI(EI):
         return X
 
 
+class CategoricalqNEI(qNEI):
+    def __init__(
+        self,
+        domain: Domain,
+        model,
+        best_f,
+        objective=None,
+        maximize: bool = True,
+        **kwargs,
+    ) -> None:
+        super().__init__(model, best_f, objective, maximize, **kwargs)
+        self._domain = domain
+
+    def forward(self, X):
+        X = self.round_to_one_hot(X, self._domain)
+        return super().forward(X)
+
+    @staticmethod
+    def round_to_one_hot(X, domain: Domain):
+        """Round all categorical variables to a one-hot encoding"""
+        num_experiments = X.shape[1]
+        X = X.clone()
+        for q in range(num_experiments):
+            c = 0
+            for v in domain.input_variables:
+                if isinstance(v, CategoricalVariable):
+                    n_levels = len(v.levels)
+                    levels_selected = X[:, q, c : c + n_levels].argmax(axis=1)
+                    X[:, q, c : c + n_levels] = 0
+                    for j, l in zip(range(X.shape[0]), levels_selected):
+                        X[j, q, int(c + l)] = 1
+
+                    check = int(X[:, q, c : c + n_levels].sum()) == X.shape[0]
+                    if not check:
+                        raise ValueError(
+                            (
+                                f"Rounding to a one-hot encoding is not properly working. Please report this bug at "
+                                f"https://github.com/sustainable-processes/summit/issues. Tensor: \n {X[:, :, c : c + n_levels]}"
+                            )
+                        )
+                    c += n_levels
+                else:
+                    c += 1
+        return X
+
+
 class NewSTBO(Strategy):
     """Multitask Bayesian Optimisation
 
@@ -448,6 +521,7 @@ class NewSTBO(Strategy):
         domain: Domain,
         transform: Transform = None,
         categorical_method: str = "one-hot",
+        acquisition_function: str = "EI",
         **kwargs,
     ):
         Strategy.__init__(self, domain, transform, **kwargs)
@@ -457,6 +531,7 @@ class NewSTBO(Strategy):
                 "categorical_method must be one of 'one-hot' or 'descriptors'."
             )
         self.brute_force_categorical = kwargs.get("brute_force_categorical", False)
+        self.acquistion_function = acquisition_function
         self.reset()
 
     def suggest_experiments(self, num_experiments, prev_res: DataSet = None, **kwargs):
@@ -525,26 +600,46 @@ class NewSTBO(Strategy):
 
         # Optimize acquisition function
         if self.brute_force_categorical:
-            self.ei = EI(self.model, best_f=fbest_scaled, maximize=maximize)
+            if self.acquistion_function == "EI":
+                self.acq = EI(self.model, best_f=fbest_scaled, maximize=False)
+            elif self.acquistion_function == "qNEI":
+                self.acq = qNEI(
+                    self.model, X_baseline=torch.tensor(inputs.data_to_numpy()).float()
+                )
+            else:
+                raise ValueError(
+                    f"{self.acquistion_function} not a valid acquisition function"
+                )
             if self.categorical_method is None:
                 combos = np.arange(0, len(cat_mapping))
                 fixed_features_list = [{0: float(combo)} for combo in combos]
             else:
                 fixed_features_list = self._get_fixed_features()
             results, _ = optimize_acqf_mixed(
-                acq_function=self.ei,
+                acq_function=self.acq,
                 bounds=self._get_bounds(),
-                num_restarts=20,
+                num_restarts=5,
                 fixed_features_list=fixed_features_list,
                 q=num_experiments,
-                raw_samples=100,
+                raw_samples=20,
             )
         else:
-            self.ei = CategoricalEI(
-                self.domain, self.model, best_f=fbest_scaled, maximize=maximize
-            )
+            if self.acquistion_function == "EI":
+                self.acq = CategoricalEI(
+                    self.domain, self.model, best_f=fbest_scaled, maximize=False
+                )
+            elif self.acquistion_function == "qNEI":
+                self.acq = CategoricalqNEI(
+                    self.domain,
+                    self.model,
+                    X_baseline=torch.tensor(inputs.data_to_numpy()).float(),
+                )
+            else:
+                raise ValueError(
+                    f"{self.acquistion_function} not a valid acquisition function"
+                )
             results, _ = optimize_acqf(
-                acq_function=self.ei,
+                acq_function=self.acq,
                 bounds=self._get_bounds(),
                 num_restarts=20,
                 q=num_experiments,
@@ -559,6 +654,7 @@ class NewSTBO(Strategy):
 
         # Untransform
         if self.categorical_method is None:
+            raise NotImplementedError()
             cat_mapping = {
                 i: l for i, l in enumerate(self.domain["catalyst_smiles"].levels)
             }

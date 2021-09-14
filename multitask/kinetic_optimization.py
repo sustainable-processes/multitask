@@ -1,3 +1,4 @@
+from tkinter import N
 from multitask.mt import NewSTBO, NewMTBO
 from summit import *
 import gpytorch
@@ -21,8 +22,10 @@ def stbo(
     output_path: str,
     noise_level: Optional[float] = 0.0,
     max_experiments: Optional[int] = 20,
+    num_initial_experiments: Optional[int] = 0,
     batch_size: Optional[int] = 1,
     brute_force_categorical: Optional[bool] = False,
+    acquisition_function: str = "EI",
     repeats: Optional[int] = 20,
 ):
     """Optimization of a Suzuki benchmark with Single-Task Bayesian Optimziation
@@ -57,24 +60,29 @@ def stbo(
     else:
         categorical_method = "one-hot"
     for i in trange(repeats):
-        for j in range(N_RETRIES):
+        done = False
+        retries = 0
+        # Retries in case of a cholesky decomposition error
+        while not done:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
                     result = run_stbo(
                         exp,
                         max_iterations=max_iterations,
+                        num_initial_experiments=num_initial_experiments,
                         batch_size=batch_size,
                         brute_force_categorical=brute_force_categorical,
+                        acquisition_function=acquisition_function,
                         categorical_method=categorical_method,
                     )
                     result.save(output_path / f"repeat_{i}.json")
-                    break
-                except gpytorch.utils.errors.NotPSDError:
-                    continue
-            if j == N_RETRIES - 1:
+                    done = True
+                except (RuntimeError, gpytorch.utils.errors.NotPSDError):
+                    retries += 1
+            if retries >= N_RETRIES:
                 print(
-                    f"Not able to find semi-positive definite matrix after {j} tries. Skipping repeat {i}"
+                    f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
                 )
 
 
@@ -83,9 +91,13 @@ def mtbo(
     case: int,
     ct_cases: List[int],
     output_path: str,
+    acquisition_function: str = "EI",
     ct_strategy: Optional[str] = "STBO",
+    ct_acquisition_function: str = "EI",
     noise_level: Optional[float] = 0.0,
     ct_noise_level: Optional[float] = 0.0,
+    num_initial_experiments: Optional[int] = 0,
+    ct_num_initial_experiments: Optional[int] = 0,
     max_experiments: Optional[int] = 20,
     max_ct_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
@@ -118,7 +130,9 @@ def mtbo(
     else:
         ct_categorical_method = "one-hot"
     for i in trange(repeats):
-        for j in range(N_RETRIES):
+        done = False
+        retries = 0
+        while not done:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
@@ -128,6 +142,8 @@ def mtbo(
                         max_iterations=max_ct_experiments,
                         batch_size=ct_batch_size,
                         categorical_method=ct_categorical_method,
+                        num_initial_experiments=ct_num_initial_experiments,
+                        acquisition_function=ct_acquisition_function,
                     )
                     big_ds.to_csv(output_path / f"big_ds_repeat_{i}.csv")
                     result = run_mtbo(
@@ -137,15 +153,17 @@ def mtbo(
                         batch_size=batch_size,
                         task=opt_task,
                         brute_force_categorical=brute_force_categorical,
+                        acquisition_function=acquisition_function,
+                        num_initial_experiments=num_initial_experiments,
                         categorical_method=categorical_method,
                     )
                     result.save(output_path / f"repeat_{i}.json")
-                    break
+                    done = True
                 except (RuntimeError, gpytorch.utils.errors.NotPSDError):
-                    continue
-            if j == N_RETRIES - 1:
+                    retries += 1
+            if retries >= N_RETRIES:
                 print(
-                    f"Not able to find semi-positive definite matrix at {j} tries. Skipping repeat {i}"
+                    f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
                 )
 
 
@@ -164,18 +182,29 @@ def get_mit_case(case: int, noise_level: float = 0.0) -> Experiment:
 
 def run_stbo(
     exp: Experiment,
+    num_initial_experiments: int = 0,
     max_iterations: int = 10,
     batch_size: int = 1,
     brute_force_categorical: bool = False,
     categorical_method: str = "one-hot",
+    acquisition_function: str = "EI",
 ):
     """Run Single Task Bayesian Optimization (AKA normal BO)"""
     exp.reset()
     assert exp.data.shape[0] == 0
+    if num_initial_experiments > 0:
+        strategy = LHS(exp.domain)
+        suggestions = strategy.suggest_experiments(
+            num_experiments=num_initial_experiments
+        )
+        prev_res = exp.run_experiments(suggestions)
+    else:
+        prev_res = None
     strategy = NewSTBO(
         exp.domain,
         brute_force_categorical=brute_force_categorical,
         categorical_method=categorical_method,
+        acquisition_function=acquisition_function,
     )
     r = Runner(
         strategy=strategy,
@@ -183,30 +212,49 @@ def run_stbo(
         max_iterations=max_iterations,
         batch_size=batch_size,
     )
-    r.run()
+    r.run(prev_res=prev_res)
     return r
 
 
 def run_cotraining(
-    ct_exps, ct_strategy, max_iterations, batch_size, categorical_method
+    ct_exps,
+    ct_strategy,
+    max_iterations,
+    batch_size,
+    num_initial_experiments,
+    categorical_method,
+    acquisition_function,
 ) -> DataSet:
-    if ct_strategy == "LHS":
-        strategy = LHS
-    elif ct_strategy == "SOBO":
-        strategy = SOBO
-    elif ct_strategy == "STBO":
-        strategy = NewSTBO
 
     big_data = []
     for task, ct_exp in tqdm(enumerate(ct_exps)):
-        s = strategy(ct_exp.domain)
+        if num_initial_experiments > 0:
+            strategy = LHS(ct_exp.domain)
+            suggestions = strategy.suggest_experiments(
+                num_experiments=num_initial_experiments
+            )
+            prev_res = ct_exp.run_experiments(suggestions)
+        else:
+            prev_res = None
+
+        if ct_strategy == "LHS":
+            strategy = LHS(ct_exp.domain)
+        elif ct_strategy == "SOBO":
+            strategy = SOBO(ct_exp.domain)
+        elif ct_strategy == "STBO":
+            strategy = NewSTBO(
+                ct_exp.domain,
+                categorical_method=categorical_method,
+                acquisition_function=acquisition_function,
+            )
+
         r = Runner(
-            strategy=s,
+            strategy=strategy,
             experiment=ct_exp,
             max_iterations=max_iterations,
             batch_size=batch_size,
         )
-        r.run()
+        r.run(prev_res=prev_res)
         ct_data = r.experiment.data
         ct_data["task", "METADATA"] = task
         big_data.append(ct_data)
@@ -216,20 +264,32 @@ def run_cotraining(
 def run_mtbo(
     exp: Experiment,
     ct_data: DataSet,
+    num_initial_experiments: int = 0,
     max_iterations: int = 10,
     batch_size=1,
     task: int = 1,
     brute_force_categorical: bool = False,
+    acquisition_function: str = "EI",
     categorical_method: str = "one-hot",
 ):
     """Run Multitask Bayesian optimization"""
     exp.reset()
     assert exp.data.shape[0] == 0
+    if num_initial_experiments > 0:
+        strategy = LHS(exp.domain)
+        suggestions = strategy.suggest_experiments(
+            num_experiments=num_initial_experiments
+        )
+        prev_res = exp.run_experiments(suggestions)
+        prev_res["task", "METADATA"] = task
+    else:
+        prev_res = None
     strategy = NewMTBO(
         exp.domain,
         pretraining_data=ct_data,
         task=task,
         brute_force_categorical=brute_force_categorical,
+        acquisition_function=acquisition_function,
         categorical_method=categorical_method,
     )
     r = Runner(
@@ -238,7 +298,7 @@ def run_mtbo(
         max_iterations=max_iterations,
         batch_size=batch_size,
     )
-    r.run()
+    r.run(prev_res=prev_res)
     return r
 
 
