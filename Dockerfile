@@ -7,6 +7,8 @@ FROM python:3.9.6-slim
 WORKDIR /gridai/project
 COPY . .
 
+RUN apt-get -y update
+RUN apt-get -y install git
 RUN pip install \
     pandas>="1.2.4" \
     matplotlib>="3.4.1" \
@@ -26,6 +28,6 @@ RUN pip install \
     pygithub>=1.51 \
     python-dateutil>=1.10.0 \
     jinja2>=2.0.0 \
-    xlrd<2.0.0 \ 
+    xlrd<=2.0.0 \ 
     xlwt>=1.3.0 \
     joblib>=1.0.0
