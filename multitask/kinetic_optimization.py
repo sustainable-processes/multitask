@@ -17,8 +17,8 @@ N_RETRIES = 3
 
 @app.command()
 def stbo(
-    case: int,
-    output_path: str,
+    case: Optional[int] = 1,
+    output_path: Optional[str] = "data/kinetic_models",
     noise_level: Optional[float] = 0.0,
     max_experiments: Optional[int] = 20,
     num_initial_experiments: Optional[int] = 0,
@@ -87,9 +87,9 @@ def stbo(
 
 @app.command()
 def mtbo(
-    case: int,
-    ct_cases: List[int],
-    output_path: str,
+    case: int = 1,
+    ct_cases: List[int] = [2],
+    output_path: Optional[str] = "data/kinetic_models",
     acquisition_function: str = "EI",
     ct_strategy: Optional[str] = "STBO",
     ct_acquisition_function: str = "EI",
