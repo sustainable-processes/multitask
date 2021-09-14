@@ -264,7 +264,6 @@ stages:
       outs:
         - data/multitask_results/results_${key}
 
-
   suzuki_mtbo_mixed_four_cotraining:
     foreach:
       baumgartner_suzuki:
@@ -317,3 +316,5 @@ stages:
         - ${item.benchmark}
       outs:
         - data/multitask_results/results_multitask_four_cotraining_mixed_domain_${key}
+
+      

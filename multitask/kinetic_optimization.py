@@ -1,4 +1,3 @@
-from tkinter import N
 from multitask.mt import NewSTBO, NewMTBO
 from summit import *
 import gpytorch
