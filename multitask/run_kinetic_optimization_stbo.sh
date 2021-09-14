@@ -1,3 +1,3 @@
-pip install --use-feature=in-tree-build .
+pip install .
 ARGS=("$@")
 python multitask/kinetic_optimization.py stbo "${ARGS[@]}"
