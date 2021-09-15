@@ -3,7 +3,7 @@ from summit import *
 import gpytorch
 
 import typer
-from numpy.random import default_rng
+import json
 from tqdm.auto import tqdm, trange
 from pathlib import Path
 from typing import List, Optional
@@ -44,9 +44,16 @@ def stbo(
         The number of repeats of the optimization. Defaults to 20.
 
     """
+    args = dict(locals())
+    args["strategy"] = "STBO"
+
     # Ouptut path
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
+
+    # Save command args
+    with open(output_path / "args.json", "w") as f:
+        json.dump(args, f)
 
     # Load benchmark
     exp = get_mit_case(case=case, noise_level=noise_level)
@@ -106,6 +113,9 @@ def mtbo(
     repeats: Optional[int] = 20,
 ):
     """Optimization of a kinetic model benchmark with Multitask Bayesian Optimziation"""
+    args = dict(locals())
+    args["strategy"] = "MTBO"
+
     # Load benchmark
     exp = get_mit_case(case=case, noise_level=noise_level)
 
@@ -114,11 +124,16 @@ def mtbo(
         get_mit_case(case=ct_case, noise_level=ct_noise_level) for ct_case in ct_cases
     ]
 
+    # Save command args
+    output_path = Path(output_path)
+    output_path.mkdir(exist_ok=True)
+    with open(output_path / "args.json", "w") as f:
+        json.dump(args, f)
+
     # Multi-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
     max_iterations += 1 if max_experiments % batch_size != 0 else 0
-    output_path = Path(output_path)
-    output_path.mkdir(exist_ok=True)
+
     opt_task = len(ct_exps)
     if brute_force_categorical:
         categorical_method = None
@@ -138,7 +153,7 @@ def mtbo(
                     big_ds = run_cotraining(
                         ct_exps,
                         ct_strategy=ct_strategy,
-                        max_iterations=max_ct_experiments,
+                        max_iterations=max_ct_experiments - ct_num_initial_experiments,
                         batch_size=ct_batch_size,
                         categorical_method=ct_categorical_method,
                         num_initial_experiments=ct_num_initial_experiments,

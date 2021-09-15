@@ -246,7 +246,7 @@ class NewMTBO(Strategy):
                 num_restarts=5,
                 fixed_features_list=fixed_features_list,
                 q=num_experiments,
-                raw_samples=20,
+                raw_samples=100,
             )
         else:
             if self.acquistion_function == "EI":
