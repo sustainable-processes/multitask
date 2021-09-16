@@ -1,0 +1,5 @@
+outs:
+- md5: 2967669ca15cc6f2c5466216b749e8f8.dir
+  size: 8887238
+  nfiles: 1444
+  path: grid_artifacts

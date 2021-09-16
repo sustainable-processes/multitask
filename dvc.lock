@@ -1967,3 +1967,33 @@ stages:
       md5: ebd8ee60c2154c6e444a14bfcf4db250.dir
       size: 319045
       nfiles: 20
+  kinetic_models_stbo_grid@1:
+    cmd: grid run --instance_type t2.2xlarge --dockerfile Dockerfile --cpus 4 --memory
+      8G --ignore_warnings --description "STBO of kinetic models case 1" multitask/run_kinetic_optimization_stbo.sh
+      --case 1 --output_path data/kinetic_models_stbo_case_1 --noise_level "[0.0,
+      1.0, 10.0]" --num_initial_experiments "[0, 5, 10]" --acquisition_function "['qNEI',
+      'EI']"
+  kinetic_models_stbo_grid@4:
+    cmd: grid run --instance_type t2.2xlarge --dockerfile Dockerfile --cpus 4 --memory
+      8G --ignore_warnings --description "STBO of kinetic models case 4" multitask/run_kinetic_optimization_stbo.sh
+      --case 4 --output_path data/kinetic_models_stbo_case_4 --noise_level "[0.0,
+      1.0, 10.0]" --num_initial_experiments "[0, 5, 10]" --acquisition_function "['qNEI',
+      'EI']"
+  kinetic_models_stbo_grid@5:
+    cmd: grid run --instance_type t2.2xlarge --dockerfile Dockerfile --cpus 4 --memory
+      8G --ignore_warnings --description "STBO of kinetic models case 5" multitask/run_kinetic_optimization_stbo.sh
+      --case 5 --output_path data/kinetic_models_stbo_case_5 --noise_level "[0.0,
+      1.0, 10.0]" --num_initial_experiments "[0, 5, 10]" --acquisition_function "['qNEI',
+      'EI']"
+  kinetic_models_stbo_grid@3:
+    cmd: grid run --instance_type t2.2xlarge --dockerfile Dockerfile --cpus 4 --memory
+      8G --ignore_warnings --description "STBO of kinetic models case 3" multitask/run_kinetic_optimization_stbo.sh
+      --case 3 --output_path data/kinetic_models_stbo_case_3 --noise_level "[0.0,
+      1.0, 10.0]" --num_initial_experiments "[0, 5, 10]" --acquisition_function "['qNEI',
+      'EI']"
+  kinetic_models_stbo_grid@2:
+    cmd: grid run --instance_type t2.2xlarge --dockerfile Dockerfile --cpus 4 --memory
+      8G --ignore_warnings --description "STBO of kinetic models case 2" multitask/run_kinetic_optimization_stbo.sh
+      --case 2 --output_path data/kinetic_models_stbo_case_2 --noise_level "[0.0,
+      1.0, 10.0]" --num_initial_experiments "[0, 5, 10]" --acquisition_function "['qNEI',
+      'EI']"
