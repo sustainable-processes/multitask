@@ -1,7 +1,7 @@
 from multitask.mt import NewSTBO, NewMTBO
 from summit import *
 import gpytorch
-
+from uuid import uuid4
 import typer
 import json
 from tqdm.auto import tqdm, trange
@@ -49,7 +49,7 @@ def stbo(
 
     # Ouptut path
     output_path = Path(output_path)
-    output_path.mkdir(exist_ok=True)
+    output_path.mkdir(exist_ok=True, parents=True)
 
     # Save command args
     with open(output_path / "args.json", "w") as f:
@@ -105,7 +105,7 @@ def mtbo(
     num_initial_experiments: Optional[int] = 0,
     ct_num_initial_experiments: Optional[int] = 0,
     max_experiments: Optional[int] = 20,
-    max_ct_experiments: Optional[int] = 20,
+    ct_max_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
     ct_batch_size: Optional[int] = 1,
     brute_force_categorical: bool = False,
@@ -126,7 +126,7 @@ def mtbo(
 
     # Save command args
     output_path = Path(output_path)
-    output_path.mkdir(exist_ok=True)
+    output_path.mkdir(exist_ok=True, parents=True)
     with open(output_path / "args.json", "w") as f:
         json.dump(args, f)
 
@@ -153,7 +153,7 @@ def mtbo(
                     big_ds = run_cotraining(
                         ct_exps,
                         ct_strategy=ct_strategy,
-                        max_iterations=max_ct_experiments - ct_num_initial_experiments,
+                        max_iterations=ct_max_experiments - ct_num_initial_experiments,
                         batch_size=ct_batch_size,
                         categorical_method=ct_categorical_method,
                         num_initial_experiments=ct_num_initial_experiments,
@@ -179,6 +179,73 @@ def mtbo(
                 print(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
                 )
+
+
+@app.command()
+def mtbo_tune(
+    case: int,
+    ct_cases: List[int],
+    output_path: Optional[str] = "data/kinetic_models/mtbo",
+    acquisition_function: Optional[List[str]] = ["EI"],
+    ct_strategy: Optional[List[str]] = ["STBO"],
+    ct_acquisition_function: Optional[List[str]] = ["qNEI"],
+    noise_level: Optional[List[float]] = [0.0],
+    ct_noise_level: Optional[List[float]] = [0.0],
+    num_initial_experiments: Optional[List[int]] = [0],
+    ct_num_initial_experiments: Optional[List[int]] = [0],
+    max_experiments: Optional[List[int]] = [20],
+    ct_max_experiments: Optional[List[int]] = [20],
+    batch_size: Optional[List[int]] = [1],
+    ct_batch_size: Optional[List[int]] = [1],
+    brute_force_categorical: Optional[List[bool]] = [False],
+    ct_brute_force_categorical: Optional[List[bool]] = [False],
+    repeats: Optional[int] = 20,
+    ray_head_node_ip: Optional[str] = None,
+):
+    from ray import tune
+
+    import ray
+
+    ray.init(address="127.0.0.1:8888", _redis_password="5241590000000000")
+
+    # if ray_head_node_ip is not None:
+    #     # Connect to existing ray cluster
+    #     import ray
+
+    #     ray.init(f"ray://{ray_head_node_ip}:10001")
+
+    output_path = Path(output_path)
+
+    def trainable(config):
+        config["output_path"] = str(output_path / str(uuid4()))
+        mtbo(**config)
+
+    def convert_grid(values):
+        if len(values) > 1:
+            return tune.grid_search(list(values))
+        else:
+            return values[0]
+
+    tune_config = {
+        "case": case,
+        "ct_cases": ct_cases,
+        "acquisition_function": convert_grid(acquisition_function),
+        "ct_strategy": convert_grid(ct_strategy),
+        "ct_acquisition_function": convert_grid(ct_acquisition_function),
+        "noise_level": convert_grid(noise_level),
+        "ct_noise_level": convert_grid(ct_noise_level),
+        "num_initial_experiments": convert_grid(num_initial_experiments),
+        "ct_num_initial_experiments": convert_grid(ct_num_initial_experiments),
+        "max_experiments": convert_grid(max_experiments),
+        "ct_max_experiments": convert_grid(ct_max_experiments),
+        "batch_size": convert_grid(batch_size),
+        "ct_batch_size": convert_grid(ct_batch_size),
+        "brute_force_categorical": convert_grid(brute_force_categorical),
+        "ct_brute_force_categorical": convert_grid(ct_brute_force_categorical),
+        "repeats": repeats,
+    }
+    # Run grid search
+    tune.run(trainable, config=tune_config, resources_per_trial={"cpu": 4})
 
 
 def get_mit_case(case: int, noise_level: float = 0.0) -> Experiment:

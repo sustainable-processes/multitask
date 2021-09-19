@@ -191,18 +191,11 @@ class NewMTBO(Strategy):
             np.float
         )
 
-        # Max/Min
+        # Make it always a minimization problem
         objective = self.domain.output_variables[0]
-        output_task = output.copy()
-        output_task["task"] = task_data
         if objective.maximize:
-            y = -1.0 * torch.tensor(output.data_to_numpy()).float()
-            maximize = True
-        else:
-            maximize = False
-        fbest_scaled = output_task[output_task["task"] == self.task].min()[
-            objective.name
-        ]
+            output = -1.0 * output
+        fbest_scaled = output.min()
 
         # Train model
         if self.brute_force_categorical and self.categorical_method is None:
@@ -229,7 +222,8 @@ class NewMTBO(Strategy):
                 self.acq = EI(self.model, best_f=fbest_scaled, maximize=False)
             elif self.acquistion_function == "qNEI":
                 self.acq = qNEI(
-                    self.model, X_baseline=torch.tensor(inputs_task).float()
+                    self.model,
+                    X_baseline=torch.tensor(inputs_task[:, :-1]).float(),
                 )
             else:
                 raise ValueError(
@@ -257,7 +251,7 @@ class NewMTBO(Strategy):
                 self.acq = CategoricalqNEI(
                     self.domain,
                     self.model,
-                    X_baseline=torch.tensor(inputs_task).float(),
+                    X_baseline=torch.tensor(inputs_task[:, :-1]).float(),
                 )
             else:
                 raise ValueError(
@@ -287,8 +281,6 @@ class NewMTBO(Strategy):
         result = self.transform.un_transform(
             result, categorical_method=self.categorical_method, standardize_inputs=True
         )
-        if maximize:
-            result[objective.name, "DATA"] = -1.0 * result[objective.name]
 
         # Add metadata
         result[("strategy", "METADATA")] = "MTBO"
@@ -523,6 +515,8 @@ class NewSTBO(Strategy):
         **kwargs,
     ):
         Strategy.__init__(self, domain, transform, **kwargs)
+        if len(self.domain.output_variables) > 1:
+            raise DomainError("STBO only works with single objective problems")
         self.categorical_method = categorical_method
         if self.categorical_method not in ["one-hot", "descriptors", None]:
             raise ValueError(
@@ -563,6 +557,13 @@ class NewSTBO(Strategy):
             standardize_outputs=True,
         )
 
+        # Make it always a minimization problem
+        objective = self.domain.output_variables[0]
+        if objective.maximize:
+            output = -1.0 * output
+        fbest_scaled = output[objective.name].min()
+
+        # Set up model
         if self.categorical_method is None:
             cat_mappings = {}
             cat_dimensions = []
@@ -583,18 +584,10 @@ class NewSTBO(Strategy):
                 torch.tensor(inputs.data_to_numpy()).float(),
                 torch.tensor(output.data_to_numpy()).float(),
             )
+
         # Train model
         mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
         fit_gpytorch_model(mll)
-
-        # Create acquisition function
-        objective = self.domain.output_variables[0]
-        if objective.maximize:
-            fbest_scaled = output.max()[objective.name]
-            maximize = True
-        else:
-            fbest_scaled = output.min()[objective.name]
-            maximize = False
 
         # Optimize acquisition function
         if self.brute_force_categorical:
@@ -619,7 +612,7 @@ class NewSTBO(Strategy):
                 num_restarts=5,
                 fixed_features_list=fixed_features_list,
                 q=num_experiments,
-                raw_samples=20,
+                raw_samples=100,
             )
         else:
             if self.acquistion_function == "EI":

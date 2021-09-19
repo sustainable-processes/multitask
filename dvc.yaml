@@ -327,45 +327,32 @@ stages:
     do: 
       desc: STBO of kinetic models
       cmd: >-
-        grid run
-        --instance_type t2.2xlarge
-        --dockerfile Dockerfile
-        --cpus 4
-        --memory 8G
-        --ignore_warnings
-        --description "STBO of kinetic models case ${item}"
+        python
         multitask/run_kinetic_optimization_stbo.sh
         --case ${item}
         --output_path data/kinetic_models_stbo_case_${item}
         --noise_level "[0.0, 1.0, 10.0]"
         --num_initial_experiments "[0, 5, 10]"
-        --acquisition_function "['qNEI', 'EI']"
+        --acquisition_function "EI"
 
 
-  kinetic_models_mtbo_grid_one:
+  kinetic_models_mtbo_ray_tune:
     foreach:
-      case_1_case_2:
+      case_1_ct_2:
         case: 1
         ct_case_1: 2
     do: 
       desc: MTBO of kinetic models with one cotraining case
       cmd: >-
-        grid run
-        --instance_type t2.2xlarge
-        --dockerfile Dockerfile
-        --cpus 4
-        --memory 8G
-        --ignore_warnings
-        --description "MTBO of kinetic models case ${item.case} cotrained with ${item.ct_case_1}"
-        multitask/run_kinetic_optimization_mtbo.sh
-        --case ${item.case}
-        --ct_cases ${item.ct_case_1}
-        --output_path data/kinetic_models_mtbo_case_${item.case}
-        --ct_strategy "['STBO', 'LHS']"
-        --noise_level "[0.0, 1.0, 10.0]"
-        --ct_noise_level "[0.0, 1.0, 10.0]"
-        --num_initial_experiments "[0, 5, 10]"
+        python multitask/kinetic_optimization.py mtbo-tune
+        ${item.case}
+        ${item.ct_case_1}
+        --output_path data/kinetic_models/mtbo/${key}
+        --ct_strategy STBO --ct_strategy LHS
+        --noise_level 0.0 --noise_level 1.0 --noise_level 10.0
+        --ct_noise_level 0.0 --ct_noise_level 1.0 --ct_noise_level 10.0
+        --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
         --ct_num_initial_experiments 10
-        --max_ct_experiments "[20, 50]"
-        --acquisition_function "['qNEI', 'EI']"
-        --ignore_warnings
+        --ct_max_experiments 20 --ct_max_experiments 50
+        --acquisition_function qNEI --acquisition_function EI
+        --ct_acquisition_function qNEI
