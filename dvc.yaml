@@ -341,6 +341,15 @@ stages:
       case_1_ct_2:
         case: 1
         ct_case_1: 2
+      case_1_ct_3:
+        case: 1
+        ct_case_1: 3
+      case_1_ct_4:
+        case: 1
+        ct_case_1: 4
+      case_1_ct_5:
+        case: 1
+        ct_case_1: 5
     do: 
       desc: MTBO of kinetic models with one cotraining case
       cmd: >-
@@ -356,3 +365,5 @@ stages:
         --ct_max_experiments 20 --ct_max_experiments 50
         --acquisition_function qNEI --acquisition_function EI
         --ct_acquisition_function qNEI
+      outs:
+        - data/kinetic_models/mtbo/${key}

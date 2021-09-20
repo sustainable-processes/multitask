@@ -1,6 +1,7 @@
 from multitask.mt import NewSTBO, NewMTBO
 from summit import *
 import gpytorch
+import torch
 from uuid import uuid4
 import typer
 import json
@@ -115,6 +116,7 @@ def mtbo(
     """Optimization of a kinetic model benchmark with Multitask Bayesian Optimziation"""
     args = dict(locals())
     args["strategy"] = "MTBO"
+    print("Torch number of threads: ", torch.get_num_threads())
 
     # Load benchmark
     exp = get_mit_case(case=case, noise_level=noise_level)
@@ -127,6 +129,7 @@ def mtbo(
     # Save command args
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True, parents=True)
+    print("Dumping args to:", output_path.resolve())
     with open(output_path / "args.json", "w") as f:
         json.dump(args, f)
 
@@ -200,13 +203,10 @@ def mtbo_tune(
     brute_force_categorical: Optional[List[bool]] = [False],
     ct_brute_force_categorical: Optional[List[bool]] = [False],
     repeats: Optional[int] = 20,
-    ray_head_node_ip: Optional[str] = None,
+    cpus_per_trial: Optional[int] = 4,
 ):
     from ray import tune
-
     import ray
-
-    ray.init(address="127.0.0.1:8888", _redis_password="5241590000000000")
 
     # if ray_head_node_ip is not None:
     #     # Connect to existing ray cluster
@@ -217,7 +217,12 @@ def mtbo_tune(
     output_path = Path(output_path)
 
     def trainable(config):
+        import torch
         config["output_path"] = str(output_path / str(uuid4()))
+        print("Torch number of threads before setting: ", torch.get_num_threads())
+        num_threads = config.pop("num_threads")
+        #torch.set_num_threads(config.pop("num_threads"))
+        print("Torch number of threads: ", torch.get_num_threads())
         mtbo(**config)
 
     def convert_grid(values):
@@ -242,10 +247,11 @@ def mtbo_tune(
         "ct_batch_size": convert_grid(ct_batch_size),
         "brute_force_categorical": convert_grid(brute_force_categorical),
         "ct_brute_force_categorical": convert_grid(ct_brute_force_categorical),
-        "repeats": repeats,
+        "repeats": 1,
+        "num_threads": cpus_per_trial
     }
     # Run grid search
-    tune.run(trainable, config=tune_config, resources_per_trial={"cpu": 4})
+    tune.run(trainable, num_samples=repeats, config=tune_config, resources_per_trial={"cpu": cpus_per_trial}) 
 
 
 def get_mit_case(case: int, noise_level: float = 0.0) -> Experiment:
