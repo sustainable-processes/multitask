@@ -329,11 +329,11 @@ stages:
       cmd: >-
         python
         multitask/run_kinetic_optimization_stbo.sh
-        --case ${item}
-        --output_path data/kinetic_models_stbo_case_${item}
-        --noise_level "[0.0, 1.0, 10.0]"
-        --num_initial_experiments "[0, 5, 10]"
-        --acquisition_function "EI"
+        ${item}
+        --output_path data/kinetic_models/mtbo/${item}
+        --noise_level 0.0 --noise_level 1.0 --noise_level 10.0
+        --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
+        --acquisition_function qNEI --acquisition_function EI
 
 
   kinetic_models_mtbo_ray_tune:

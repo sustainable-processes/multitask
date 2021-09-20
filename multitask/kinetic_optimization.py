@@ -94,6 +94,55 @@ def stbo(
 
 
 @app.command()
+def stbo_tune(
+    case: int,
+    output_path: Optional[str] = "data/kinetic_models/stbo",
+    acquisition_function: Optional[List[str]] = ["EI"],
+    noise_level: Optional[List[float]] = [0.0],
+    num_initial_experiments: Optional[List[int]] = [0],
+    max_experiments: Optional[List[int]] = [20],
+    batch_size: Optional[List[int]] = [1],
+    brute_force_categorical: Optional[List[bool]] = [False],
+    repeats: Optional[int] = 20,
+    cpus_per_trial: Optional[int] = 4,
+):
+    from ray import tune
+
+    output_path = Path(output_path)
+
+    def trainable(config):
+        import torch
+
+        config["output_path"] = str(output_path / str(uuid4()))
+        print("Torch number of threads: ", torch.get_num_threads())
+        stbo(**config)
+
+    def convert_grid(values):
+        if len(values) > 1:
+            return tune.grid_search(list(values))
+        else:
+            return values[0]
+
+    tune_config = {
+        "case": case,
+        "acquisition_function": convert_grid(acquisition_function),
+        "noise_level": convert_grid(noise_level),
+        "num_initial_experiments": convert_grid(num_initial_experiments),
+        "max_experiments": convert_grid(max_experiments),
+        "batch_size": convert_grid(batch_size),
+        "brute_force_categorical": convert_grid(brute_force_categorical),
+        "repeats": 1,
+    }
+    # Run grid search
+    tune.run(
+        trainable,
+        num_samples=repeats,
+        config=tune_config,
+        resources_per_trial={"cpu": cpus_per_trial},
+    )
+
+
+@app.command()
 def mtbo(
     case: int = 1,
     ct_cases: List[int] = [2],
@@ -208,20 +257,15 @@ def mtbo_tune(
     from ray import tune
     import ray
 
-    # if ray_head_node_ip is not None:
-    #     # Connect to existing ray cluster
-    #     import ray
-
-    #     ray.init(f"ray://{ray_head_node_ip}:10001")
-
     output_path = Path(output_path)
 
     def trainable(config):
         import torch
+
         config["output_path"] = str(output_path / str(uuid4()))
         print("Torch number of threads before setting: ", torch.get_num_threads())
         num_threads = config.pop("num_threads")
-        #torch.set_num_threads(config.pop("num_threads"))
+        # torch.set_num_threads(config.pop("num_threads"))
         print("Torch number of threads: ", torch.get_num_threads())
         mtbo(**config)
 
@@ -248,10 +292,15 @@ def mtbo_tune(
         "brute_force_categorical": convert_grid(brute_force_categorical),
         "ct_brute_force_categorical": convert_grid(ct_brute_force_categorical),
         "repeats": 1,
-        "num_threads": cpus_per_trial
+        "num_threads": cpus_per_trial,
     }
     # Run grid search
-    tune.run(trainable, num_samples=repeats, config=tune_config, resources_per_trial={"cpu": cpus_per_trial}) 
+    tune.run(
+        trainable,
+        num_samples=repeats,
+        config=tune_config,
+        resources_per_trial={"cpu": cpus_per_trial},
+    )
 
 
 def get_mit_case(case: int, noise_level: float = 0.0) -> Experiment:
