@@ -13,7 +13,7 @@ import warnings
 
 
 app = typer.Typer()
-N_RETRIES = 3
+N_RETRIES = 5
 
 
 @app.command()
@@ -91,6 +91,7 @@ def stbo(
                 print(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
                 )
+                done = True
 
 
 @app.command()
@@ -231,6 +232,7 @@ def mtbo(
                 print(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
                 )
+                done = True
 
 
 @app.command()
