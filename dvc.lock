@@ -1997,3 +1997,13 @@ stages:
       --case 2 --output_path data/kinetic_models_stbo_case_2 --noise_level "[0.0,
       1.0, 10.0]" --num_initial_experiments "[0, 5, 10]" --acquisition_function "['qNEI',
       'EI']"
+  kinetic_models_stbo_ray_tune@4:
+    cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py stbo-tune 4 --output_path
+      data/kinetic_models/mtbo/4 --noise_level 0.0 --noise_level 1.0 --noise_level
+      10.0 --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments
+      10 --acquisition_function qNEI --acquisition_function EI
+  kinetic_models_stbo_ray_tune@2:
+    cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py stbo-tune 2 --output_path
+      data/kinetic_models/mtbo/2 --noise_level 0.0 --noise_level 1.0 --noise_level
+      10.0 --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments
+      10 --acquisition_function qNEI --acquisition_function EI

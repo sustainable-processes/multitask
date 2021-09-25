@@ -317,7 +317,7 @@ stages:
       outs:
         - data/multitask_results/results_multitask_four_cotraining_mixed_domain_${key}
 
-  kinetic_models_stbo_grid:
+  kinetic_models_stbo_ray_tune:
     foreach: # cases
       - 1
       - 2
@@ -327,8 +327,8 @@ stages:
     do: 
       desc: STBO of kinetic models
       cmd: >-
-        python
-        multitask/run_kinetic_optimization_stbo.sh
+        OMP_NUM_THREADS=4
+        python multitask/kinetic_optimization.py stbo-tune
         ${item}
         --output_path $(pwd)/data/kinetic_models/mtbo/${item}
         --noise_level 0.0 --noise_level 1.0 --noise_level 10.0
@@ -353,6 +353,7 @@ stages:
     do: 
       desc: MTBO of kinetic models with one cotraining case
       cmd: >-
+        OMP_NUM_THREADS=4
         python multitask/kinetic_optimization.py mtbo-tune
         ${item.case}
         ${item.ct_case_1}
