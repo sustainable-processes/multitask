@@ -364,6 +364,9 @@ def run_cotraining(
 
     big_data = []
     for task, ct_exp in tqdm(enumerate(ct_exps)):
+        # Reset the cotraining experiment
+        ct_exp.reset()
+
         if num_initial_experiments > 0:
             strategy = LHS(ct_exp.domain)
             suggestions = strategy.suggest_experiments(
