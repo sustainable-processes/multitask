@@ -1999,11 +1999,78 @@ stages:
       'EI']"
   kinetic_models_stbo_ray_tune@4:
     cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py stbo-tune 4 --output_path
-      data/kinetic_models/mtbo/4 --noise_level 0.0 --noise_level 1.0 --noise_level
+      $(pwd)/data/kinetic_models/mtbo/4 --noise_level 0.0 --noise_level 1.0 --noise_level
       10.0 --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments
       10 --acquisition_function qNEI --acquisition_function EI
   kinetic_models_stbo_ray_tune@2:
     cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py stbo-tune 2 --output_path
-      data/kinetic_models/mtbo/2 --noise_level 0.0 --noise_level 1.0 --noise_level
+      $(pwd)/data/kinetic_models/mtbo/2 --noise_level 0.0 --noise_level 1.0 --noise_level
       10.0 --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments
       10 --acquisition_function qNEI --acquisition_function EI
+  kinetic_models_mtbo_ray_tune@case_1_ct_5:
+    cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py mtbo-tune 1 5
+      --output_path $(pwd)/data/kinetic_models/mtbo/case_1_ct_5 --ct_strategy STBO
+      --ct_strategy LHS --noise_level 0.0 --noise_level 1.0 --noise_level 10.0 --ct_noise_level
+      0.0 --ct_noise_level 1.0 --ct_noise_level 10.0 --num_initial_experiments 0 --num_initial_experiments
+      5 --num_initial_experiments 10 --ct_num_initial_experiments 10 --ct_max_experiments
+      20 --ct_max_experiments 50 --acquisition_function qNEI --acquisition_function
+      EI --ct_acquisition_function qNEI
+    outs:
+    - path: data/kinetic_models/mtbo/case_1_ct_5
+      md5: 6500c6e26c59536935fb7b763b8401c9.dir
+      size: 52651322
+      nfiles: 11917
+  kinetic_models_stbo_ray_tune@1:
+    cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py stbo-tune 1 --output_path
+      $(pwd)/data/kinetic_models/mtbo/1 --noise_level 0.0 --noise_level 1.0 --noise_level
+      10.0 --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments
+      10 --acquisition_function qNEI --acquisition_function EI
+  kinetic_models_mtbo_ray_tune@case_1_ct_3:
+    cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py mtbo-tune 1 3
+      --output_path $(pwd)/data/kinetic_models/mtbo/case_1_ct_3 --ct_strategy STBO
+      --ct_strategy LHS --noise_level 0.0 --noise_level 1.0 --noise_level 10.0 --ct_noise_level
+      0.0 --ct_noise_level 1.0 --ct_noise_level 10.0 --num_initial_experiments 0 --num_initial_experiments
+      5 --num_initial_experiments 10 --ct_num_initial_experiments 10 --ct_max_experiments
+      20 --ct_max_experiments 50 --acquisition_function qNEI --acquisition_function
+      EI --ct_acquisition_function qNEI
+    outs:
+    - path: data/kinetic_models/mtbo/case_1_ct_3
+      md5: 5013739b503eb6783d43b5eccc1e4a82.dir
+      size: 51982705
+      nfiles: 11843
+  kinetic_models_stbo_ray_tune@3:
+    cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py stbo-tune 3 --output_path
+      $(pwd)/data/kinetic_models/mtbo/3 --noise_level 0.0 --noise_level 1.0 --noise_level
+      10.0 --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments
+      10 --acquisition_function qNEI --acquisition_function EI
+  kinetic_models_stbo_ray_tune@5:
+    cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py stbo-tune 5 --output_path
+      $(pwd)/data/kinetic_models/mtbo/5 --noise_level 0.0 --noise_level 1.0 --noise_level
+      10.0 --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments
+      10 --acquisition_function qNEI --acquisition_function EI
+  kinetic_models_mtbo_ray_tune@case_1_ct_2:
+    cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py mtbo-tune 1 2
+      --output_path $(pwd)/data/kinetic_models/mtbo/case_1_ct_2 --ct_strategy STBO
+      --ct_strategy LHS --noise_level 0.0 --noise_level 1.0 --noise_level 10.0 --ct_noise_level
+      0.0 --ct_noise_level 1.0 --ct_noise_level 10.0 --num_initial_experiments 0 --num_initial_experiments
+      5 --num_initial_experiments 10 --ct_num_initial_experiments 10 --ct_max_experiments
+      20 --ct_max_experiments 50 --acquisition_function qNEI --acquisition_function
+      EI --ct_acquisition_function qNEI
+    outs:
+    - path: data/kinetic_models/mtbo/case_1_ct_2
+      md5: e2d82e185d7cad6a670e6b9ed426f841.dir
+      size: 52077600
+      nfiles: 11857
+  kinetic_models_mtbo_ray_tune@case_1_ct_4:
+    cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py mtbo-tune 1 4
+      --output_path $(pwd)/data/kinetic_models/mtbo/case_1_ct_4 --ct_strategy STBO
+      --ct_strategy LHS --noise_level 0.0 --noise_level 1.0 --noise_level 10.0 --ct_noise_level
+      0.0 --ct_noise_level 1.0 --ct_noise_level 10.0 --num_initial_experiments 0 --num_initial_experiments
+      5 --num_initial_experiments 10 --ct_num_initial_experiments 10 --ct_max_experiments
+      20 --ct_max_experiments 50 --acquisition_function qNEI --acquisition_function
+      EI --ct_acquisition_function qNEI
+    outs:
+    - path: data/kinetic_models/mtbo/case_1_ct_4
+      md5: 93c350d04373fe6c9b2d1e594a9f938e.dir
+      size: 52491524
+      nfiles: 11902
