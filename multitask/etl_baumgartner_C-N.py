@@ -610,7 +610,8 @@ def define_measurement(measurement: ProductMeasurement, row: pd.Series):
     #     rxn_yield = float(rxn_yield)
     # except:
     #     pass
-    measurement.percentage.value = rxn_yield * 100
+    if rxn_yield < 200:
+        measurement.percentage.value = rxn_yield * 100
 
     # measurement.retention_time.value = row[
     #    "2-Fluoro-3,3'-bipyridine Retention time in min"
