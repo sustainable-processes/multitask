@@ -10,11 +10,24 @@ from pathlib import Path
 from typing import List, Optional
 import pandas as pd
 import warnings
-
+import logging
 
 app = typer.Typer()
 N_RETRIES = 5
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# create a file handler
+handler = logging.FileHandler('kinetic_optimization.log')
+handler.setLevel(logging.INFO)
+
+# create a logging format
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+# add the file handler to the logger
+logger.addHandler(handler)
 
 @app.command()
 def stbo(
@@ -88,7 +101,7 @@ def stbo(
                 except (RuntimeError, gpytorch.utils.errors.NotPSDError):
                     retries += 1
             if retries >= N_RETRIES:
-                print(
+                logger.info(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
                 )
                 done = True
@@ -108,14 +121,13 @@ def stbo_tune(
     cpus_per_trial: Optional[int] = 4,
 ):
     from ray import tune
-
     output_path = Path(output_path)
 
     def trainable(config):
         import torch
 
         config["output_path"] = str(output_path / str(uuid4()))
-        print("Torch number of threads: ", torch.get_num_threads())
+        logger.info("Torch number of threads: ", torch.get_num_threads())
         stbo(**config)
 
     def convert_grid(values):
@@ -229,7 +241,7 @@ def mtbo(
                 except (RuntimeError, gpytorch.utils.errors.NotPSDError):
                     retries += 1
             if retries >= N_RETRIES:
-                print(
+                logger.info(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
                 )
                 done = True
@@ -265,10 +277,10 @@ def mtbo_tune(
         import torch
 
         config["output_path"] = str(output_path / str(uuid4()))
-        print("Torch number of threads before setting: ", torch.get_num_threads())
+        logger.info("Torch number of threads before setting: ", torch.get_num_threads())
         num_threads = config.pop("num_threads")
         # torch.set_num_threads(config.pop("num_threads"))
-        print("Torch number of threads: ", torch.get_num_threads())
+        logger.info("Torch number of threads: ", torch.get_num_threads())
         mtbo(**config)
 
     def convert_grid(values):

@@ -38,11 +38,11 @@ stages:
       data/baumgartner_suzuki/emulator
       figures/
       --${suzuki_benchmark_training.split-catalyst}
-      --max-epochs ${suzuki_benchmark_training.max-epochs}
-      --cv-folds ${suzuki_benchmark_training.cv-folds}
+      --max_epochs ${suzuki_benchmark_training.max-epochs}
+      --cv_folds ${suzuki_benchmark_training.cv-folds}
       --verbose ${suzuki_benchmark_training.verbose}
       --${suzuki_benchmark_training.include-reactant-concentrations}
-      --no-print-warnings
+      --no-print_warnings
     deps:
       - multitask/suzuki_benchmark_training.py
       - multitask/suzuki_emulator.py
@@ -66,10 +66,10 @@ stages:
         data/reizman_suzuki/emulator_case_${item}/
         figures/
         --${suzuki_benchmark_training.split-catalyst}
-        --max-epochs ${suzuki_benchmark_training.max-epochs}
-        --cv-folds ${suzuki_benchmark_training.cv-folds}
+        --max_epochs ${suzuki_benchmark_training.max-epochs}
+        --cv_folds ${suzuki_benchmark_training.cv-folds}
         --verbose ${suzuki_benchmark_training.verbose}
-        --no-print-warnings
+        --no-print_warnings
       deps:
         - multitask/suzuki_benchmark_training.py
         - multitask/suzuki_emulator.py
@@ -86,8 +86,8 @@ stages:
       baumgartner_suzuki
       data/baumgartner_suzuki/emulator
       data/baumgartner_suzuki/results_stbo
-      --max-experiments ${suzuki_optimization.max-experiments}
-      --batch-size ${suzuki_optimization.batch-size}
+      --max_experiments ${suzuki_optimization.max-experiments}
+      --batch_size ${suzuki_optimization.batch-size}
       --repeats ${suzuki_optimization.repeats}
     deps:
       - multitask/suzuki_optimization.py
@@ -104,9 +104,9 @@ stages:
       baumgartner_suzuki
       data/baumgartner_suzuki/emulator
       data/baumgartner_suzuki/results_stbo_mixed_domain
-      --brute-force-categorical
-      --max-experiments ${suzuki_optimization.max-experiments}
-      --batch-size ${suzuki_optimization.batch-size}
+      --brute_force_categorical
+      --max_experiments ${suzuki_optimization.max-experiments}
+      --batch_size ${suzuki_optimization.batch-size}
       --repeats ${suzuki_optimization.repeats}
     deps:
       - multitask/suzuki_optimization.py
@@ -129,8 +129,8 @@ stages:
         reizman_suzuki_case_${item}
         data/reizman_suzuki/emulator_case_${item}
         data/reizman_suzuki/results_stbo_case_${item}/
-        --max-experiments ${suzuki_optimization.max-experiments}
-        --batch-size ${suzuki_optimization.batch-size}
+        --max_experiments ${suzuki_optimization.max-experiments}
+        --batch_size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}
       deps:
         - multitask/suzuki_optimization.py
@@ -153,9 +153,9 @@ stages:
         reizman_suzuki_case_${item}
         data/reizman_suzuki/emulator_case_${item}
         data/reizman_suzuki/results_stbo_mixed_case_${item}/
-        --brute-force-categorical
-        --max-experiments ${suzuki_optimization.max-experiments}
-        --batch-size ${suzuki_optimization.batch-size}
+        --brute_force_categorical
+        --max_experiments ${suzuki_optimization.max-experiments}
+        --batch_size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}
       deps:
         - multitask/suzuki_optimization.py
@@ -175,10 +175,10 @@ stages:
         ${item.benchmark}
         ${item.dataset_1}
         data/multitask_results/results_${key}
-        --max-experiments ${suzuki_optimization.max-experiments}
-        --batch-size ${suzuki_optimization.batch-size}
+        --max_experiments ${suzuki_optimization.max-experiments}
+        --batch_size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}
-        --no-print-warnings
+        --no-print_warnings
       deps:
         - multitask/suzuki_optimization.py
         - multitask/suzuki_emulator.py
@@ -197,12 +197,12 @@ stages:
         ${item.model_name}
         ${item.benchmark}
         ${item.dataset_1}
-        --brute-force-categorical
+        --brute_force_categorical
         data/multitask_results/results_mixed_${key}
-        --max-experiments ${suzuki_optimization.max-experiments}
-        --batch-size ${suzuki_optimization.batch-size}
+        --max_experiments ${suzuki_optimization.max-experiments}
+        --batch_size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}
-        --no-print-warnings
+        --no-print_warnings
       deps:
         - multitask/suzuki_optimization.py
         - multitask/suzuki_emulator.py
@@ -252,10 +252,10 @@ stages:
         ${item.benchmark}
         ${item.dataset_1} ${item.dataset_2} ${item.dataset_3} ${item.dataset_4}
         data/multitask_results/results_${key}
-        --max-experiments ${suzuki_optimization.max-experiments}
-        --batch-size ${suzuki_optimization.batch-size}
+        --max_experiments ${suzuki_optimization.max-experiments}
+        --batch_size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}
-        --no-print-warnings
+        --no-print_warnings
       deps:
         - multitask/suzuki_optimization.py
         - multitask/suzuki_emulator.py
@@ -304,11 +304,11 @@ stages:
         ${item.benchmark}
         ${item.dataset_1} ${item.dataset_2} ${item.dataset_3} ${item.dataset_4}
         data/multitask_results/results_multitask_four_cotraining_mixed_domain_${key}
-        --brute-force-categorical
-        --max-experiments ${suzuki_optimization.max-experiments}
-        --batch-size ${suzuki_optimization.batch-size}
+        --brute_force_categorical
+        --max_experiments ${suzuki_optimization.max-experiments}
+        --batch_size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}
-        --no-print-warnings
+        --no-print_warnings
       deps:
         - multitask/suzuki_optimization.py
         - multitask/suzuki_emulator.py
