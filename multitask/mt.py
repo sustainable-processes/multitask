@@ -172,6 +172,7 @@ class NewMTBO(Strategy):
             standardize_outputs=True,
         )
 
+        # Categorial transformation
         if self.categorical_method is None:
             cat_mappings = {}
             cat_dimensions = []
@@ -273,11 +274,11 @@ class NewMTBO(Strategy):
 
         # Untransform
         if self.categorical_method is None:
-            raise NotImplementedError()
-            cat_mapping = {
-                i: l for i, l in enumerate(self.domain["catalyst_smiles"].levels)
-            }
-            result["catalyst_smiles"] = result["catalyst_smiles"].replace(cat_mapping)
+            for i, v in enumerate(self.domain.input_variables):
+                if v.variable_type == "categorical":
+                    cat_mapping = {i: l for i, l in enumerate(v.levels)}
+                    result[v.name] = result[v.name].replace(cat_mapping)
+
         result = self.transform.un_transform(
             result, categorical_method=self.categorical_method, standardize_inputs=True
         )
@@ -645,14 +646,15 @@ class NewSTBO(Strategy):
 
         # Untransform
         if self.categorical_method is None:
-            raise NotImplementedError()
-            cat_mapping = {
-                i: l for i, l in enumerate(self.domain["catalyst_smiles"].levels)
-            }
-            result["catalyst_smiles"] = result["catalyst_smiles"].replace(cat_mapping)
+            for i, v in enumerate(self.domain.input_variables):
+                if v.variable_type == "categorical":
+                    cat_mapping = {i: l for i, l in enumerate(v.levels)}
+                    result[v.name] = result[v.name].replace(cat_mapping)
+
         result = self.transform.un_transform(
             result, categorical_method=self.categorical_method, standardize_inputs=True
         )
+
 
         # Add metadata
         result[("strategy", "METADATA")] = "STBO"
