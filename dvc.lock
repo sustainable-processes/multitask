@@ -1999,7 +1999,7 @@ stages:
       'EI']"
   kinetic_models_stbo_ray_tune@4:
     cmd: OMP_NUM_THREADS=4 python multitask/kinetic_optimization.py stbo-tune 4 --output_path
-      $(pwd)/data/kinetic_models/mtbo/4 --noise_level 0.0 --noise_level 1.0 --noise_level
+      $(pwd)/data/kinetic_models/stbo/4 --noise_level 0.0 --noise_level 1.0 --noise_level
       10.0 --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments
       10 --acquisition_function qNEI --acquisition_function EI
   kinetic_models_stbo_ray_tune@2:
