@@ -95,6 +95,18 @@ You can run commands from inside the poetry virtual environment in one of two wa
 
 This will ask you to authenticate with Google Drive. Make sure to use your Cambridge account (or an account you shared the [Multitask Bayesian Optimization shared drive](https://drive.google.com/drive/u/2/folders/0AGWGXkw78NfUUk9PVA) with).
 
+### Apple M1
+
+You might run into some issues when installing scientific python packages such as Summit on Apple M1. Follow the steps below to install via pip:
+
+```bash
+    arch -arm64 brew install llvm@11 
+    brew install hdf5
+    HDF5_DIR=/opt/homebrew/opt/hdf5 PIP_NO_BINARY="h5py" LLVM_CONFIG="/opt/homebrew/Cellar/llvm@11/11.1.0_3/bin/llvm-config" arch -arm64 poetry install
+```
+Replace the llvm path with the version of llvm installed by brew.
+
+
 ### Pipelines
 
 [Pipelines](https://dvc.org/doc/start/data-pipelines#get-started-data-pipelines) are a feature of DVC for keeping track of data workflows.  You can see our existing pipelines using the following command:

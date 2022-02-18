@@ -19,15 +19,16 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # create a file handler
-handler = logging.FileHandler('kinetic_optimization.log')
+handler = logging.FileHandler("kinetic_optimization.log")
 handler.setLevel(logging.INFO)
 
 # create a logging format
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 
 # add the file handler to the logger
 logger.addHandler(handler)
+
 
 @app.command()
 def stbo(
@@ -97,6 +98,9 @@ def stbo(
                         categorical_method=categorical_method,
                     )
                     result.save(output_path / f"repeat_{i}.json")
+                    torch.save(
+                        result.strategy.model, output_path / f"repeat_{i}_model.pth"
+                    )
                     done = True
                 except (RuntimeError, gpytorch.utils.errors.NotPSDError):
                     retries += 1
@@ -121,6 +125,7 @@ def stbo_tune(
     cpus_per_trial: Optional[int] = 4,
 ):
     from ray import tune
+
     output_path = Path(output_path)
 
     def trainable(config):
@@ -237,6 +242,9 @@ def mtbo(
                         categorical_method=categorical_method,
                     )
                     result.save(output_path / f"repeat_{i}.json")
+                    torch.save(
+                        result.strategy.model, output_path / f"repeat_{i}_model.pth"
+                    )
                     done = True
                 except (RuntimeError, gpytorch.utils.errors.NotPSDError):
                     retries += 1
@@ -277,9 +285,6 @@ def mtbo_tune(
         import torch
 
         config["output_path"] = str(output_path / str(uuid4()))
-        logger.info("Torch number of threads before setting: ", torch.get_num_threads())
-        num_threads = config.pop("num_threads")
-        # torch.set_num_threads(config.pop("num_threads"))
         logger.info("Torch number of threads: ", torch.get_num_threads())
         mtbo(**config)
 
@@ -306,7 +311,6 @@ def mtbo_tune(
         "brute_force_categorical": convert_grid(brute_force_categorical),
         "ct_brute_force_categorical": convert_grid(ct_brute_force_categorical),
         "repeats": 1,
-        "num_threads": cpus_per_trial,
     }
     # Run grid search
     tune.run(
@@ -338,7 +342,7 @@ def run_stbo(
     brute_force_categorical: bool = False,
     categorical_method: str = "one-hot",
     acquisition_function: str = "EI",
-):
+) -> Runner:
     """Run Single Task Bayesian Optimization (AKA normal BO)"""
     exp.reset()
     assert exp.data.shape[0] == 0
@@ -424,7 +428,7 @@ def run_mtbo(
     brute_force_categorical: bool = False,
     acquisition_function: str = "EI",
     categorical_method: str = "one-hot",
-):
+) -> Runner:
     """Run Multitask Bayesian optimization"""
     exp.reset()
     assert exp.data.shape[0] == 0

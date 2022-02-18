@@ -192,9 +192,9 @@ class NewMTBO(Strategy):
             np.float
         )
 
-        # Make it always a minimization problem
+        # Make it always a maximization problem
         objective = self.domain.output_variables[0]
-        if objective.maximize:
+        if not objective.maximize:
             output = -1.0 * output
         fbest_scaled = output.min()
 
@@ -220,7 +220,7 @@ class NewMTBO(Strategy):
         # Optimize acquisition function
         if self.brute_force_categorical:
             if self.acquistion_function == "EI":
-                self.acq = EI(self.model, best_f=fbest_scaled, maximize=False)
+                self.acq = EI(self.model, best_f=fbest_scaled, maximize=True)
             elif self.acquistion_function == "qNEI":
                 self.acq = qNEI(
                     self.model,
@@ -558,9 +558,9 @@ class NewSTBO(Strategy):
             standardize_outputs=True,
         )
 
-        # Make it always a minimization problem
+        # Make it always a maximization problem
         objective = self.domain.output_variables[0]
-        if objective.maximize:
+        if not objective.maximize:
             output = -1.0 * output
         fbest_scaled = output[objective.name].min()
 
@@ -593,7 +593,7 @@ class NewSTBO(Strategy):
         # Optimize acquisition function
         if self.brute_force_categorical:
             if self.acquistion_function == "EI":
-                self.acq = EI(self.model, best_f=fbest_scaled, maximize=False)
+                self.acq = EI(self.model, best_f=fbest_scaled, maximize=True)
             elif self.acquistion_function == "qNEI":
                 self.acq = qNEI(
                     self.model, X_baseline=torch.tensor(inputs.data_to_numpy()).float()
@@ -654,7 +654,6 @@ class NewSTBO(Strategy):
         result = self.transform.un_transform(
             result, categorical_method=self.categorical_method, standardize_inputs=True
         )
-
 
         # Add metadata
         result[("strategy", "METADATA")] = "STBO"
