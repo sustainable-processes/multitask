@@ -99,7 +99,8 @@ def stbo(
                     )
                     result.save(output_path / f"repeat_{i}.json")
                     torch.save(
-                        result.strategy.model, output_path / f"repeat_{i}_model.pth"
+                        result.strategy.model.state_dict(),
+                        output_path / f"repeat_{i}_model.pth",
                     )
                     done = True
                 except (RuntimeError, gpytorch.utils.errors.NotPSDError):
@@ -243,7 +244,8 @@ def mtbo(
                     )
                     result.save(output_path / f"repeat_{i}.json")
                     torch.save(
-                        result.strategy.model, output_path / f"repeat_{i}_model.pth"
+                        result.strategy.model.state_dict(),
+                        output_path / f"repeat_{i}_model.pth",
                     )
                     done = True
                 except (RuntimeError, gpytorch.utils.errors.NotPSDError):
