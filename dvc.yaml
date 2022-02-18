@@ -330,7 +330,7 @@ stages:
         OMP_NUM_THREADS=4
         python multitask/kinetic_optimization.py stbo-tune
         ${item}
-        --output_path $(pwd)/data/kinetic_models/mtbo/${item}
+        --output_path $(pwd)/data/kinetic_models/stbo/${item}
         --noise_level 0.0 --noise_level 1.0 --noise_level 10.0
         --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
         --acquisition_function qNEI --acquisition_function EI
