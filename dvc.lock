@@ -12,7 +12,7 @@ stages:
       size: 17487
     outs:
     - path: data/baumgartner_suzuki/ord/
-      md5: f78095a2fe71a61e4aa73a75d3fed650.dir
+      md5: b166c964caa6627b76e6b628962decaa.dir
       size: 446426
       nfiles: 2
   suzuki_benchmark_training:
@@ -60,7 +60,7 @@ stages:
       --cv_folds 5 --verbose 0 --no-include_reactant_concentrations --no-print_warnings
     deps:
     - path: data/baumgartner_suzuki/ord/
-      md5: f78095a2fe71a61e4aa73a75d3fed650.dir
+      md5: b166c964caa6627b76e6b628962decaa.dir
       size: 446426
       nfiles: 2
     - path: multitask/suzuki_benchmark_training.py
@@ -74,12 +74,12 @@ stages:
       size: 2245
     outs:
     - path: data/baumgartner_suzuki/emulator/
-      md5: e61538cb93f6b42cb9c5838a167e4dee.dir
-      size: 144735
+      md5: ee64f0f6a80e1ae1d9f5b162ac305937.dir
+      size: 144742
       nfiles: 6
     - path: figures/baumgartner_suzuki_parity_plot.png
-      md5: fb67dd7c486de3d08ed3a2c7a26763cb
-      size: 234331
+      md5: 72f4ee5c82e1250e35434d2b4e6d2880
+      size: 244271
   reizman_suzuki_benchmark_training@2:
     cmd: python multitask/suzuki_benchmark_training.py data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
       data/reizman_suzuki/emulator_case_2/ figures/ --no-split_catalyst --max_epochs

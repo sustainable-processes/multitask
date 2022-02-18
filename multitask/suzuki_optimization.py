@@ -3,7 +3,7 @@ from multitask.suzuki_data_utils import get_suzuki_dataset
 from multitask.mt import NewSTBO, NewMTBO
 from summit import *
 import gpytorch
-
+import torch
 import typer
 from numpy.random import default_rng
 from tqdm.auto import tqdm, trange
@@ -16,7 +16,21 @@ import warnings
 
 
 app = typer.Typer()
-N_REPEATS = 3
+N_RETRIES = 5
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# create a file handler
+handler = logging.FileHandler("kinetic_optimization.log")
+handler.setLevel(logging.INFO)
+
+# create a logging format
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+
+# add the file handler to the logger
+logger.addHandler(handler)
 
 
 @app.command()
@@ -63,7 +77,9 @@ def stbo(
     else:
         categorical_method = "one-hot"
     for i in trange(repeats):
-        for j in range(N_REPEATS):
+        done = False
+        retries = 0
+        while not done:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
@@ -75,13 +91,18 @@ def stbo(
                         categorical_method=categorical_method,
                     )
                     result.save(output_path / f"repeat_{i}.json")
-                    break
+                    torch.save(
+                        result.strategy.model.state_dict(),
+                        output_path / f"repeat_{i}_model.pth",
+                    )
+                    done = True
                 except gpytorch.utils.errors.NotPSDError:
-                    continue
-            if j == N_REPEATS-1:
-                print(
-                    f"Not able to find semi-positive definite matrix after {j} tries. Skipping repeat {i}"
+                    retries += 1
+            if retries >= N_RETRIES:
+                logger.info(
+                    f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
                 )
+                done = True
 
 
 @app.command()
@@ -124,7 +145,9 @@ def mtbo(
     else:
         categorical_method = "one-hot"
     for i in trange(repeats):
-        for j in range(N_REPEATS):
+        done = False
+        retries = 0
+        while not done:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
@@ -135,15 +158,21 @@ def mtbo(
                         batch_size=batch_size,
                         task=opt_task,
                         brute_force_categorical=brute_force_categorical,
-                        categorical_method=categorical_method)
+                        categorical_method=categorical_method,
+                    )
                     result.save(output_path / f"repeat_{i}.json")
-                    break
+                    torch.save(
+                        result.strategy.model.state_dict(),
+                        output_path / f"repeat_{i}_model.pth",
+                    )
+                    done = True
                 except (RuntimeError, gpytorch.utils.errors.NotPSDError):
-                    continue
-            if j == N_REPEATS-1:
-                print(
-                    f"Not able to find semi-positive definite matrix at {j} tries. Skipping repeat {i}"
+                    retries += 1
+            if retries >= N_RETRIES:
+                logger.info(
+                    f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
                 )
+                done = True
 
 
 def run_stbo(
