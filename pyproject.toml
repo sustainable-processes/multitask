@@ -17,6 +17,7 @@ typer = {git = "https://github.com/marcosfelt/typer"}
 summit = {git = "https://github.com/sustainable-processes/summit", rev = "master"}
 scikit-learn=">=0.24.2"
 rdkit-pypi="^2021.9.4"
+ray = {extras = ["tune"], version = "^1.10.0"}
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^5.5.3"
