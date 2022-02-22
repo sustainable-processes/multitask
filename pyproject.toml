@@ -24,6 +24,7 @@ ipykernel = "^5.5.3"
 dvc = {extras = ["gdrive"], version = "^2.3.0"}
 black = "^21.5b2"
 ipdb = "^0.13.9"
+pytest = "^7.0.1"
 
 [build-system]
 requires = ["poetry>=0.12"]

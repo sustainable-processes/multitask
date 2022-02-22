@@ -196,7 +196,7 @@ class NewMTBO(Strategy):
         objective = self.domain.output_variables[0]
         if not objective.maximize:
             output = -1.0 * output
-        fbest_scaled = output.min()
+        fbest_scaled = output.max()
 
         # Train model
         if self.brute_force_categorical and self.categorical_method is None:
@@ -246,7 +246,7 @@ class NewMTBO(Strategy):
         else:
             if self.acquistion_function == "EI":
                 self.acq = CategoricalEI(
-                    self.domain, self.model, best_f=fbest_scaled, maximize=False
+                    self.domain, self.model, best_f=fbest_scaled, maximize=True
                 )
             elif self.acquistion_function == "qNEI":
                 self.acq = CategoricalqNEI(
@@ -374,7 +374,9 @@ class CategoricalEI(EI):
         maximize: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(model, best_f, objective, maximize, **kwargs)
+        super().__init__(
+            model=model, best_f=best_f, objective=objective, maximize=maximize, **kwargs
+        )
         self._domain = domain
 
     def forward(self, X):
@@ -562,7 +564,7 @@ class NewSTBO(Strategy):
         objective = self.domain.output_variables[0]
         if not objective.maximize:
             output = -1.0 * output
-        fbest_scaled = output[objective.name].min()
+        fbest_scaled = output[objective.name].max()
 
         # Set up model
         if self.categorical_method is None:
@@ -618,7 +620,7 @@ class NewSTBO(Strategy):
         else:
             if self.acquistion_function == "EI":
                 self.acq = CategoricalEI(
-                    self.domain, self.model, best_f=fbest_scaled, maximize=False
+                    self.domain, self.model, best_f=fbest_scaled, maximize=True
                 )
             elif self.acquistion_function == "qNEI":
                 self.acq = CategoricalqNEI(
