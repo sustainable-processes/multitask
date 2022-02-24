@@ -188,9 +188,9 @@ class NewMTBO(Strategy):
         if data.shape[0] != data.shape[0]:
             raise ValueError("Pretraining data must have a task for every row.")
         task_data = np.atleast_2d(task_data).T
-        inputs_task = np.append(inputs.data_to_numpy(), task_data, axis=1).astype(
-            np.float
-        )
+        inputs_task = np.append(
+            inputs.data_to_numpy().astype(float), task_data, axis=1
+        ).astype(np.float)
 
         # Make it always a maximization problem
         objective = self.domain.output_variables[0]
@@ -202,7 +202,7 @@ class NewMTBO(Strategy):
         if self.brute_force_categorical and self.categorical_method is None:
             self.model = MixedMultiTaskGP(
                 torch.tensor(inputs_task).float(),
-                torch.tensor(output.data_to_numpy()).float(),
+                torch.tensor(output.data_to_numpy().astype(float)).float(),
                 cat_dims=cat_dimensions,
                 task_feature=-1,
                 output_tasks=[self.task],
@@ -210,7 +210,7 @@ class NewMTBO(Strategy):
         else:
             self.model = MultiTaskGP(
                 torch.tensor(inputs_task).float(),
-                torch.tensor(output.data_to_numpy()).float(),
+                torch.tensor(output.data_to_numpy().astype(float)).float(),
                 task_feature=-1,
                 output_tasks=[self.task],
             )
@@ -610,7 +610,10 @@ class NewSTBO(Strategy):
                 self.acq = EI(self.model, best_f=fbest_scaled, maximize=True)
             elif self.acquistion_function == "qNEI":
                 self.acq = qNEI(
-                    self.model, X_baseline=torch.tensor(inputs.data_to_numpy()).float()
+                    self.model,
+                    X_baseline=torch.tensor(
+                        inputs.data_to_numpy().astype(float)
+                    ).float(),
                 )
             else:
                 raise ValueError(
@@ -646,7 +649,9 @@ class NewSTBO(Strategy):
                 self.acq = CategoricalqNEI(
                     self.domain,
                     self.model,
-                    X_baseline=torch.tensor(inputs.data_to_numpy()).float(),
+                    X_baseline=torch.tensor(
+                        inputs.data_to_numpy().astype(float).astype(float)
+                    ).float(),
                 )
             else:
                 raise ValueError(
