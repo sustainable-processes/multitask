@@ -231,8 +231,16 @@ class NewMTBO(Strategy):
                     f"{self.acquistion_function} not a valid acquisition function"
                 )
             if self.categorical_method is None:
-                combos = np.arange(0, len(cat_mapping))
-                fixed_features_list = [{0: float(combo)} for combo in combos]
+                combos = self.domain.get_categorical_combinations()
+                fixed_features_list = []
+                for v in self.domain.input_variables:
+                    if v.variable_type == "categorical":
+                        combos[v.name] = combos[v.name].replace(cat_mappings[v.name])
+                fixed_features_list = []
+                for k, combo in combos.iterrows():
+                    fixed_features_list.append(
+                        {dim: combo[i] for i, dim in enumerate(cat_dimensions)}
+                    )
             else:
                 fixed_features_list = self._get_fixed_features()
             results, _ = optimize_acqf_mixed(
@@ -316,10 +324,12 @@ class NewMTBO(Strategy):
         bounds = []
         for v in self.domain.input_variables:
             if isinstance(v, ContinuousVariable):
-                mean = self.transform.input_means[v.name]
-                std = self.transform.input_stds[v.name]
+                var_min, var_max = v.bounds[0], v.bounds[1]
+                # mean = self.transform.input_means[v.name]
+                # std = self.transform.input_stds[v.name]
                 v_bounds = np.array(v.bounds)
-                v_bounds = (v_bounds - mean) / std
+                # v_bounds = (v_bounds - mean) / std
+                v_bounds = (v_bounds - var_min) / (var_max - var_min)
                 bounds.append(v_bounds)
             elif (
                 isinstance(v, CategoricalVariable)
@@ -556,8 +566,10 @@ class NewSTBO(Strategy):
         inputs, output = self.transform.transform_inputs_outputs(
             data,
             categorical_method=self.categorical_method,
-            standardize_inputs=True,
-            standardize_outputs=True,
+            # standardize_inputs=True,
+            min_max_scale_inputs=True,
+            min_max_scale_outputs=True
+            # standardize_outputs=True,
         )
 
         # Make it always a maximization problem
@@ -578,14 +590,14 @@ class NewSTBO(Strategy):
                     cat_dimensions.append(i)
 
             self.model = MixedSingleTaskGP(
-                torch.tensor(inputs.data_to_numpy()).float(),
-                torch.tensor(output.data_to_numpy()).float(),
+                torch.tensor(inputs.data_to_numpy().astype(float)).float(),
+                torch.tensor(output.data_to_numpy().astype(float)).float(),
                 cat_dims=cat_dimensions,
             )
         else:
             self.model = SingleTaskGP(
-                torch.tensor(inputs.data_to_numpy()).float(),
-                torch.tensor(output.data_to_numpy()).float(),
+                torch.tensor(inputs.data_to_numpy().astype(float)).float(),
+                torch.tensor(output.data_to_numpy().astype(float)).float(),
             )
 
         # Train model
@@ -605,8 +617,16 @@ class NewSTBO(Strategy):
                     f"{self.acquistion_function} not a valid acquisition function"
                 )
             if self.categorical_method is None:
-                combos = np.arange(0, len(cat_mapping))
-                fixed_features_list = [{0: float(combo)} for combo in combos]
+                combos = self.domain.get_categorical_combinations()
+                fixed_features_list = []
+                for v in self.domain.input_variables:
+                    if v.variable_type == "categorical":
+                        combos[v.name] = combos[v.name].replace(cat_mappings[v.name])
+                fixed_features_list = []
+                for k, combo in combos.iterrows():
+                    fixed_features_list.append(
+                        {dim: combo[i] for i, dim in enumerate(cat_dimensions)}
+                    )
             else:
                 fixed_features_list = self._get_fixed_features()
             results, _ = optimize_acqf_mixed(
@@ -647,6 +667,9 @@ class NewSTBO(Strategy):
         )
 
         # Untransform
+        import ipdb
+
+        ipdb.set_trace()
         if self.categorical_method is None:
             for i, v in enumerate(self.domain.input_variables):
                 if v.variable_type == "categorical":
@@ -654,7 +677,10 @@ class NewSTBO(Strategy):
                     result[v.name] = result[v.name].replace(cat_mapping)
 
         result = self.transform.un_transform(
-            result, categorical_method=self.categorical_method, standardize_inputs=True
+            result,
+            categorical_method=self.categorical_method,
+            min_max_scale_inputs=True,
+            min_max_scale_outputs=True,
         )
 
         # Add metadata
@@ -669,12 +695,15 @@ class NewSTBO(Strategy):
             if v.variable_type == "categorical"
         }
         fixed_features_list = []
+        # One hot
         for i, combo in enumerate(combos):
             fixed_features = {}
             k = 0
             for v in self.domain.input_variables:
-                # One-hot encoding
-                if v.variable_type == "categorical":
+                if (
+                    v.variable_type == "categorical"
+                    and self.categorical_method == "one-hot"
+                ):
                     for j in range(encoded_combos[v.name].shape[1]):
                         fixed_features[k] = numpy_to_tensor(
                             encoded_combos[v.name][i, j]
@@ -689,10 +718,12 @@ class NewSTBO(Strategy):
         bounds = []
         for v in self.domain.input_variables:
             if isinstance(v, ContinuousVariable):
-                mean = self.transform.input_means[v.name]
-                std = self.transform.input_stds[v.name]
+                var_min, var_max = v.bounds[0], v.bounds[1]
+                # mean = self.transform.input_means[v.name]
+                # std = self.transform.input_stds[v.name]
                 v_bounds = np.array(v.bounds)
-                v_bounds = (v_bounds - mean) / std
+                # v_bounds = (v_bounds - mean) / std
+                v_bounds = (v_bounds - var_min) / (var_max - var_min)
                 bounds.append(v_bounds)
             elif (
                 isinstance(v, CategoricalVariable)
