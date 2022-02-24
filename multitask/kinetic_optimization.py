@@ -1,4 +1,6 @@
+from re import S
 from multitask.mt import NewSTBO, NewMTBO
+from multitask.kinetic_models import MITKinetics
 from summit import *
 import gpytorch
 import torch
@@ -35,6 +37,7 @@ def stbo(
     case: Optional[int] = 1,
     output_path: Optional[str] = "data/kinetic_models",
     noise_level: Optional[float] = 0.0,
+    noise_type: Optional[str] = "constant",
     max_experiments: Optional[int] = 20,
     num_initial_experiments: Optional[int] = 0,
     batch_size: Optional[int] = 1,
@@ -71,7 +74,8 @@ def stbo(
         json.dump(args, f)
 
     # Load benchmark
-    exp = get_mit_case(case=case, noise_level=noise_level)
+    # exp = get_mit_case(case=case, noise_level=noise_level)
+    exp = MITKinetics(case=case, noise_level=noise_level, noise_type=noise_type)
 
     # Single-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
@@ -118,6 +122,7 @@ def stbo_tune(
     output_path: Optional[str] = "data/kinetic_models/stbo",
     acquisition_function: Optional[List[str]] = ["EI"],
     noise_level: Optional[List[float]] = [0.0],
+    noise_type: Optional[List[str]] = ["constant"],
     num_initial_experiments: Optional[List[int]] = [0],
     max_experiments: Optional[List[int]] = [20],
     batch_size: Optional[List[int]] = [1],
@@ -146,6 +151,7 @@ def stbo_tune(
         "case": case,
         "acquisition_function": convert_grid(acquisition_function),
         "noise_level": convert_grid(noise_level),
+        "noise_type": convert_grid(noise_type),
         "num_initial_experiments": convert_grid(num_initial_experiments),
         "max_experiments": convert_grid(max_experiments),
         "batch_size": convert_grid(batch_size),
@@ -170,6 +176,7 @@ def mtbo(
     ct_strategy: Optional[str] = "STBO",
     ct_acquisition_function: str = "EI",
     noise_level: Optional[float] = 0.0,
+    noise_type: Optional[str] = "constant",
     ct_noise_level: Optional[float] = 0.0,
     num_initial_experiments: Optional[int] = 0,
     ct_num_initial_experiments: Optional[int] = 0,
@@ -187,11 +194,13 @@ def mtbo(
     print("Torch number of threads: ", torch.get_num_threads())
 
     # Load benchmark
-    exp = get_mit_case(case=case, noise_level=noise_level)
+    # exp = get_mit_case(case=case, noise_level=noise_level)
+    exp = MITKinetics(case=case, noise_level=noise_level, noise_type=noise_type)
 
     # Load cotraining cases
     ct_exps = [
-        get_mit_case(case=ct_case, noise_level=ct_noise_level) for ct_case in ct_cases
+        MITKinetics(case=ct_case, noise_level=ct_noise_level, noise_type=noise_type)
+        for ct_case in ct_cases
     ]
 
     # Save command args
@@ -266,6 +275,7 @@ def mtbo_tune(
     ct_strategy: Optional[List[str]] = ["STBO"],
     ct_acquisition_function: Optional[List[str]] = ["qNEI"],
     noise_level: Optional[List[float]] = [0.0],
+    noise_type: Optional[List[str]] = ["constant"],
     ct_noise_level: Optional[List[float]] = [0.0],
     num_initial_experiments: Optional[List[int]] = [0],
     ct_num_initial_experiments: Optional[List[int]] = [0],
@@ -303,6 +313,7 @@ def mtbo_tune(
         "ct_strategy": convert_grid(ct_strategy),
         "ct_acquisition_function": convert_grid(ct_acquisition_function),
         "noise_level": convert_grid(noise_level),
+        "noise_type": convert_grid(noise_type),
         "ct_noise_level": convert_grid(ct_noise_level),
         "num_initial_experiments": convert_grid(num_initial_experiments),
         "ct_num_initial_experiments": convert_grid(ct_num_initial_experiments),
@@ -312,7 +323,7 @@ def mtbo_tune(
         "ct_batch_size": convert_grid(ct_batch_size),
         "brute_force_categorical": convert_grid(brute_force_categorical),
         "ct_brute_force_categorical": convert_grid(ct_brute_force_categorical),
-        "repeats": 1,
+        "repeats": 1,  # use repeats formulation in tune
     }
     # Run grid search
     tune.run(
@@ -323,17 +334,17 @@ def mtbo_tune(
     )
 
 
-def get_mit_case(case: int, noise_level: float = 0.0) -> Experiment:
-    if case == 1:
-        return MIT_case1(noise_level=noise_level)
-    elif case == 2:
-        return MIT_case2(noise_level=noise_level)
-    elif case == 3:
-        return MIT_case3(noise_level=noise_level)
-    elif case == 4:
-        return MIT_case4(noise_level=noise_level)
-    elif case == 5:
-        return MIT_case5(noise_level=noise_level)
+# def get_mit_case(case: int, noise_level: float = 0.0) -> Experiment:
+#     if case == 1:
+#         return MIT_case1(noise_level=noise_level)
+#     elif case == 2:
+#         return MIT_case2(noise_level=noise_level)
+#     elif case == 3:
+#         return MIT_case3(noise_level=noise_level)
+#     elif case == 4:
+#         return MIT_case4(noise_level=noise_level)
+#     elif case == 5:
+#         return MIT_case5(noise_level=noise_level)
 
 
 def run_stbo(

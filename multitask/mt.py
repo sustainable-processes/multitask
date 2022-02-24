@@ -667,9 +667,6 @@ class NewSTBO(Strategy):
         )
 
         # Untransform
-        import ipdb
-
-        ipdb.set_trace()
         if self.categorical_method is None:
             for i, v in enumerate(self.domain.input_variables):
                 if v.variable_type == "categorical":

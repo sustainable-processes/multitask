@@ -331,6 +331,7 @@ stages:
         python multitask/kinetic_optimization.py stbo-tune
         ${item}
         --output_path $(pwd)/data/kinetic_models/stbo/${item}
+        --noise_type "knee" --noise_type "constant"
         --noise_level 0.0 --noise_level 1.0 --noise_level 10.0
         --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
         --acquisition_function qNEI --acquisition_function EI
@@ -360,6 +361,7 @@ stages:
         --output_path $(pwd)/data/kinetic_models/mtbo/${key}
         --ct_strategy STBO --ct_strategy LHS
         --noise_level 0.0 --noise_level 1.0 --noise_level 10.0
+        --noise_type "knee" --noise_type "constant"
         --ct_noise_level 0.0 --ct_noise_level 1.0 --ct_noise_level 10.0
         --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
         --ct_num_initial_experiments 10

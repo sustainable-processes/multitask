@@ -17,6 +17,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import json
+from typing import Tuple
 
 
 def main(input_path: str, output_path: str):
@@ -213,7 +214,7 @@ ligands = {
 }
 
 
-def catalyst_details(pre_catalyst_id: str, ligand_id: str) -> (str, str):
+def catalyst_details(pre_catalyst_id: str, ligand_id: str) -> Tuple[str, str]:
     pre_cat = pre_catalysts[pre_catalyst_id]
     ligand = ligands[ligand_id]
     smiles = f"""{pre_cat["SMILES"]}.{ligand["SMILES"]}"""
