@@ -62,6 +62,9 @@ def stbo(
         The number of repeats of the optimization. Defaults to 20.
 
     """
+    # Skip cases where noise level is set high (just for experiments) and using knee
+    if noise_level > 0.0 and noise_type == "knee":
+        return
     args = dict(locals())
     args["strategy"] = "STBO"
 
@@ -159,15 +162,12 @@ def stbo_tune(
         "repeats": 1,
     }
     # Run grid search
-    if noise_level > 0.0 and noise_type == "knee":
-        return
-    else:
-        tune.run(
-            trainable,
-            num_samples=repeats,
-            config=tune_config,
-            resources_per_trial={"cpu": cpus_per_trial},
-        )
+    tune.run(
+        trainable,
+        num_samples=repeats,
+        config=tune_config,
+        resources_per_trial={"cpu": cpus_per_trial},
+    )
 
 
 @app.command()
@@ -192,6 +192,9 @@ def mtbo(
     repeats: Optional[int] = 20,
 ):
     """Optimization of a kinetic model benchmark with Multitask Bayesian Optimziation"""
+    # Skip cases where noise level is set high (just for experiments) and using knee
+    if noise_level > 0.0 and noise_type == "knee":
+        return
     args = dict(locals())
     args["strategy"] = "MTBO"
     print("Torch number of threads: ", torch.get_num_threads())
@@ -329,15 +332,12 @@ def mtbo_tune(
         "repeats": 1,  # use repeats formulation in tune
     }
     # Run grid search
-    if noise_level > 0.0 and noise_type == "knee":
-        return
-    else:
-        tune.run(
-            trainable,
-            num_samples=repeats,
-            config=tune_config,
-            resources_per_trial={"cpu": cpus_per_trial},
-        )
+    tune.run(
+        trainable,
+        num_samples=repeats,
+        config=tune_config,
+        resources_per_trial={"cpu": cpus_per_trial},
+    )
 
 
 # def get_mit_case(case: int, noise_level: float = 0.0) -> Experiment:
