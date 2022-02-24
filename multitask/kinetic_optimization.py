@@ -159,12 +159,15 @@ def stbo_tune(
         "repeats": 1,
     }
     # Run grid search
-    tune.run(
-        trainable,
-        num_samples=repeats,
-        config=tune_config,
-        resources_per_trial={"cpu": cpus_per_trial},
-    )
+    if noise_level > 0.0 and noise_type == "knee":
+        return
+    else:
+        tune.run(
+            trainable,
+            num_samples=repeats,
+            config=tune_config,
+            resources_per_trial={"cpu": cpus_per_trial},
+        )
 
 
 @app.command()
@@ -326,12 +329,15 @@ def mtbo_tune(
         "repeats": 1,  # use repeats formulation in tune
     }
     # Run grid search
-    tune.run(
-        trainable,
-        num_samples=repeats,
-        config=tune_config,
-        resources_per_trial={"cpu": cpus_per_trial},
-    )
+    if noise_level > 0.0 and noise_type == "knee":
+        return
+    else:
+        tune.run(
+            trainable,
+            num_samples=repeats,
+            config=tune_config,
+            resources_per_trial={"cpu": cpus_per_trial},
+        )
 
 
 # def get_mit_case(case: int, noise_level: float = 0.0) -> Experiment:

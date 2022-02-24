@@ -332,7 +332,7 @@ stages:
         ${item}
         --output_path $(pwd)/data/kinetic_models/stbo/${item}
         --noise_type "knee" --noise_type "constant"
-        --noise_level 0.0 --noise_level 1.0 --noise_level 10.0
+        --noise_level 0.0 --noise_level 5.0
         --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
         --acquisition_function qNEI --acquisition_function EI
 

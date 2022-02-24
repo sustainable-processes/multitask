@@ -100,19 +100,19 @@ class MITKinetics(Experiment):
         if self.noise_type == "constant":
             noise_level = self.noise_level
         elif self.noise_type == "knee":
-            if C_final[3] < 0.2:
+            y = C_final[3] / self.C_i[0]
+            if y < 0.2:
                 noise_level = 5.0
-            elif C_final[3] >= 0.2 and C_final < 0.9:
+            elif y >= 0.2 and y < 0.9:
                 noise_level = 1.0
-            elif C_final > 0.9:
-                noise_level = 1.0
+            elif y > 0.9:
+                noise_level = 5.0
         C_final += C_final * self.rng.normal(scale=noise_level, size=len(C_final)) / 100
         C_final[
             C_final < 0
         ] = 0  # prevent negative values of concentration introduced by noise
 
         # calculate yield
-        # M = [159.09, 71.12, 210.21, 210.21, 261.33]  # molecular weights (g/mol)
         y = C_final[3] / self.C_i[0] * 100
         return y, res
 
