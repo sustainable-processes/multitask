@@ -201,16 +201,16 @@ class NewMTBO(Strategy):
         # Train model
         if self.brute_force_categorical and self.categorical_method is None:
             self.model = MixedMultiTaskGP(
-                torch.tensor(inputs_task).float(),
-                torch.tensor(output.data_to_numpy().astype(float)).float(),
+                torch.tensor(inputs_task).double(),
+                torch.tensor(output.data_to_numpy().astype(float)).double(),
                 cat_dims=cat_dimensions,
                 task_feature=-1,
                 output_tasks=[self.task],
             )
         else:
             self.model = MultiTaskGP(
-                torch.tensor(inputs_task).float(),
-                torch.tensor(output.data_to_numpy().astype(float)).float(),
+                torch.tensor(inputs_task).double(),
+                torch.tensor(output.data_to_numpy().astype(float)).double(),
                 task_feature=-1,
                 output_tasks=[self.task],
             )
@@ -224,7 +224,7 @@ class NewMTBO(Strategy):
             elif self.acquistion_function == "qNEI":
                 self.acq = qNEI(
                     self.model,
-                    X_baseline=torch.tensor(inputs_task[:, :-1]).float(),
+                    X_baseline=torch.tensor(inputs_task[:, :-1]).double(),
                 )
             else:
                 raise ValueError(
@@ -260,7 +260,7 @@ class NewMTBO(Strategy):
                 self.acq = CategoricalqNEI(
                     self.domain,
                     self.model,
-                    X_baseline=torch.tensor(inputs_task[:, :-1]).float(),
+                    X_baseline=torch.tensor(inputs_task[:, :-1]).double(),
                 )
             else:
                 raise ValueError(
@@ -338,7 +338,7 @@ class NewMTBO(Strategy):
                 bounds += [[0, 1] for _ in v.levels]
             elif isinstance(v, CategoricalVariable) and self.categorical_method is None:
                 bounds.append([0, len(v.levels)])
-        return torch.tensor(bounds).T.float()
+        return torch.tensor(bounds).T.double()
 
     def reset(self):
         """Reset MTBO state"""
@@ -590,30 +590,30 @@ class NewSTBO(Strategy):
                     cat_dimensions.append(i)
 
             self.model = MixedSingleTaskGP(
-                torch.tensor(inputs.data_to_numpy().astype(float)).float(),
-                torch.tensor(output.data_to_numpy().astype(float)).float(),
+                torch.tensor(inputs.data_to_numpy().astype(float)).double(),
+                torch.tensor(output.data_to_numpy().astype(float)).double(),
                 cat_dims=cat_dimensions,
             )
         else:
             self.model = SingleTaskGP(
-                torch.tensor(inputs.data_to_numpy().astype(float)).float(),
-                torch.tensor(output.data_to_numpy().astype(float)).float(),
+                torch.tensor(inputs.data_to_numpy().astype(float)).double(),
+                torch.tensor(output.data_to_numpy().astype(float)).double(),
             )
 
         # Train model
         mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
-        fit_gpytorch_model(mll)
+        fit_gpytorch_model(mll, max_retries=20)
 
         # Optimize acquisition function
         if self.brute_force_categorical:
             if self.acquistion_function == "EI":
-                self.acq = EI(self.model, best_f=fbest_scaled, maximize=True)
+                self.acq = EI(self.model, best_f=fbest_scaled.round(5), maximize=True)
             elif self.acquistion_function == "qNEI":
                 self.acq = qNEI(
                     self.model,
                     X_baseline=torch.tensor(
                         inputs.data_to_numpy().astype(float)
-                    ).float(),
+                    ).double(),
                 )
             else:
                 raise ValueError(
@@ -635,10 +635,10 @@ class NewSTBO(Strategy):
             results, _ = optimize_acqf_mixed(
                 acq_function=self.acq,
                 bounds=self._get_bounds(),
-                num_restarts=5,
+                num_restarts=100,
                 fixed_features_list=fixed_features_list,
                 q=num_experiments,
-                raw_samples=100,
+                raw_samples=2000,
             )
         else:
             if self.acquistion_function == "EI":
@@ -651,7 +651,7 @@ class NewSTBO(Strategy):
                     self.model,
                     X_baseline=torch.tensor(
                         inputs.data_to_numpy().astype(float).astype(float)
-                    ).float(),
+                    ).double(),
                 )
             else:
                 raise ValueError(
@@ -660,9 +660,9 @@ class NewSTBO(Strategy):
             results, _ = optimize_acqf(
                 acq_function=self.acq,
                 bounds=self._get_bounds(),
-                num_restarts=20,
+                num_restarts=100,
                 q=num_experiments,
-                raw_samples=100,
+                raw_samples=2000,
             )
 
         # Convert result to datset
@@ -734,7 +734,7 @@ class NewSTBO(Strategy):
                 bounds += [[0, 1] for _ in v.levels]
             elif isinstance(v, CategoricalVariable) and self.categorical_method is None:
                 bounds.append([0, len(v.levels)])
-        return torch.tensor(bounds).T.float()
+        return torch.tensor(bounds).T.double()
 
     def reset(self):
         """Reset MTBO state"""
