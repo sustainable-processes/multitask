@@ -21,3 +21,8 @@ Training,DMA (2),DPPE (5),43,186,3,3.37,0,0,0,0,0
 Optimization,CPME (1),DPPF (1),120,210,1,11,0,0,0,0,0
 Optimization,MeCN (3),DPPF (1),52,141,2,1.4,0,0,0,0,0
 Not run,CPME (1),XPhos (3),65,94,2,1,0,0,0,0,0
+Optimization,DMA (2),SPhos (2),36,210,2,4.8,0,0,0,0,0
+Optimization,MeCN (3),DPPF (1),64,209,3,4.2,0,0,0,0,0
+Optimization,DMA (2),DPPF (1),24,189,2,4.1,0,0,0,0,0
+Optimization,MeCN (3),DPPF (1),61,189,4,3.2,0,0,0,0,0
+Optimization,CPME (1),DPPF (1),53,206,3,8.7,0,0,0,0,0
