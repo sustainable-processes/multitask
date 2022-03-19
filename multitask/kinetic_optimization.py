@@ -47,6 +47,8 @@ def stbo(
     batch_size: Optional[int] = 1,
     brute_force_categorical: Optional[bool] = False,
     acquisition_function: str = "EI",
+    num_restarts: int = 5,
+    raw_samples: int = 100,
     repeats: Optional[int] = 20,
 ):
     """Optimization of a Suzuki benchmark with Single-Task Bayesian Optimziation
@@ -107,6 +109,8 @@ def stbo(
                         brute_force_categorical=brute_force_categorical,
                         acquisition_function=acquisition_function,
                         categorical_method=categorical_method,
+                        num_restarts=num_restarts,
+                        raw_samples=raw_samples,
                     )
                     result.save(output_path / f"repeat_{i}.json")
                     torch.save(
@@ -197,6 +201,8 @@ def mtbo(
     ct_batch_size: Optional[int] = 1,
     brute_force_categorical: bool = False,
     ct_brute_force_categorical: bool = False,
+    num_restarts: int = 5,
+    raw_samples: int = 100,
     repeats: Optional[int] = 20,
 ):
     """Optimization of a kinetic model benchmark with Multitask Bayesian Optimziation"""
@@ -264,6 +270,8 @@ def mtbo(
                         acquisition_function=acquisition_function,
                         num_initial_experiments=num_initial_experiments,
                         categorical_method=categorical_method,
+                        num_restarts=num_restarts,
+                        raw_samples=raw_samples,
                     )
                     result.save(output_path / f"repeat_{i}.json")
                     torch.save(

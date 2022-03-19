@@ -332,7 +332,7 @@ stages:
         ${item}
         --output_path $(pwd)/data/kinetic_models/stbo/${item}
         --num_restarts 10 --num_restarts 100
-        --raw_samples 100 --raw samples 2000
+        --raw_samples 100 --raw_samples 2000
         --noise_type "knee" --noise_type "constant"
         --noise_level 0.0 --noise_level 5.0
         --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
@@ -355,7 +355,7 @@ stages:
         --brute_force_categorical
         --output_path $(pwd)/data/kinetic_models/stbo_mixed/${item}
         --num_restarts 10 --num_restarts 100
-        --raw_samples 100 --raw samples 2000
+        --raw_samples 100 --raw_samples 2000
         --noise_type "knee" --noise_type "constant"
         --noise_level 0.0 --noise_level 5.0
         --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
