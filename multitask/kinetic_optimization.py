@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # create a file handler
-handler = logging.FileHandler("kinetic_optimization.log")
+handler = logging.FileHandler("data/kinetic_models/kinetic_optimization.log")
 handler.setLevel(logging.INFO)
 
 # create a logging format

@@ -265,9 +265,6 @@ class NewMTBO(Strategy):
                 raise ValueError(
                     f"{self.acquistion_function} not a valid acquisition function"
                 )
-            import pdb
-
-            pdb.set_trace()
             results, _ = optimize_acqf(
                 acq_function=self.acq,
                 bounds=self._get_bounds(),
