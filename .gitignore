@@ -1,3 +1,6 @@
+# Specific data
+data/kinetic_models
+
 .DS_Store
 .idea/
 # Byte-compiled / optimized / DLL files
