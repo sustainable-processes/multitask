@@ -140,30 +140,30 @@ stages:
       outs:
         - data/reizman_suzuki/results_stbo_case_${item}/
 
-  suzuki_stbo_reizman_mixed:
-    foreach: # cases
-      - 1
-      - 2
-      - 3
-      - 4
-    do:
-      desc: "Optimization of Reizman using Mixed Domain Single Task Bayesian Optimization"
-      cmd: >-
-        python multitask/suzuki_optimization.py stbo
-        reizman_suzuki_case_${item}
-        data/reizman_suzuki/emulator_case_${item}
-        data/reizman_suzuki/results_stbo_mixed_case_${item}/
-        --brute_force_categorical
-        --max_experiments ${suzuki_optimization.max-experiments}
-        --batch_size ${suzuki_optimization.batch-size}
-        --repeats ${suzuki_optimization.repeats}
-      deps:
-        - multitask/suzuki_optimization.py
-        - multitask/suzuki_emulator.py
-        - multitask/suzuki_data_utils.py
-        - data/reizman_suzuki/emulator_case_${item}
-      outs:
-        - data/reizman_suzuki/results_stbo_mixed_case_${item}/
+  # suzuki_stbo_reizman_mixed:
+  #   foreach: # cases
+  #     - 1
+  #     - 2
+  #     - 3
+  #     - 4
+  #   do:
+  #     desc: "Optimization of Reizman using Mixed Domain Single Task Bayesian Optimization"
+  #     cmd: >-
+  #       python multitask/suzuki_optimization.py stbo
+  #       reizman_suzuki_case_${item}
+  #       data/reizman_suzuki/emulator_case_${item}
+  #       data/reizman_suzuki/results_stbo_mixed_case_${item}/
+  #       --brute_force_categorical
+  #       --max_experiments ${suzuki_optimization.max-experiments}
+  #       --batch_size ${suzuki_optimization.batch-size}
+  #       --repeats ${suzuki_optimization.repeats}
+  #     deps:
+  #       - multitask/suzuki_optimization.py
+  #       - multitask/suzuki_emulator.py
+  #       - multitask/suzuki_data_utils.py
+  #       - data/reizman_suzuki/emulator_case_${item}
+  #     outs:
+  #       - data/reizman_suzuki/results_stbo_mixed_case_${item}/
 
   suzuki_mtbo_one_cotraining:
     foreach: ${suzuki_one_experiments}
@@ -188,29 +188,29 @@ stages:
       outs:
         - data/multitask_results/results_${key}
 
-  suzuki_mtbo_mixed_one_cotraining:
-    foreach: ${suzuki_one_experiments}
-    do:
-      desc: "Optimization using mixed domain  Multitask Bayesian Optimization with one co-training task"
-      cmd: >-
-        python multitask/suzuki_optimization.py mtbo
-        ${item.model_name}
-        ${item.benchmark}
-        ${item.dataset_1}
-        --brute_force_categorical
-        data/multitask_results/results_mixed_${key}
-        --max_experiments ${suzuki_optimization.max-experiments}
-        --batch_size ${suzuki_optimization.batch-size}
-        --repeats ${suzuki_optimization.repeats}
-        --no-print_warnings
-      deps:
-        - multitask/suzuki_optimization.py
-        - multitask/suzuki_emulator.py
-        - multitask/suzuki_data_utils.py
-        - ${item.benchmark}
-        - ${item.dataset_1}
-      outs:
-        - data/multitask_results/results_mixed_${key}
+  # suzuki_mtbo_mixed_one_cotraining:
+  #   foreach: ${suzuki_one_experiments}
+  #   do:
+  #     desc: "Optimization using mixed domain  Multitask Bayesian Optimization with one co-training task"
+  #     cmd: >-
+  #       python multitask/suzuki_optimization.py mtbo
+  #       ${item.model_name}
+  #       ${item.benchmark}
+  #       ${item.dataset_1}
+  #       --brute_force_categorical
+  #       data/multitask_results/results_mixed_${key}
+  #       --max_experiments ${suzuki_optimization.max-experiments}
+  #       --batch_size ${suzuki_optimization.batch-size}
+  #       --repeats ${suzuki_optimization.repeats}
+  #       --no-print_warnings
+  #     deps:
+  #       - multitask/suzuki_optimization.py
+  #       - multitask/suzuki_emulator.py
+  #       - multitask/suzuki_data_utils.py
+  #       - ${item.benchmark}
+  #       - ${item.dataset_1}
+  #     outs:
+  #       - data/multitask_results/results_mixed_${key}
 
   suzuki_mtbo_four_cotraining:
     foreach:
@@ -264,58 +264,58 @@ stages:
       outs:
         - data/multitask_results/results_${key}
 
-  suzuki_mtbo_mixed_four_cotraining:
-    foreach:
-      baumgartner_suzuki:
-        benchmark: data/baumgartner_suzuki/emulator
-        dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
-        dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
-        dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
-        dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
-      reizman_suzuki_case_1:
-        benchmark: data/reizman_suzuki/emulator_case_1
-        dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
-        dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
-        dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
-        dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
-      reizman_suzuki_case_2:
-        benchmark: data/reizman_suzuki/emulator_case_2
-        dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
-        dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
-        dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
-        dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
-      reizman_suzuki_case_3:
-        benchmark: data/reizman_suzuki/emulator_case_3
-        dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
-        dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
-        dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
-        dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
-      reizman_suzuki_case_4:
-        benchmark: data/reizman_suzuki/emulator_case_4
-        dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
-        dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
-        dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
-        dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
-    do:
-      desc: "Optimization using Multitask Bayesian Optimization"
-      cmd: >-
-        python multitask/suzuki_optimization.py mtbo
-        ${key}
-        ${item.benchmark}
-        ${item.dataset_1} ${item.dataset_2} ${item.dataset_3} ${item.dataset_4}
-        data/multitask_results/results_multitask_four_cotraining_mixed_domain_${key}
-        --brute_force_categorical
-        --max_experiments ${suzuki_optimization.max-experiments}
-        --batch_size ${suzuki_optimization.batch-size}
-        --repeats ${suzuki_optimization.repeats}
-        --no-print_warnings
-      deps:
-        - multitask/suzuki_optimization.py
-        - multitask/suzuki_emulator.py
-        - multitask/suzuki_data_utils.py
-        - ${item.benchmark}
-      outs:
-        - data/multitask_results/results_multitask_four_cotraining_mixed_domain_${key}
+  # suzuki_mtbo_mixed_four_cotraining:
+  #   foreach:
+  #     baumgartner_suzuki:
+  #       benchmark: data/baumgartner_suzuki/emulator
+  #       dataset_1: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+  #       dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+  #       dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+  #       dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+  #     reizman_suzuki_case_1:
+  #       benchmark: data/reizman_suzuki/emulator_case_1
+  #       dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+  #       dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+  #       dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+  #       dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+  #     reizman_suzuki_case_2:
+  #       benchmark: data/reizman_suzuki/emulator_case_2
+  #       dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+  #       dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+  #       dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+  #       dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+  #     reizman_suzuki_case_3:
+  #       benchmark: data/reizman_suzuki/emulator_case_3
+  #       dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+  #       dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+  #       dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+  #       dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_4.pb
+  #     reizman_suzuki_case_4:
+  #       benchmark: data/reizman_suzuki/emulator_case_4
+  #       dataset_1: data/baumgartner_suzuki/ord/baumgartner_suzuki.pb
+  #       dataset_2: data/reizman_suzuki/ord/reizman_suzuki_case_1.pb
+  #       dataset_3: data/reizman_suzuki/ord/reizman_suzuki_case_2.pb
+  #       dataset_4: data/reizman_suzuki/ord/reizman_suzuki_case_3.pb
+  #   do:
+  #     desc: "Optimization using Multitask Bayesian Optimization"
+  #     cmd: >-
+  #       python multitask/suzuki_optimization.py mtbo
+  #       ${key}
+  #       ${item.benchmark}
+  #       ${item.dataset_1} ${item.dataset_2} ${item.dataset_3} ${item.dataset_4}
+  #       data/multitask_results/results_multitask_four_cotraining_mixed_domain_${key}
+  #       --brute_force_categorical
+  #       --max_experiments ${suzuki_optimization.max-experiments}
+  #       --batch_size ${suzuki_optimization.batch-size}
+  #       --repeats ${suzuki_optimization.repeats}
+  #       --no-print_warnings
+  #     deps:
+  #       - multitask/suzuki_optimization.py
+  #       - multitask/suzuki_emulator.py
+  #       - multitask/suzuki_data_utils.py
+  #       - ${item.benchmark}
+  #     outs:
+  #       - data/multitask_results/results_multitask_four_cotraining_mixed_domain_${key}
 
   kinetic_models_stbo_ray_tune:
     foreach: # cases
@@ -331,11 +331,35 @@ stages:
         python multitask/kinetic_optimization.py stbo-tune
         ${item}
         --output_path $(pwd)/data/kinetic_models/stbo/${item}
+        --num_restarts 10 --num_restarts 100
+        --raw_samples 100 --raw samples 2000
         --noise_type "knee" --noise_type "constant"
         --noise_level 0.0 --noise_level 5.0
         --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
         --acquisition_function qNEI --acquisition_function EI
 
+
+  kinetic_models_mixed_stbo_ray_tune:
+    foreach: # cases
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+    do: 
+      desc: STBO of kinetic models
+      cmd: >-
+        OMP_NUM_THREADS=4
+        python multitask/kinetic_optimization.py stbo-tune
+        ${item}
+        --brute_force_categorical
+        --output_path $(pwd)/data/kinetic_models/stbo_mixed/${item}
+        --num_restarts 10 --num_restarts 100
+        --raw_samples 100 --raw samples 2000
+        --noise_type "knee" --noise_type "constant"
+        --noise_level 0.0 --noise_level 5.0
+        --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
+        --acquisition_function qNEI --acquisition_function EI
 
   kinetic_models_mtbo_ray_tune:
     foreach:

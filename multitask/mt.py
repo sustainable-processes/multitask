@@ -9,7 +9,6 @@ from botorch.acquisition import qNoisyExpectedImprovement as qNEI
 import numpy as np
 from typing import Type, Tuple, Union, Optional
 
-from torch import Tensor
 import torch
 
 
@@ -246,10 +245,10 @@ class NewMTBO(Strategy):
             results, _ = optimize_acqf_mixed(
                 acq_function=self.acq,
                 bounds=self._get_bounds(),
-                num_restarts=5,
+                num_restarts=kwargs.get("num_restarts", 5),
                 fixed_features_list=fixed_features_list,
                 q=num_experiments,
-                raw_samples=100,
+                raw_samples=kwargs.get("raw_samples", 100),
             )
         else:
             if self.acquistion_function == "EI":
@@ -266,12 +265,15 @@ class NewMTBO(Strategy):
                 raise ValueError(
                     f"{self.acquistion_function} not a valid acquisition function"
                 )
+            import pdb
+
+            pdb.set_trace()
             results, _ = optimize_acqf(
                 acq_function=self.acq,
                 bounds=self._get_bounds(),
-                num_restarts=20,
+                num_restarts=kwargs.get("num_restarts", 20),
                 q=num_experiments,
-                raw_samples=100,
+                raw_samples=kwargs.get("raw_samples", 100),
             )
 
         # Convert result to datset
@@ -635,10 +637,10 @@ class NewSTBO(Strategy):
             results, _ = optimize_acqf_mixed(
                 acq_function=self.acq,
                 bounds=self._get_bounds(),
-                num_restarts=100,
+                num_restarts=kwargs.get("num_restarts", 5),
                 fixed_features_list=fixed_features_list,
                 q=num_experiments,
-                raw_samples=2000,
+                raw_samples=kwargs.get("raw_samples", 100),
             )
         else:
             if self.acquistion_function == "EI":
@@ -660,9 +662,9 @@ class NewSTBO(Strategy):
             results, _ = optimize_acqf(
                 acq_function=self.acq,
                 bounds=self._get_bounds(),
-                num_restarts=100,
+                num_restarts=kwargs.get("num_restarts", 5),
                 q=num_experiments,
-                raw_samples=2000,
+                raw_samples=kwargs.get("raw_samples", 100),
             )
 
         # Convert result to datset

@@ -1,4 +1,3 @@
-from re import S
 from multitask.mt import NewSTBO, NewMTBO
 from multitask.kinetic_models import MITKinetics
 from summit import *
@@ -13,6 +12,11 @@ from typing import List, Optional
 import pandas as pd
 import warnings
 import logging
+from fastprogress.fastprogress import progress_bar
+import numpy as np
+import os
+import pathlib
+
 
 app = typer.Typer()
 N_RETRIES = 5
@@ -130,6 +134,8 @@ def stbo_tune(
     max_experiments: Optional[List[int]] = [20],
     batch_size: Optional[List[int]] = [1],
     brute_force_categorical: Optional[List[bool]] = [False],
+    num_restarts: Optional[List[int]] = [5],
+    raw_samples: Optional[List[int]] = [100],
     repeats: Optional[int] = 20,
     cpus_per_trial: Optional[int] = 4,
 ):
@@ -159,7 +165,9 @@ def stbo_tune(
         "max_experiments": convert_grid(max_experiments),
         "batch_size": convert_grid(batch_size),
         "brute_force_categorical": convert_grid(brute_force_categorical),
-        "repeats": 1,
+        "num_restarts": convert_grid(num_restarts),
+        "raw_samples": convert_grid(raw_samples),
+        "repeats": 1,  # Using tune for this
     }
     # Run grid search
     tune.run(
@@ -361,6 +369,8 @@ def run_stbo(
     brute_force_categorical: bool = False,
     categorical_method: str = "one-hot",
     acquisition_function: str = "EI",
+    num_restarts: int = 5,
+    raw_samples: int = 100,
 ) -> Runner:
     """Run Single Task Bayesian Optimization (AKA normal BO)"""
     exp.reset()
@@ -379,13 +389,16 @@ def run_stbo(
         categorical_method=categorical_method,
         acquisition_function=acquisition_function,
     )
-    r = Runner(
+    r = PatchedRunner(
         strategy=strategy,
         experiment=exp,
-        max_iterations=max_iterations,
+        max_iterations=max_iterations - num_initial_experiments,
         batch_size=batch_size,
     )
-    r.run(prev_res=prev_res)
+    r.run(
+        prev_res=prev_res,
+        suggest_kwargs={"num_restarts": num_restarts, "raw_samples": raw_samples},
+    )
     return r
 
 
@@ -397,6 +410,8 @@ def run_cotraining(
     num_initial_experiments,
     categorical_method,
     acquisition_function,
+    num_restarts: int = 5,
+    raw_samples: int = 100,
 ) -> DataSet:
 
     big_data = []
@@ -424,13 +439,16 @@ def run_cotraining(
                 acquisition_function=acquisition_function,
             )
 
-        r = Runner(
+        r = PatchedRunner(
             strategy=strategy,
             experiment=ct_exp,
-            max_iterations=max_iterations,
+            max_iterations=max_iterations - num_initial_experiments,
             batch_size=batch_size,
         )
-        r.run(prev_res=prev_res)
+        r.run(
+            prev_res=prev_res,
+            suggest_kwargs={"num_restarts": num_restarts, "raw_samples": raw_samples},
+        )
         ct_data = r.experiment.data
         ct_data["task", "METADATA"] = task
         big_data.append(ct_data)
@@ -447,6 +465,8 @@ def run_mtbo(
     brute_force_categorical: bool = False,
     acquisition_function: str = "EI",
     categorical_method: str = "one-hot",
+    num_restarts: int = 5,
+    raw_samples: int = 100,
 ) -> Runner:
     """Run Multitask Bayesian optimization"""
     exp.reset()
@@ -468,14 +488,104 @@ def run_mtbo(
         acquisition_function=acquisition_function,
         categorical_method=categorical_method,
     )
-    r = Runner(
+    r = PatchedRunner(
         strategy=strategy,
         experiment=exp,
         max_iterations=max_iterations,
         batch_size=batch_size,
     )
-    r.run(prev_res=prev_res)
+    r.run(
+        prev_res=prev_res,
+        suggest_kwargs={"num_restarts": num_restarts, "raw_samples": raw_samples},
+    )
     return r
+
+
+class PatchedRunner(Runner):
+    def run(self, **kwargs):
+        """Run the closed loop experiment cycle
+        Parameters
+        ----------
+        prev_res: DataSet, optional
+            Previous results to initialize the optimization
+        save_freq : int, optional
+            The frequency with which to checkpoint the state of the optimization. Defaults to None.
+        save_at_end : bool, optional
+            Save the state of the optimization at the end of a run, even if it is stopped early.
+            Default is True.
+        save_dir : str, optional
+            The directory to save checkpoints locally. Defaults to not saving locally.
+        suggest_kwargs : dict, optional
+            A dictionary of keyword arguments to pass to suggest_experments.
+        """
+        save_freq = kwargs.get("save_freq")
+        save_dir = kwargs.get("save_dir", str(get_summit_config_path()))
+        self.uuid_val = uuid4()
+        save_dir = pathlib.Path(save_dir) / "runner" / str(self.uuid_val)
+        if not os.path.isdir(save_dir):
+            os.makedirs(save_dir)
+        save_at_end = kwargs.get("save_at_end", True)
+
+        n_objs = len(self.experiment.domain.output_variables)
+        fbest_old = np.zeros(n_objs)
+        fbest = np.zeros(n_objs)
+        prev_res = kwargs.get("prev_res")
+        self.restarts = 0
+        suggest_kwargs = kwargs.get("suggest_kwargs", {})
+
+        if kwargs.get("progress_bar", True):
+            bar = progress_bar(range(self.max_iterations))
+        else:
+            bar = range(self.max_iterations)
+        for i in bar:
+            # Get experiment suggestions
+            if i == 0 and prev_res is None:
+                k = self.n_init if self.n_init is not None else self.batch_size
+                next_experiments = self.strategy.suggest_experiments(
+                    num_experiments=k, **suggest_kwargs
+                )
+            else:
+                next_experiments = self.strategy.suggest_experiments(
+                    num_experiments=self.batch_size, prev_res=prev_res, **suggest_kwargs
+                )
+            prev_res = self.experiment.run_experiments(next_experiments)
+
+            for j, v in enumerate(self.experiment.domain.output_variables):
+                if i > 0:
+                    fbest_old[j] = fbest[j]
+                if v.maximize:
+                    fbest[j] = self.experiment.data[v.name].max()
+                elif not v.maximize:
+                    fbest[j] = self.experiment.data[v.name].min()
+
+            # Save state
+            if save_freq is not None:
+                file = save_dir / f"iteration_{i}.json"
+                if i % save_freq == 0:
+                    self.save(file)
+
+            compare = np.abs(fbest - fbest_old) > self.f_tol
+            if all(compare) or i <= 1:
+                nstop = 0
+            else:
+                nstop += 1
+
+            if self.max_same is not None:
+                if nstop >= self.max_same and self.restarts >= self.max_restarts:
+                    self.logger.info(
+                        f"{self.strategy.__class__.__name__} stopped after {i+1} iterations and {self.restarts} restarts."
+                    )
+                    break
+                elif nstop >= self.max_same:
+                    nstop = 0
+                    prev_res = None
+                    self.strategy.reset()
+                    self.restarts += 1
+
+        # Save at end
+        if save_at_end:
+            file = save_dir / f"iteration_{i}.json"
+            self.save(file)
 
 
 if __name__ == "__main__":
