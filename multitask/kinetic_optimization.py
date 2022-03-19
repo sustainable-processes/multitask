@@ -21,20 +21,6 @@ import pathlib
 app = typer.Typer()
 N_RETRIES = 5
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-# create a file handler
-handler = logging.FileHandler("data/kinetic_models/kinetic_optimization.log")
-handler.setLevel(logging.INFO)
-
-# create a logging format
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-
-# add the file handler to the logger
-logger.addHandler(handler)
-
 
 @app.command()
 def stbo(
@@ -73,6 +59,7 @@ def stbo(
         return
     args = dict(locals())
     args["strategy"] = "STBO"
+    logger = logging.getLogger(__name__)
 
     # Ouptut path
     output_path = Path(output_path)
@@ -145,6 +132,7 @@ def stbo_tune(
 ):
     from ray import tune
 
+    logger = logging.getLogger(__name__)
     output_path = Path(output_path)
 
     def trainable(config):
@@ -211,7 +199,8 @@ def mtbo(
         return
     args = dict(locals())
     args["strategy"] = "MTBO"
-    print("Torch number of threads: ", torch.get_num_threads())
+    logger = logging.getLogger(__name__)
+    logger.debug(f"Torch number of threads: {torch.get_num_threads()}")
 
     # Load benchmark
     # exp = get_mit_case(case=case, noise_level=noise_level)
@@ -314,6 +303,7 @@ def mtbo_tune(
     import ray
 
     output_path = Path(output_path)
+    logger = logging.getLogger(__name__)
 
     def trainable(config):
         import torch
@@ -597,4 +587,20 @@ class PatchedRunner(Runner):
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    # create a file handler
+    handler = logging.FileHandler("data/kinetic_models/kinetic_optimization.log")
+    handler.setLevel(logging.INFO)
+
+    # create a logging format
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    handler.setFormatter(formatter)
+
+    # add the file handler to the logger
+    logger.addHandler(handler)
+
     app()
