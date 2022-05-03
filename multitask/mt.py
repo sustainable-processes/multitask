@@ -167,8 +167,8 @@ class NewMTBO(Strategy):
         inputs, output = self.transform.transform_inputs_outputs(
             data,
             categorical_method=self.categorical_method,
-            standardize_inputs=True,
-            standardize_outputs=True,
+            min_max_scale_inputs=True,
+            min_max_scale_outputs=True,
         )
 
         # Categorial transformation
@@ -184,7 +184,7 @@ class NewMTBO(Strategy):
 
         # Add column to inputs indicating task
         task_data = data["task"].dropna().to_numpy()
-        if data.shape[0] != data.shape[0]:
+        if task_data.shape[0] != data.shape[0]:
             raise ValueError("Pretraining data must have a task for every row.")
         task_data = np.atleast_2d(task_data).T
         inputs_task = np.append(
@@ -195,7 +195,7 @@ class NewMTBO(Strategy):
         objective = self.domain.output_variables[0]
         if not objective.maximize:
             output = -1.0 * output
-        fbest_scaled = output.max()
+        fbest_scaled = output[objective.name].max()
 
         # Train model
         if self.brute_force_categorical and self.categorical_method is None:
@@ -245,10 +245,10 @@ class NewMTBO(Strategy):
             results, _ = optimize_acqf_mixed(
                 acq_function=self.acq,
                 bounds=self._get_bounds(),
-                num_restarts=kwargs.get("num_restarts", 5),
+                num_restarts=kwargs.get("num_restarts", 100),
                 fixed_features_list=fixed_features_list,
                 q=num_experiments,
-                raw_samples=kwargs.get("raw_samples", 100),
+                raw_samples=kwargs.get("raw_samples", 2000),
             )
         else:
             if self.acquistion_function == "EI":
@@ -268,9 +268,9 @@ class NewMTBO(Strategy):
             results, _ = optimize_acqf(
                 acq_function=self.acq,
                 bounds=self._get_bounds(),
-                num_restarts=kwargs.get("num_restarts", 20),
+                num_restarts=kwargs.get("num_restarts", 100),
                 q=num_experiments,
-                raw_samples=kwargs.get("raw_samples", 100),
+                raw_samples=kwargs.get("raw_samples", 2000),
             )
 
         # Convert result to datset
@@ -287,7 +287,9 @@ class NewMTBO(Strategy):
                     result[v.name] = result[v.name].replace(cat_mapping)
 
         result = self.transform.un_transform(
-            result, categorical_method=self.categorical_method, standardize_inputs=True
+            result,
+            categorical_method=self.categorical_method,
+            min_max_scale_inputs=True,
         )
 
         # Add metadata
@@ -634,10 +636,10 @@ class NewSTBO(Strategy):
             results, _ = optimize_acqf_mixed(
                 acq_function=self.acq,
                 bounds=self._get_bounds(),
-                num_restarts=kwargs.get("num_restarts", 5),
+                num_restarts=kwargs.get("num_restarts", 100),
                 fixed_features_list=fixed_features_list,
                 q=num_experiments,
-                raw_samples=kwargs.get("raw_samples", 100),
+                raw_samples=kwargs.get("raw_samples", 2000),
             )
         else:
             if self.acquistion_function == "EI":
@@ -659,9 +661,9 @@ class NewSTBO(Strategy):
             results, _ = optimize_acqf(
                 acq_function=self.acq,
                 bounds=self._get_bounds(),
-                num_restarts=kwargs.get("num_restarts", 5),
+                num_restarts=kwargs.get("num_restarts", 100),
                 q=num_experiments,
-                raw_samples=kwargs.get("raw_samples", 100),
+                raw_samples=kwargs.get("raw_samples", 2000),
             )
 
         # Convert result to datset

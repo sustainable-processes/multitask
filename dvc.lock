@@ -12,7 +12,7 @@ stages:
       size: 17487
     outs:
     - path: data/baumgartner_suzuki/ord/
-      md5: 703e932a228102171974236b0d8fc701.dir
+      md5: b166c964caa6627b76e6b628962decaa.dir
       size: 446426
       nfiles: 2
   suzuki_benchmark_training:

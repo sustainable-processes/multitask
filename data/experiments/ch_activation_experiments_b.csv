@@ -1,0 +1,4 @@
+﻿,,Conditions,,,,,,Results,,,,,Weighing,,,,,,,,,
+Data file,Type,Solvent,Ligand,ResT /min,Temp /°C,Mol%,Yield /%,SM area,Product area,Biphenyl area,SM conc,Product conc,Volume /mL,Conc SM /M,Mol% catalyst,SM /g,Pd(OAc)2 /g,Ligand Mr,Ligand /g,NEt3 /mL,Biphenyl /g,Biphenyl /M
+,Optimization,NMP,Xphos,19,75,4,17.4,,,,,,,,,,,,,,,
+Changed to qNEI,Optimization,Toluene,DPEPhos,50,121,8,21.06,,,,,,,,,,,,,,,
