@@ -1,4 +1,4 @@
-from .mixed_gp_regression import MixedMultiTaskGP
+from .mixed_gp_regression import MixedMultiTaskGP, LCMMultitaskGP
 from summit import *
 from summit.benchmarks.experimental_emulator import numpy_to_tensor
 from summit.strategies.base import Strategy, Transform
@@ -71,14 +71,18 @@ class NewMTBO(Strategy):
 
     """
 
+    ICM = "icm"
+    LCM = "lcm"
+
     def __init__(
         self,
         domain: Domain,
-        pretraining_data: DataSet = None,
-        transform: Transform = None,
-        task: int = 1,
-        categorical_method: str = "one-hot",
-        acquisition_function: str = "EI",
+        pretraining_data: DataSet,
+        transform: Optional[Transform] = None,
+        task: Optional[int] = 1,
+        categorical_method: Optional[str] = "one-hot",
+        acquisition_function: Optional[str] = "EI",
+        model_type: Optional[str] = None,
         **kwargs,
     ):
         Strategy.__init__(self, domain, transform, **kwargs)
@@ -91,6 +95,7 @@ class NewMTBO(Strategy):
             )
         self.brute_force_categorical = kwargs.get("brute_force_categorical", False)
         self.acquistion_function = acquisition_function
+        self.model_type = model_type if model_type is not None else self.ICM
         self.reset()
 
     def suggest_experiments(self, num_experiments, prev_res: DataSet = None, **kwargs):
@@ -206,13 +211,22 @@ class NewMTBO(Strategy):
                 task_feature=-1,
                 output_tasks=[self.task],
             )
-        else:
+        elif self.model_type == self.LCM:
+            self.model = LCMMultitaskGP(
+                torch.tensor(inputs_task).double(),
+                torch.tensor(output.data_to_numpy().astype(float)).double(),
+                task_feature=-1,
+                output_tasks=[self.task],
+            )
+        elif self.model_type == self.ICM:
             self.model = MultiTaskGP(
                 torch.tensor(inputs_task).double(),
                 torch.tensor(output.data_to_numpy().astype(float)).double(),
                 task_feature=-1,
                 output_tasks=[self.task],
             )
+        else:
+            raise ValueError(f"{self.model_type} not available")
         mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
         fit_gpytorch_model(mll)
 
@@ -229,6 +243,7 @@ class NewMTBO(Strategy):
                 raise ValueError(
                     f"{self.acquistion_function} not a valid acquisition function"
                 )
+
             if self.categorical_method is None:
                 combos = self.domain.get_categorical_combinations()
                 fixed_features_list = []
@@ -305,16 +320,14 @@ class NewMTBO(Strategy):
             if v.variable_type == "categorical"
         }
         fixed_features_list = []
-        for i, combo in enumerate(combos):
+        for i in range(len(combos)):
             fixed_features = {}
             k = 0
             for v in self.domain.input_variables:
                 # One-hot encoding
                 if v.variable_type == "categorical":
                     for j in range(encoded_combos[v.name].shape[1]):
-                        fixed_features[k] = numpy_to_tensor(
-                            encoded_combos[v.name][i, j]
-                        )
+                        fixed_features[k] = float(encoded_combos[v.name][i, j])
                         k += 1
                 else:
                     k += 1
@@ -698,19 +711,14 @@ class NewSTBO(Strategy):
             if v.variable_type == "categorical"
         }
         fixed_features_list = []
-        # One hot
-        for i, combo in enumerate(combos):
+        for i in range(len(combos)):
             fixed_features = {}
             k = 0
             for v in self.domain.input_variables:
-                if (
-                    v.variable_type == "categorical"
-                    and self.categorical_method == "one-hot"
-                ):
+                # One-hot encoding
+                if v.variable_type == "categorical":
                     for j in range(encoded_combos[v.name].shape[1]):
-                        fixed_features[k] = numpy_to_tensor(
-                            encoded_combos[v.name][i, j]
-                        )
+                        fixed_features[k] = float(encoded_combos[v.name][i, j])
                         k += 1
                 else:
                     k += 1

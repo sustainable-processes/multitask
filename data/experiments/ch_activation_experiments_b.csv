@@ -1,4 +1,11 @@
 ﻿,,Conditions,,,,,,Results,,,,,Weighing,,,,,,,,,
 Data file,Type,Solvent,Ligand,ResT /min,Temp /°C,Mol%,Yield /%,SM area,Product area,Biphenyl area,SM conc,Product conc,Volume /mL,Conc SM /M,Mol% catalyst,SM /g,Pd(OAc)2 /g,Ligand Mr,Ligand /g,NEt3 /mL,Biphenyl /g,Biphenyl /M
-,Optimization,NMP,Xphos,19,75,4,17.4,,,,,,,,,,,,,,,
-Changed to qNEI,Optimization,Toluene,DPEPhos,50,121,8,21.06,,,,,,,,,,,,,,,
+,Optimization,NMP,Xphos,19,75,4,10.19,,,,,,,,,,,,,,,
+Changed to qNEI,Optimization,Toluene,DPEPhos,50,121,8,12.35,,,,,,,,,,,,,,,
+,Optimization,MeCN,JohnPhos,21,59,7,7.9,,,,,,,,,,,,,,,
+,Optimization,NMP,Xphos,58,91,9,11,,,,,,,,,,,,,,,
+,Optimization,MeCN,JohnPhos,18,88,4,67.18,,,,,,,,,,,,,,,
+,Optimization,MeCN,JohnPhos,27,93,4,70.6,,,,,,,,,,,,,,,
+,Optimization,MeCN,JohnPhos,20,105,4,67.5,,,,,,,,,,,,,,,
+Not run!!,Optimization,MeCN,JohnPhos,23,91,3,66,,,,,,,,,,,,,,,
+,TEST,MeCN,JohnPhos,40,100,8,80.11,,,,,,,,,,,,,,,
