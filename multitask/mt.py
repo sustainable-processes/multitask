@@ -5,17 +5,26 @@ from summit.strategies.base import Strategy, Transform
 
 from botorch.acquisition import ExpectedImprovement as EI
 from botorch.acquisition import qNoisyExpectedImprovement as qNEI
+from botorch.acquisition import UpperConfidenceBound as UCB
+from botorch.models import MultiTaskGP, SingleTaskGP
+from botorch.fit import fit_gpytorch_model
+from botorch.optim import optimize_acqf, optimize_acqf_mixed
+from gpytorch.mlls.exact_marginal_log_likelihood import (
+    ExactMarginalLogLikelihood,
+)
 from botorch.models.model import Model
+
+from gpytorch.priors.lkj_prior import LKJCovariancePrior
+from gpytorch.priors.prior import Prior
+from gpytorch.priors.torch_priors import GammaPrior
 
 import numpy as np
 from typing import Type, Tuple, Union, Optional, List
 
-from botorch.acquisition.analytic import AnalyticAcquisitionFunction
-
-
 
 import torch
 from torch import Tensor
+
 
 class NewMTBO(Strategy):
     """Multitask Bayesian Optimisation
@@ -140,13 +149,6 @@ class NewMTBO(Strategy):
         >>> res = strategy.suggest_experiments(1, prev_res=data)
 
         """
-        from botorch.models import MultiTaskGP, SingleTaskGP
-        from botorch.fit import fit_gpytorch_model
-        from botorch.optim import optimize_acqf, optimize_acqf_mixed
-        from gpytorch.mlls.exact_marginal_log_likelihood import (
-            ExactMarginalLogLikelihood,
-        )
-
         if num_experiments != 1:
             raise NotImplementedError(
                 "Multitask does not support batch optimization yet. See https://github.com/sustainable-processes/summit/issues/119#"
@@ -208,8 +210,18 @@ class NewMTBO(Strategy):
         fbest_scaled = output[objective.name].max()
 
         # Train model
-        n_tasks = task_data.max()
-        output_tasks = [self.task] # if self.acquistion_function != "WeightedEI" else list(range(n_tasks))
+        n_tasks = int(task_data.max()) + 1
+        output_tasks = [
+            self.task
+        ]  # if self.acquistion_function != "WeightedEI" else list(range(n_tasks))
+        sd_prior = GammaPrior(1.0, 0.15)
+        sd_prior._event_shape = torch.Size([n_tasks])
+        eta = 1.5
+        if not isinstance(eta, float) and not isinstance(eta, int):
+            raise ValueError(f"eta must be a real number, your eta was {eta}.")
+        prior = LKJCovariancePrior(n_tasks, eta, sd_prior)
+        from gpytorch.kernels import MaternKernel, LinearKernel
+
         if self.brute_force_categorical and self.categorical_method is None:
             self.model = MixedMultiTaskGP(
                 torch.tensor(inputs_task).double(),
@@ -217,6 +229,7 @@ class NewMTBO(Strategy):
                 cat_dims=cat_dimensions,
                 task_feature=-1,
                 output_tasks=output_tasks,
+                task_covar_prior=prior,
             )
         elif self.model_type == self.LCM:
             self.model = LCMMultitaskGP(
@@ -224,6 +237,8 @@ class NewMTBO(Strategy):
                 torch.tensor(output.data_to_numpy().astype(float)).double(),
                 task_feature=-1,
                 output_tasks=output_tasks,
+                num_independent_kernels=2,
+                task_covar_prior=prior,
             )
         elif self.model_type == self.ICM:
             self.model = MultiTaskGP(
@@ -231,23 +246,24 @@ class NewMTBO(Strategy):
                 torch.tensor(output.data_to_numpy().astype(float)).double(),
                 task_feature=-1,
                 output_tasks=output_tasks,
+                task_covar_prior=prior,
             )
         else:
             raise ValueError(f"{self.model_type} not available")
-        
+
         mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
         fit_gpytorch_model(mll)
 
-        #Train an extra model for the current task
+        # Train an extra model for the current task
         if self.acquistion_function == "WeightedEI":
             self.task_model = SingleTaskGP(
                 torch.tensor(inputs.data_to_numpy().astype(float)).double(),
                 torch.tensor(output.data_to_numpy().astype(float)).double(),
             )
-            mll = ExactMarginalLogLikelihood(self.task_model.likelihood, self.task_model)
+            mll = ExactMarginalLogLikelihood(
+                self.task_model.likelihood, self.task_model
+            )
             fit_gpytorch_model(mll)
-
-        
 
         # Optimize acquisition function
         if self.brute_force_categorical:
@@ -260,13 +276,14 @@ class NewMTBO(Strategy):
                 )
             elif self.acquistion_function == "WeightedEI":
                 self.acq = WeightedEI(
-                    models = [self.task_model, self.model],
-                    task = 0,
+                    models=[self.task_model, self.model],
+                    task=0,
                     best_f=fbest_scaled,
-                    maximize=True
-                    
-
+                    maximize=True,
+                    weights=[1e4, 1],
                 )
+            elif self.acquistion_function == "UCB":
+                self.acq = UCB(self.model, beta=0.8)
             else:
                 raise ValueError(
                     f"{self.acquistion_function} not a valid acquisition function"
@@ -462,45 +479,53 @@ class CategoricalEI(EI):
                 else:
                     c += 1
         return X
-    
+
 
 class WeightedEI(EI):
-    def __init__(self,models: List[Model], task:int, best_f: Union[float, Tensor],maximize: bool = True, weights = None, **kwargs):
+    def __init__(
+        self,
+        models: List[Model],
+        task: int,
+        best_f: Union[float, Tensor],
+        maximize: bool = True,
+        weights=None,
+        **kwargs,
+    ):
 
-        #could also implement weighting as a kw
+        # could also implement weighting as a kw
         self.models = models
-        self.task = task #active task
+        self.task = task  # active task
         self.maximize = maximize
         n = len(models)
-        self.weights = weights if weights != None else [1/n]*n
+        self.weights = weights if weights != None else [1 / n] * n
         super().__init__(model=models[task], best_f=best_f, **kwargs)
 
     def forward(self, X):
-        out = torch.zeros_like(X[:,0,0])
+        out = torch.zeros_like(X[:, 0, 0])
         for i, model in enumerate(self.models):
             if i == self.task:
                 # Expected Improvement
-                out +=  super().forward(X) * self.weights[i]
-    
+                val = super().forward(X) * self.weights[i]
+                # print(f"EI: {val}")
+                out += val
             else:
                 # Improvement
                 self.best_f = self.best_f.to(X)
                 posterior = model.posterior(
-                    X=X,  #posterior_transform=self.posterior_transform
+                    X=X,  # posterior_transform=self.posterior_transform
                 )
                 mean = posterior.mean
-                diff = (mean-self.best_f).squeeze()
+                diff = (mean - self.best_f).squeeze()
                 if self.maximize:
-                    out += torch.clip(diff, min=0) * self.weights[i]
-                else: #if we're minimising
-                    out += torch.clip(diff, max=0) * self.weights[i]
-        
+                    # val = torch.clip(diff, min=0) * self.weights[i]
+                    val = diff * self.weights[i]
+                else:  # if we're minimising
+                    val = torch.clip(diff, max=0) * self.weights[i]
+                # print(f"Improvement: {val}")
+                out += val
+
         out /= sum(self.weights)
         return out
-
-        
-    
-
 
 
 class CategoricalqNEI(qNEI):
@@ -696,6 +721,8 @@ class NewSTBO(Strategy):
                         inputs.data_to_numpy().astype(float)
                     ).double(),
                 )
+            elif self.acquistion_function == "UCB":
+                self.acq = UCB(self.model, beta=1.5)
             else:
                 raise ValueError(
                     f"{self.acquistion_function} not a valid acquisition function"
@@ -826,5 +853,3 @@ class NewSTBO(Strategy):
         std[std < 1e-5] = 1e-5
         scaled = (X - mean.to_numpy()) / std.to_numpy()
         return scaled.to_numpy(), mean, std
-
-
