@@ -4,13 +4,6 @@ from multitask.mt import NewMTBO
 import pandas as pd
 
 
-st.title("Multitask Bayesian Optimization")
-
-
-ct_csvs = st.file_uploader("Cotraining data", accept_multiple_files=True)
-
-curr_csv = st.file_uploader("Training data")
-
 # Transform data
 def transform_data(df):
     categorical_columns = ["Solvent", "Ligand"]
@@ -61,55 +54,83 @@ def create_domain():
     return domain
 
 
-# Read and transform data
-if ct_csvs is not None:
+columns = [
+    "case",
+    "Type",
+    "Solvent",
+    "Ligand",
+    "ResT",
+    "Temp",
+    "Mol",
+    "yld",
+]
+
+"""
+# Summit Multitask Optimization
+
+Optimize faster using data from past experiments.
+
+## Step 1: Upload data for past cases
+"""
+# Step 1: Cotraining data
+ct_csvs = st.file_uploader(
+    "Each case must be a separate CSV", accept_multiple_files=True, type="csv"
+)
+case = 0
+if len(ct_csvs) > 0:
     ct_dfs = [pd.read_csv(ct_csv, skiprows=1) for ct_csv in ct_csvs]
-    st.write("Cotraining data")
-    st.write(pd.concat(ct_dfs))
+    # Transform data
+    ct_dss = [transform_data(ct_df) for ct_df in ct_dfs]
+
+    for ct_ds in ct_dss:
+        ct_ds[("task", "METADATA")] = case
+        case += 1
+    st.write("Cotraining case data:")
+    to_display = pd.concat(ct_dss)
+    to_display = to_display.rename(columns={"task": "case"})
+    st.dataframe(to_display[columns], height=200)
 else:
-    ct_dfs = None
+    ct_dss = None
+
+
+# Step 2: Current data
+if len(ct_csvs) > 0:
+    """
+    ## Step 2: Upload current data
+    """
+    curr_csv = st.file_uploader("CSV with training data", type="csv")
+else:
+    curr_csv = None
 if curr_csv is not None:
     df = pd.read_csv(curr_csv, skiprows=1)
-    st.write("Trainin data")
-    st.write(df)
+    ds = transform_data(df)
+    ds[("task", "METADATA")] = case
+
+    st.write("Training data for current case")
+    to_display = ds.rename(columns={"task": "case"})
+    st.dataframe(to_display[columns], height=200)
 else:
-    df = None
+    ds = None
 
 
 # Run suggestions
-if ct_dfs is None or df is None:
-    st.write("Please upload training and cotraining data")
-else:
-    # Transform data
-    ct_dss = [transform_data(ct_df) for ct_df in ct_dfs]
-    i = 0
-    for ct_ds in ct_dss:
-        ct_ds[("task", "METADATA")] = i
-        i += 1
-    ds = transform_data(df)
-    ds[("task", "METADATA")] = i
-
+if ct_dss is not None and ds is not None:
+    """
+    ## Step 3: Get new suggestions
+    """
     # Setup domain
     domain = create_domain()
-    st.write("Domain")
-    st.write(domain)
 
     # Get suggestions
-    with st.spinner("Generating suggestions"):
+    with st.spinner("Generating suggestion"):
         strategy = NewMTBO(
             domain,
             pretraining_data=pd.concat(ct_dss),
             acquisition_function="qNEI",
             brute_force_categorical=False,
-            #     model_type=NewMTBO.LCM,
+            task=case,
         )
-        suggestions = strategy.suggest_experiments(int(1))
+        suggestions = strategy.suggest_experiments(int(1), prev_res=ds)
         suggestions = suggestions.round(0)
-    st.write("Suggestions")
+    st.write("Suggestion")
     st.write(suggestions)
-
-
-# ds_a = transform_data(df_a)
-# ds_b = transform_data(df_b)
-# ds_a[("task", "METADATA")] = 0
-# ds_b[("task", "METADATA")] = 1
