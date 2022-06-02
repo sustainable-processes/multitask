@@ -15,7 +15,7 @@ ord-schema = "^0.3.0"
 tqdm = "^4.61.0"
 typer = {git = "https://github.com/marcosfelt/typer"}  
 summit = {git = "https://github.com/sustainable-processes/summit", rev = "master"}
-scikit-learn=">=0.24.2"
+scikit-learn="1.0.2"
 rdkit-pypi="^2021.9.4"
 ray = {extras = ["tune"], version = "1.10.0"}
 hiplot = "^0.1.32"
@@ -25,7 +25,6 @@ streamlit = "^1.9.2"
 absl-py=">=0.9.0"
 flask=">=1.1.2"
 protobuf=">=3.13.0"
-protoc-wheel-0=">=3.14.0"
 pygithub=">=1.51"
 python-dateutil=">=1.10.0"
 jinja2=">=2.0.0"
