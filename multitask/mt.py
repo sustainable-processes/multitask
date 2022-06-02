@@ -155,7 +155,7 @@ class NewMTBO(Strategy):
             )
 
         # Suggest lhs initial design or append new experiments to previous experiments
-        if prev_res is None:
+        if self.pretraining_data is None and prev_res is None:
             lhs = LHS(self.domain)
             self.iterations += 1
             k = num_experiments if num_experiments > 1 else 2
@@ -164,8 +164,12 @@ class NewMTBO(Strategy):
             return conditions
         elif prev_res is not None and self.all_experiments is None:
             self.all_experiments = prev_res
+            data = self.all_experiments.append(self.pretraining_data)
         elif prev_res is not None and self.all_experiments is not None:
             self.all_experiments = self.all_experiments.append(prev_res)
+            data = self.all_experiments.append(self.pretraining_data)
+        else:
+            data = self.pretraining_data
         self.iterations += 1
 
         # Combine pre-training and experiment data
@@ -173,7 +177,6 @@ class NewMTBO(Strategy):
             raise ValueError(
                 """The pretraining data must have a METADATA column called "task" with the task number."""
             )
-        data = self.all_experiments.append(self.pretraining_data)
 
         # Get inputs (decision variables) and outputs (objectives)
         inputs, output = self.transform.transform_inputs_outputs(
