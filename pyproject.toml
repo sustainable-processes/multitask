@@ -5,27 +5,29 @@ description = ""
 authors = ["Kobi Felton <kobi.c.f@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9,<3.11"
+python = "^3.9,<3.10"
 pandas = "^1.2.4"
 matplotlib = "^3.4.1"
 numpy = "^1.20.2"
 pint = "^0.17"
 openpyxl = "^3.0.7"
-ord-schema = "^0.3.0"
+# ord-schema = "^0.3.0"
 tqdm = "^4.61.0"
 typer = {git = "https://github.com/marcosfelt/typer"}  
 summit = {git = "https://github.com/sustainable-processes/summit", rev = "master"}
-scikit-learn=">=0.24.2"
+scikit-learn="1.0.2"
 rdkit-pypi="^2021.9.4"
-ray = {extras = ["tune"], version = "^1.10.0"}
+ray = {extras = ["tune"], version = "1.10.0"}
 hiplot = "^0.1.32"
+streamlit = "^1.9.2"
+
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^5.5.3"
 dvc = {extras = ["gdrive"], version = "^2.3.0"}
 black = "^21.5b2"
 ipdb = "^0.13.9"
-pytest = "^7.0.1"
+ipywidgets = "^7.7.0"
 
 [build-system]
 requires = ["poetry>=0.12"]

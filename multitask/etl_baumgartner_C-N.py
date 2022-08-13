@@ -71,6 +71,8 @@ def main(
     reactions.extend(
         df_rxn_data.progress_apply(inner_loop, axis=1, args=(df_stock_solutions,))
     )
+    for i, reaction in enumerate(reactions):
+        reaction.reaction_id = df_rxn.iloc[i]["Overall "]
 
     # Create dataset
     dataset = Dataset()
