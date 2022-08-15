@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 import pytest
 
 from summit import *
@@ -96,6 +97,7 @@ def test_mtbo(
         experiment=hartmann3D,
         batch_size=batch_size,
         max_iterations=max_num_exp // batch_size,
+        num_initial_experiments=1
     )
     r.run()
 
@@ -121,3 +123,6 @@ def test_mtbo(
 
     if plot:
         fig, ax = hartmann3D.plot()
+        fig, ax =  plt.subplots(1)
+        hartmann3D.data["y"].plot(ax=ax)
+        plt.show()

@@ -155,7 +155,7 @@ class NewMTBO(Strategy):
             )
 
         # Suggest lhs initial design or append new experiments to previous experiments
-        if self.pretraining_data is None and prev_res is None:
+        if prev_res is None:
             lhs = LHS(self.domain)
             self.iterations += 1
             k = num_experiments if num_experiments > 1 else 2

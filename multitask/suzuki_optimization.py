@@ -181,6 +181,7 @@ def run_stbo(
     batch_size: int = 1,
     brute_force_categorical: bool = False,
     categorical_method: str = "one-hot",
+    acquisition_function: str = "EI",
 ):
     """Run Single Task Bayesian Optimization (AKA normal BO)"""
     exp.reset()
@@ -189,6 +190,7 @@ def run_stbo(
         exp.domain,
         brute_force_categorical=brute_force_categorical,
         categorical_method=categorical_method,
+        acquisition_function=acquisition_function
     )
     r = Runner(
         strategy=strategy,
@@ -208,6 +210,7 @@ def run_mtbo(
     task: int = 1,
     brute_force_categorical: bool = False,
     categorical_method: str = "one-hot",
+    acquisition_function: str = "EI",
 ):
     """Run Multitask Bayesian optimization"""
     exp.reset()
@@ -218,6 +221,7 @@ def run_mtbo(
         task=task,
         brute_force_categorical=brute_force_categorical,
         categorical_method=categorical_method,
+        acquisition_function=acquisition_function,
     )
     r = Runner(
         strategy=strategy,

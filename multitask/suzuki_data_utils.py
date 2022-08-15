@@ -9,7 +9,6 @@ from ord_schema.proto.reaction_pb2 import *
 from rdkit import Chem
 from pint import UnitRegistry
 
-import typer
 from tqdm.auto import tqdm, trange
 from pathlib import Path
 import pkg_resources
