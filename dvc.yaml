@@ -86,9 +86,10 @@ stages:
       baumgartner_suzuki
       data/baumgartner_suzuki/emulator
       data/baumgartner_suzuki/results_stbo
-      --max_experiments ${suzuki_optimization.max-experiments}
-      --batch_size ${suzuki_optimization.batch-size}
+      --max-experiments ${suzuki_optimization.max-experiments}
+      --batch-size ${suzuki_optimization.batch-size}
       --repeats ${suzuki_optimization.repeats}
+      --acquisition-function "qNEI"
     deps:
       - multitask/suzuki_optimization.py
       - multitask/suzuki_emulator.py
@@ -105,9 +106,10 @@ stages:
       data/baumgartner_suzuki/emulator
       data/baumgartner_suzuki/results_stbo_mixed_domain
       --brute_force_categorical
-      --max_experiments ${suzuki_optimization.max-experiments}
-      --batch_size ${suzuki_optimization.batch-size}
+      --max-experiments ${suzuki_optimization.max-experiments}
+      --batch-size ${suzuki_optimization.batch-size}
       --repeats ${suzuki_optimization.repeats}
+      --acquisition-function "qNEI"
     deps:
       - multitask/suzuki_optimization.py
       - multitask/suzuki_emulator.py
@@ -129,9 +131,10 @@ stages:
         reizman_suzuki_case_${item}
         data/reizman_suzuki/emulator_case_${item}
         data/reizman_suzuki/results_stbo_case_${item}/
-        --max_experiments ${suzuki_optimization.max-experiments}
-        --batch_size ${suzuki_optimization.batch-size}
+        --max-experiments ${suzuki_optimization.max-experiments}
+        --batch-size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}
+        --acquisition-function "qNEI"
       deps:
         - multitask/suzuki_optimization.py
         - multitask/suzuki_emulator.py
@@ -154,8 +157,8 @@ stages:
   #       data/reizman_suzuki/emulator_case_${item}
   #       data/reizman_suzuki/results_stbo_mixed_case_${item}/
   #       --brute_force_categorical
-  #       --max_experiments ${suzuki_optimization.max-experiments}
-  #       --batch_size ${suzuki_optimization.batch-size}
+  #       --max-experiments ${suzuki_optimization.max-experiments}
+  #       --batch-size ${suzuki_optimization.batch-size}
   #       --repeats ${suzuki_optimization.repeats}
   #     deps:
   #       - multitask/suzuki_optimization.py
@@ -175,10 +178,11 @@ stages:
         ${item.benchmark}
         ${item.dataset_1}
         data/multitask_results/results_${key}
-        --max_experiments ${suzuki_optimization.max-experiments}
-        --batch_size ${suzuki_optimization.batch-size}
+        --max-experiments ${suzuki_optimization.max-experiments}
+        --batch-size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}
         --no-print_warnings
+        --acquisition-function "qNEI"
       deps:
         - multitask/suzuki_optimization.py
         - multitask/suzuki_emulator.py
@@ -199,8 +203,8 @@ stages:
   #       ${item.dataset_1}
   #       --brute_force_categorical
   #       data/multitask_results/results_mixed_${key}
-  #       --max_experiments ${suzuki_optimization.max-experiments}
-  #       --batch_size ${suzuki_optimization.batch-size}
+  #       --max-experiments ${suzuki_optimization.max-experiments}
+  #       --batch-size ${suzuki_optimization.batch-size}
   #       --repeats ${suzuki_optimization.repeats}
   #       --no-print_warnings
   #     deps:
@@ -252,9 +256,10 @@ stages:
         ${item.benchmark}
         ${item.dataset_1} ${item.dataset_2} ${item.dataset_3} ${item.dataset_4}
         data/multitask_results/results_${key}
-        --max_experiments ${suzuki_optimization.max-experiments}
-        --batch_size ${suzuki_optimization.batch-size}
+        --max-experiments ${suzuki_optimization.max-experiments}
+        --batch-size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}
+        --acquisition-function "qNEI"
         --no-print_warnings
       deps:
         - multitask/suzuki_optimization.py
@@ -305,8 +310,8 @@ stages:
   #       ${item.dataset_1} ${item.dataset_2} ${item.dataset_3} ${item.dataset_4}
   #       data/multitask_results/results_multitask_four_cotraining_mixed_domain_${key}
   #       --brute_force_categorical
-  #       --max_experiments ${suzuki_optimization.max-experiments}
-  #       --batch_size ${suzuki_optimization.batch-size}
+  #       --max-experiments ${suzuki_optimization.max-experiments}
+  #       --batch-size ${suzuki_optimization.batch-size}
   #       --repeats ${suzuki_optimization.repeats}
   #       --no-print_warnings
   #     deps:
@@ -330,13 +335,13 @@ stages:
         OMP_NUM_THREADS=4
         python multitask/kinetic_optimization.py stbo-tune
         ${item}
-        --output_path $(pwd)/data/kinetic_models/stbo/${item}
-        --num_restarts 10 --num_restarts 100
+        --output-path $(pwd)/data/kinetic_models/stbo/${item}
+        --num-restarts 10 --num-restarts 100
         --raw_samples 100 --raw_samples 2000
-        --noise_type "knee" --noise_type "constant"
-        --noise_level 0.0 --noise_level 5.0
-        --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
-        --acquisition_function qNEI --acquisition_function EI
+        --noise-type "knee" --noise-type "constant"
+        --noise-level 0.0 --noise-level 5.0
+        --num-initial-experiments 0 --num-initial-experiments 5 --num-initial-experiments 10
+        --acquisition-function qNEI --acquisition-function EI
 
 
   kinetic_models_mixed_stbo_ray_tune:
@@ -353,13 +358,13 @@ stages:
         python multitask/kinetic_optimization.py stbo-tune
         ${item}
         --brute_force_categorical
-        --output_path $(pwd)/data/kinetic_models/stbo_mixed/${item}
-        --num_restarts 10 --num_restarts 100
+        --output-path $(pwd)/data/kinetic_models/stbo_mixed/${item}
+        --num-restarts 10 --num-restarts 100
         --raw_samples 100 --raw_samples 2000
-        --noise_type "knee" --noise_type "constant"
-        --noise_level 0.0 --noise_level 5.0
-        --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
-        --acquisition_function qNEI --acquisition_function EI
+        --noise-type "knee" --noise-type "constant"
+        --noise-level 0.0 --noise-level 5.0
+        --num-initial-experiments 0 --num-initial-experiments 5 --num-initial-experiments 10
+        --acquisition-function qNEI --acquisition-function EI
 
   kinetic_models_mtbo_ray_tune:
     foreach:
@@ -382,15 +387,15 @@ stages:
         python multitask/kinetic_optimization.py mtbo-tune
         ${item.case}
         ${item.ct_case_1}
-        --output_path $(pwd)/data/kinetic_models/mtbo/${key}
+        --output-path $(pwd)/data/kinetic_models/mtbo/${key}
         --ct_strategy STBO --ct_strategy LHS
-        --noise_level 0.0 --noise_level 5.0
-        --noise_type "knee" --noise_type "constant"
-        --ct_noise_level 0.0 --ct_noise_level 5.0
-        --num_initial_experiments 0 --num_initial_experiments 5 --num_initial_experiments 10
-        --ct_num_initial_experiments 10
-        --ct_max_experiments 20 --ct_max_experiments 50
-        --acquisition_function qNEI --acquisition_function EI
-        --ct_acquisition_function qNEI
+        --noise-level 0.0 --noise-level 5.0
+        --noise-type "knee" --noise-type "constant"
+        --ct-noise-level 0.0 --ct-noise-level 5.0
+        --num-initial-experiments 0 --num-initial-experiments 5 --num-initial-experiments 10
+        --ct_num-initial-experiments 10
+        --ct-max-experiments 20 --ct-max-experiments 50
+        --acquisition-function qNEI --acquisition-function EI
+        --ct-acquisition-function qNEI
       outs:
         - data/kinetic_models/mtbo/${key}
