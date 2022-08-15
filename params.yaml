@@ -1,8 +1,8 @@
 suzuki_benchmark_training:
   cv-folds: 5
-  include-reactant-concentrations: no-include_reactant_concentrations
+  include-reactant-concentrations: no-include-reactant-concentrations
   max-epochs: 1000
-  split-catalyst: no-split_catalyst
+  split-catalyst: no-split-catalyst
   verbose: 0
 suzuki_one_experiments:
   baumgartner_suzuki_cotrain_reizman_suzuki_case_1:

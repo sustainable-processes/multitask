@@ -1,4 +1,6 @@
 [core]
     remote = gdrive
+[cache]
+    type = copy
 ['remote "gdrive"']
     url = gdrive://0AGWGXkw78NfUUk9PVA

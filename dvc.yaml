@@ -42,7 +42,7 @@ stages:
       --cv-folds ${suzuki_benchmark_training.cv-folds}
       --verbose ${suzuki_benchmark_training.verbose}
       --${suzuki_benchmark_training.include-reactant-concentrations}
-      --no-print_warnings
+      --no-print-warnings
     deps:
       - multitask/suzuki_benchmark_training.py
       - multitask/suzuki_emulator.py
@@ -69,7 +69,7 @@ stages:
         --max-epochs ${suzuki_benchmark_training.max-epochs}
         --cv-folds ${suzuki_benchmark_training.cv-folds}
         --verbose ${suzuki_benchmark_training.verbose}
-        --no-print_warnings
+        --no-print-warnings
       deps:
         - multitask/suzuki_benchmark_training.py
         - multitask/suzuki_emulator.py
@@ -181,7 +181,7 @@ stages:
         --max-experiments ${suzuki_optimization.max-experiments}
         --batch-size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}
-        --no-print_warnings
+        --no-print-warnings
         --acquisition-function "qNEI"
       deps:
         - multitask/suzuki_optimization.py
@@ -206,7 +206,7 @@ stages:
   #       --max-experiments ${suzuki_optimization.max-experiments}
   #       --batch-size ${suzuki_optimization.batch-size}
   #       --repeats ${suzuki_optimization.repeats}
-  #       --no-print_warnings
+  #       --no-print-warnings
   #     deps:
   #       - multitask/suzuki_optimization.py
   #       - multitask/suzuki_emulator.py
@@ -260,7 +260,7 @@ stages:
         --batch-size ${suzuki_optimization.batch-size}
         --repeats ${suzuki_optimization.repeats}
         --acquisition-function "qNEI"
-        --no-print_warnings
+        --no-print-warnings
       deps:
         - multitask/suzuki_optimization.py
         - multitask/suzuki_emulator.py
@@ -313,7 +313,7 @@ stages:
   #       --max-experiments ${suzuki_optimization.max-experiments}
   #       --batch-size ${suzuki_optimization.batch-size}
   #       --repeats ${suzuki_optimization.repeats}
-  #       --no-print_warnings
+  #       --no-print-warnings
   #     deps:
   #       - multitask/suzuki_optimization.py
   #       - multitask/suzuki_emulator.py

@@ -47,11 +47,11 @@ stages:
       md5: ebff787dfbcc0ac852994133f43182b1
       size: 3410
     - path: multitask/etl_reizman_suzuki.py
-      md5: 08780151de09685c60262c39806eb227
-      size: 15509
+      md5: 6ba6c9626c15e1b76122a5adfaf573aa
+      size: 15539
     outs:
     - path: data/reizman_suzuki/ord/
-      md5: 16be7414fc6910ab476d8ffdeeb00eff.dir
+      md5: 0ec7f5b0630445b42c83e4c794676279.dir
       size: 585221
       nfiles: 8
   baumgartner_suzuki_benchmark_training:
