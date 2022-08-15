@@ -38,8 +38,8 @@ stages:
       data/baumgartner_suzuki/emulator
       figures/
       --${suzuki_benchmark_training.split-catalyst}
-      --max_epochs ${suzuki_benchmark_training.max-epochs}
-      --cv_folds ${suzuki_benchmark_training.cv-folds}
+      --max-epochs ${suzuki_benchmark_training.max-epochs}
+      --cv-folds ${suzuki_benchmark_training.cv-folds}
       --verbose ${suzuki_benchmark_training.verbose}
       --${suzuki_benchmark_training.include-reactant-concentrations}
       --no-print_warnings
@@ -66,8 +66,8 @@ stages:
         data/reizman_suzuki/emulator_case_${item}/
         figures/
         --${suzuki_benchmark_training.split-catalyst}
-        --max_epochs ${suzuki_benchmark_training.max-epochs}
-        --cv_folds ${suzuki_benchmark_training.cv-folds}
+        --max-epochs ${suzuki_benchmark_training.max-epochs}
+        --cv-folds ${suzuki_benchmark_training.cv-folds}
         --verbose ${suzuki_benchmark_training.verbose}
         --no-print_warnings
       deps:
