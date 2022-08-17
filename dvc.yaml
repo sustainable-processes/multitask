@@ -105,7 +105,7 @@ stages:
       baumgartner_suzuki
       data/baumgartner_suzuki/emulator
       data/baumgartner_suzuki/results_stbo_mixed_domain
-      --brute_force_categorical
+      --brute-force-categorical
       --max-experiments ${suzuki_optimization.max-experiments}
       --batch-size ${suzuki_optimization.batch-size}
       --repeats ${suzuki_optimization.repeats}
@@ -156,7 +156,7 @@ stages:
   #       reizman_suzuki_case_${item}
   #       data/reizman_suzuki/emulator_case_${item}
   #       data/reizman_suzuki/results_stbo_mixed_case_${item}/
-  #       --brute_force_categorical
+  #       --brute-force-categorical
   #       --max-experiments ${suzuki_optimization.max-experiments}
   #       --batch-size ${suzuki_optimization.batch-size}
   #       --repeats ${suzuki_optimization.repeats}
@@ -201,7 +201,7 @@ stages:
   #       ${item.model_name}
   #       ${item.benchmark}
   #       ${item.dataset_1}
-  #       --brute_force_categorical
+  #       --brute-force-categorical
   #       data/multitask_results/results_mixed_${key}
   #       --max-experiments ${suzuki_optimization.max-experiments}
   #       --batch-size ${suzuki_optimization.batch-size}
@@ -309,7 +309,7 @@ stages:
   #       ${item.benchmark}
   #       ${item.dataset_1} ${item.dataset_2} ${item.dataset_3} ${item.dataset_4}
   #       data/multitask_results/results_multitask_four_cotraining_mixed_domain_${key}
-  #       --brute_force_categorical
+  #       --brute-force-categorical
   #       --max-experiments ${suzuki_optimization.max-experiments}
   #       --batch-size ${suzuki_optimization.batch-size}
   #       --repeats ${suzuki_optimization.repeats}
@@ -337,7 +337,7 @@ stages:
         ${item}
         --output-path $(pwd)/data/kinetic_models/stbo/${item}
         --num-restarts 10 --num-restarts 100
-        --raw_samples 100 --raw_samples 2000
+        --raw-samples 100 --raw-samples 2000
         --noise-type "knee" --noise-type "constant"
         --noise-level 0.0 --noise-level 5.0
         --num-initial-experiments 0 --num-initial-experiments 5 --num-initial-experiments 10
@@ -357,10 +357,10 @@ stages:
         OMP_NUM_THREADS=4
         python multitask/kinetic_optimization.py stbo-tune
         ${item}
-        --brute_force_categorical
+        --brute-force-categorical
         --output-path $(pwd)/data/kinetic_models/stbo_mixed/${item}
         --num-restarts 10 --num-restarts 100
-        --raw_samples 100 --raw_samples 2000
+        --raw-samples 100 --raw-samples 2000
         --noise-type "knee" --noise-type "constant"
         --noise-level 0.0 --noise-level 5.0
         --num-initial-experiments 0 --num-initial-experiments 5 --num-initial-experiments 10
