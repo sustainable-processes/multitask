@@ -4,3 +4,4 @@
     type = copy
 ['remote "gdrive"']
     url = gdrive://0AGWGXkw78NfUUk9PVA
+    gdrive_client_secret = 4/0AdQt8qis7LWNyileFf1jsWn5BCdEVboPCfFAjPolG0ntW1ydukg2KnRBu5IMTycnMt7liQ

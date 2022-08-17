@@ -118,6 +118,7 @@ def mtbo(
     repeats: Optional[int] = 20,
     print_warnings: Optional[bool] = True,
     brute_force_categorical: bool = False,
+    acquisition_function: Optional[str] = "EI",
 ):
     """Optimization of a Suzuki benchmark with Multitask Bayesian Optimziation"""
     # Load benchmark
