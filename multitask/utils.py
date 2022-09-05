@@ -101,6 +101,45 @@ def get_reactant_smiles(reaction: Reaction) -> List[str]:
     return reactants
 
 
+def fullfact(levels):
+    """
+    Create a general full-factorial design
+
+    Parameters
+    ----------
+    levels : array-like
+        An array of integers that indicate the number of levels of each input
+        design factor.
+
+    Returns
+    -------
+    mat : 2d-array
+        The design matrix with coded levels 0 to k-1 for a k-level factor
+
+
+    Notes
+    ------
+    This code is copied from pydoe2: https://github.com/clicumu/pyDOE2/blob/master/pyDOE2/doe_factorial.py
+
+    """
+    n = len(levels)  # number of factors
+    nb_lines = np.prod(levels)  # number of trial conditions
+    H = np.zeros((nb_lines, n))
+
+    level_repeat = 1
+    range_repeat = np.prod(levels)
+    for i in range(n):
+        range_repeat //= levels[i]
+        lvl = []
+        for j in range(levels[i]):
+            lvl += [j] * level_repeat
+        rng = lvl * range_repeat
+        level_repeat *= levels[i]
+        H[:, i] = rng
+
+    return H
+
+
 class WandbRunner(Runner):
     """Run a closed-loop strategy and experiment cycle with logging to Wandb
 
@@ -297,7 +336,6 @@ class WandbRunner(Runner):
             if not save_dir:
                 os.remove(file)
 
-
     def to_dict(
         self,
     ):
@@ -312,5 +350,6 @@ class WandbRunner(Runner):
                 wandb_tags=self.wandb_tags,
                 wandb_save_code=self.wandb_save_code,
                 wandb_artifact=self.wandb_artifact,
-        ))
+            )
+        )
         return d

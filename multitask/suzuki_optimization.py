@@ -2,11 +2,11 @@ from multitask.suzuki_emulator import SuzukiEmulator
 from multitask.suzuki_data_utils import get_suzuki_dataset
 from multitask.mt import NewSTBO, NewMTBO
 from multitask.utils import WandbRunner
+import lightning as L
 from summit import *
 import gpytorch
 import torch
 import wandb
-import typer
 from numpy.random import default_rng
 from tqdm.auto import tqdm, trange
 from pathlib import Path
@@ -16,8 +16,6 @@ import logging
 import json
 import warnings
 
-
-app = typer.Typer()
 N_RETRIES = 5
 
 logger = logging.getLogger(__name__)
@@ -34,12 +32,133 @@ handler.setFormatter(formatter)
 # add the file handler to the logger
 logger.addHandler(handler)
 
-WANDB_SETTINGS = {
-    "wandb_entity": "ceb-sre",
-    "wandb_project": "multitask"
-}
+WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
 
-@app.command()
+
+class SuzukiWork(L.LightningWork):
+    def __init__(
+        self,
+        strategy: str,
+        model_name: str,
+        benchmark_path: str,
+        output_path: str,
+        ct_data_paths: Optional[List[str]] = None,
+        max_experiments: Optional[int] = 20,
+        batch_size: Optional[int] = 1,
+        brute_force_categorical: Optional[bool] = False,
+        acquisition_function: Optional[str] = "EI",
+        repeats: Optional[int] = 20,
+        wandb_artifact_name: Optional[str] = None,
+        print_warnings: Optional[bool] = True,
+        parallel: bool = True,
+    ):
+        super().__init__(parallel=parallel)
+        self.strategy = strategy
+        self.model_name = model_name
+        self.benchmark_path = benchmark_path
+        self.output_path = output_path
+        self.max_experiments = max_experiments
+        self.batch_size = batch_size
+        self.brute_force_categorical = brute_force_categorical
+        self.acquisition_function = acquisition_function
+        self.repeats = repeats
+        self.wandb_artificant_name = wandb_artifact_name
+        self.print_warnings = print_warnings
+        self.ct_data_paths = ct_data_paths
+
+    def run(self):
+        # Ouptut path
+        output_path = Path(self.output_path)
+        output_path.mkdir(exist_ok=True)
+
+        # Load benchmark
+        exp = SuzukiEmulator.load(
+            model_name=self.model_name, save_dir=self.benchmark_path
+        )
+
+        # Load auxliary datasets
+        if self.strategy == "MTBO":
+            ds_list = [
+                get_suzuki_dataset(
+                    ct_data_path,
+                    split_catalyst=exp.split_catalyst,
+                    print_warnings=self.print_warnings,
+                )
+                for ct_data_path in self.ct_data_paths
+            ]
+            for i, ds in enumerate(ds_list):
+                ds["task", "METADATA"] = i
+            big_ds = pd.concat(ds_list)
+            opt_task = len(ds_list)
+
+        # Saving
+        output_path = Path(output_path)
+        output_path.mkdir(exist_ok=True)
+
+        # Bayesian Optimization
+        max_iterations = self.max_experiments // self.batch_size
+        max_iterations += 1 if self.max_experiments % self.batch_size != 0 else 0
+        if self.brute_force_categorical:
+            categorical_method = None
+        else:
+            categorical_method = "one-hot"
+
+        for i in trange(self.repeats):
+            done = False
+            retries = 0
+            while not done:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    try:
+                        run = wandb.init(
+                            entity=WANDB_SETTINGS["wandb_entity"],
+                            project=WANDB_SETTINGS["wandb_project"],
+                            # config=args,
+                            tags=[self.strategy],
+                        )
+                        if self.strategy == "STBO":
+                            result = run_stbo(
+                                exp,
+                                max_iterations=max_iterations,
+                                batch_size=self.batch_size,
+                                brute_force_categorical=self.brute_force_categorical,
+                                categorical_method=categorical_method,
+                                acquisition_function=self.acquisition_function,
+                                wandb_runner_kwargs=WANDB_SETTINGS,
+                            )
+                        elif self.strategy == "MTBO":
+                            result = run_mtbo(
+                                exp,
+                                ct_data=big_ds,
+                                max_iterations=max_iterations,
+                                batch_size=self.batch_size,
+                                task=opt_task,
+                                brute_force_categorical=self.brute_force_categorical,
+                                categorical_method=categorical_method,
+                                acquisition_function=self.cquisition_function,
+                            )
+                        result.save(output_path / f"repeat_{i}.json")
+                        torch.save(
+                            result.strategy.model.state_dict(),
+                            output_path / f"repeat_{i}_model.pth",
+                        )
+                        if self.wandb_artifact_name:
+                            artifact = wandb.Artifact(
+                                self.wandb_artifact_name, type="optimization_result"
+                            )
+                            artifact.add_file(output_path / f"repeat_{i}.json")
+                            artifact.add_file(output_path / f"repeat_{i}_model.pth")
+                            run.log_artifact(artifact)
+                        done = True
+                    except gpytorch.utils.errors.NotPSDError:
+                        retries += 1
+                if retries >= N_RETRIES:
+                    logger.info(
+                        f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
+                    )
+                    done = True
+
+
 def stbo(
     model_name: str,
     benchmark_path: str,
@@ -101,7 +220,7 @@ def stbo(
                         entity=WANDB_SETTINGS["wandb_entity"],
                         project=WANDB_SETTINGS["wandb_project"],
                         config=args,
-                        tags=["STBO"]
+                        tags=["STBO"],
                     )
                     result = run_stbo(
                         exp,
@@ -118,7 +237,9 @@ def stbo(
                         output_path / f"repeat_{i}_model.pth",
                     )
                     if wandb_artifact_name:
-                        artifact = wandb.Artifact(wandb_artifact_name, type="optimization_result")
+                        artifact = wandb.Artifact(
+                            wandb_artifact_name, type="optimization_result"
+                        )
                         artifact.add_file(output_path / f"repeat_{i}.json")
                         artifact.add_file(output_path / f"repeat_{i}_model.pth")
                         run.log_artifact(artifact)
@@ -131,7 +252,7 @@ def stbo(
                 )
                 done = True
 
-@app.command()
+
 def mtbo(
     model_name: str,
     benchmark_path: str,
@@ -189,7 +310,7 @@ def mtbo(
                         entity=WANDB_SETTINGS["wandb_entity"],
                         project=WANDB_SETTINGS["wandb_project"],
                         config=args,
-                        tags=["MTBO"]
+                        tags=["MTBO"],
                     )
                     result = run_mtbo(
                         exp,
@@ -207,7 +328,9 @@ def mtbo(
                         output_path / f"repeat_{i}_model.pth",
                     )
                     if wandb_artifact_name:
-                        artifact = wandb.Artifact(wandb_artifact_name, type="optimization_result")
+                        artifact = wandb.Artifact(
+                            wandb_artifact_name, type="optimization_result"
+                        )
                         artifact.add_file(output_path / f"repeat_{i}.json")
                         artifact.add_file(output_path / f"repeat_{i}_model.pth")
                         run.log_artifact(artifact)
@@ -228,7 +351,7 @@ def run_stbo(
     brute_force_categorical: bool = False,
     categorical_method: str = "one-hot",
     acquisition_function: str = "EI",
-    wandb_runner_kwargs: Optional[dict]={}
+    wandb_runner_kwargs: Optional[dict] = {},
 ):
     """Run Single Task Bayesian Optimization (AKA normal BO)"""
     exp.reset()
@@ -237,14 +360,14 @@ def run_stbo(
         exp.domain,
         brute_force_categorical=brute_force_categorical,
         categorical_method=categorical_method,
-        acquisition_function=acquisition_function
+        acquisition_function=acquisition_function,
     )
     r = WandbRunner(
         strategy=strategy,
         experiment=exp,
         max_iterations=max_iterations,
         batch_size=batch_size,
-        **wandb_runner_kwargs
+        **wandb_runner_kwargs,
     )
     r.run(skip_wandb_intialization=True)
     return r
@@ -259,7 +382,7 @@ def run_mtbo(
     brute_force_categorical: bool = False,
     categorical_method: str = "one-hot",
     acquisition_function: str = "EI",
-    wandb_runner_kwargs: Optional[dict]={}
+    wandb_runner_kwargs: Optional[dict] = {},
 ):
     """Run Multitask Bayesian optimization"""
     exp.reset()
@@ -277,7 +400,7 @@ def run_mtbo(
         experiment=exp,
         max_iterations=max_iterations,
         batch_size=batch_size,
-        **wandb_runner_kwargs
+        **wandb_runner_kwargs,
     )
     r.run(skip_wandb_intialization=True)
     return r

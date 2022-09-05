@@ -122,9 +122,9 @@ class MITKinetics(Experiment):
         R = 8.314 / 1000  # kJ/K/mol
         T = T + 273.71  # Convert to deg K
         conc_cat = C[2]
-        A_R = 3.1 * 10 ** 7
-        A_S1 = 1 * 10 ** 12
-        A_S2 = 3.1 * 10 ** 5
+        A_R = 3.1 * 10**7
+        A_S1 = 1 * 10**12
+        A_S2 = 3.1 * 10**5
 
         k = (
             lambda conc_cat, A, E_A, E_Ai, temp: np.sqrt(conc_cat)

@@ -20,11 +20,13 @@ hiplot = "^0.1.32"
 streamlit = "^1.9.2"
 lightning = "^2022.8.17"
 wandb = "^0.13.2"
-
+fastapi = "^0.79.0"
+# Temporary https://github.com/pytorch/botorch/issues/1370
+gpytorch = "1.8.1"
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^5.5.3"
-black = "^21.5b2"
+black = "^22.3.0"
 ipdb = "^0.13.9"
 ipywidgets = "^7.7.0"
 
