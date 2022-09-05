@@ -211,14 +211,16 @@ class WandbRunner(Runner):
             artifact.add_dir(save_dir)
 
         # Create wandb run
-        wandb.init(
-            entity=self.wandb_entity,
-            project=self.wandb_project,
-            name=self.wandb_run_name,
-            tags=self.wandb_tags,
-            notes=self.wandb_notes,
-            save_code=self.wandb_save_code,
-        )
+        skip_wandb_intialization = kwargs.get("skip_wandb_intialization", False)
+        if not skip_wandb_intialization:
+            wandb.init(
+                entity=self.wandb_entity,
+                project=self.wandb_project,
+                name=self.wandb_run_name,
+                tags=self.wandb_tags,
+                notes=self.wandb_notes,
+                save_code=self.wandb_save_code,
+            )
 
         # Run optimization loop
         if kwargs.get("progress_bar", True):
@@ -295,8 +297,6 @@ class WandbRunner(Runner):
             if not save_dir:
                 os.remove(file)
 
-        # Stop the wandb run
-        wandb.finish()
 
     def to_dict(
         self,
