@@ -16,18 +16,14 @@ tqdm = "^4.61.0"
 summit = "^0.8.6"
 scikit-learn="1.0.2"
 rdkit-pypi="^2021.9.4"
-ray = {extras = ["tune"], version = "1.10.0"}
 hiplot = "^0.1.32"
 streamlit = "^1.9.2"
-typer = "^0.6.1"
-# Temporary until this is fixed: https://github.com/pallets/click/issues/2292
-click =  "8.1.2"
 lightning = "^2022.8.17"
+wandb = "^0.13.2"
 
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^5.5.3"
-dvc = {extras = ["gdrive"], version = "^2.18.0"}
 black = "^21.5b2"
 ipdb = "^0.13.9"
 ipywidgets = "^7.7.0"
