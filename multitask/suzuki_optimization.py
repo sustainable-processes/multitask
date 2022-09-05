@@ -1,6 +1,7 @@
 from multitask.suzuki_emulator import SuzukiEmulator
 from multitask.suzuki_data_utils import get_suzuki_dataset
 from multitask.mt import NewSTBO, NewMTBO
+from multitask.utils import WandbRunner
 from summit import *
 import gpytorch
 import torch
@@ -32,6 +33,10 @@ handler.setFormatter(formatter)
 # add the file handler to the logger
 logger.addHandler(handler)
 
+WANDB_SETTINGS = {
+    "wandb_entity": "ceb-sre",
+    "wandb_project": "multitask"
+}
 
 @app.command()
 def stbo(
@@ -91,6 +96,7 @@ def stbo(
                         brute_force_categorical=brute_force_categorical,
                         categorical_method=categorical_method,
                         acquisition_function=acquisition_function,
+                        wandb_runner_kwargs=WANDB_SETTINGS,
                     )
                     result.save(output_path / f"repeat_{i}.json")
                     torch.save(
@@ -186,6 +192,7 @@ def run_stbo(
     brute_force_categorical: bool = False,
     categorical_method: str = "one-hot",
     acquisition_function: str = "EI",
+    wandb_runner_kwargs: Optional[dict]={}
 ):
     """Run Single Task Bayesian Optimization (AKA normal BO)"""
     exp.reset()
@@ -196,11 +203,12 @@ def run_stbo(
         categorical_method=categorical_method,
         acquisition_function=acquisition_function
     )
-    r = Runner(
+    r = WandbRunner(
         strategy=strategy,
         experiment=exp,
         max_iterations=max_iterations,
         batch_size=batch_size,
+        **wandb_runner_kwargs
     )
     r.run()
     return r

@@ -22,6 +22,7 @@ streamlit = "^1.9.2"
 typer = "^0.6.1"
 # Temporary until this is fixed: https://github.com/pallets/click/issues/2292
 click =  "8.1.2"
+wandb = "^0.13.2"
 
 
 [tool.poetry.dev-dependencies]
