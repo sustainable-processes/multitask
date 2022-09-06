@@ -15,6 +15,7 @@ import pandas as pd
 import logging
 import json
 import warnings
+import os
 
 N_RETRIES = 5
 
@@ -66,6 +67,10 @@ class SuzukiWork(L.LightningWork):
         self.print_warnings = print_warnings
         self.ct_data_paths = ct_data_paths
 
+        # login to wandb
+        wandb.login(key=os.environ.get("WANDB_API_KEY"))
+        self.wandb_run_id = None
+
     def run(self):
         # Ouptut path
         output_path = Path(self.output_path)
@@ -116,6 +121,10 @@ class SuzukiWork(L.LightningWork):
                             # config=args,
                             tags=[self.strategy],
                         )
+                        self.wandb_run_id = run.id
+                        self.wandb_run_name = run.name
+                        self.wandb_project = run.project
+                        self.wandb_entity = run.entity
                         if self.strategy == "STBO":
                             result = run_stbo(
                                 exp,
