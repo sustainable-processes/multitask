@@ -1,5 +1,5 @@
-from copy import deepcopy
-import uuid
+from pathlib import Path
+import os.path as osp
 from multitask.suzuki_optimization import SuzukiWork
 from typing import Dict, Optional, Literal
 import lightning as L
@@ -10,74 +10,72 @@ import wandb
 import logging
 import os.path as ops
 
-N_RETRIES = 5
 
 logger = logging.getLogger(__name__)
 
-RequestMethods = Literal[
-    "train_benchmarks", "run_single_task_benchmarks", "run_multi_task_benchmarks"
-]
 
+class BenchmarkTraining(TracerPythonScript):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.wandb_run = None
 
-class Request:
-    def __init__(self, method: RequestMethods):
-        self.method = method
-        self.payload = {}
+    def run(self):
+        # Download data
+        wandb_run = wandb.init(job_type="training")
 
-    def to_dict(self):
-        return {"method": self.method, "payload": self.payload}
+        # Train model using script
+        super().run()
 
-    @classmethod
-    def from_dict(cls, d: Dict):
-        return cls(**d)
+        # Upload to wandb
+        name = Path(self.script_args[-3]).parts[-1].rstrip(".pb")
+        artifact = wandb.Artifact(name, type="model")
+        artifact.add_dir(self.script_args[-2])
+        artifact.add_file(osp.join(self.script_args[-1], f"/{name}_parity_plot.png"))
+        wandb_run.log_artifact(artifact)
+        wandb_run.finish()
 
 
 class MultitaskBenchmarkStudy(L.LightningFlow):
-    def __init__(self):
+    def __init__(
+        self, run_benchmark_training: bool, run_single_task: bool, run_multi_task: bool
+    ):
         super().__init__()
 
         self.max_experiments = 20
         self.batch_size = 1
         self.repeats = 20
-        self.benchmark_runs = structures.Dict()
-        self.suzuki_single_task_runs = structures.Dict()
-        self.suzuki_multi_task_runs = structures.Dict()
-        self.requests = []
+        self.run_benchmark_training = run_benchmark_training
+        self.run_single_task = run_single_task
+        self.run_multi_task = run_multi_task
 
         # Download data if not already downloaded
 
     def run(self):
-        # Hanndle request
-        for request_dict in self.requests:
-            self._handle_request(Request.from_dict(request_dict))
-
-    def handle_request(self, request):
         # Benchmark training
-        if request.method == "train_benchmarks":
+        if self.run_benchmark_training:
             # Train Baumgartner benchmark
-            baumgartner_runs = {
-                uuid.uuid4(): TracerPythonScript(
+            baumgartner_runs = [
+                BenchmarkTraining(
                     script_path=ops.join(
                         ops.dirname(__file__), "suzuki_benchmark_training.py"
                     ),
                     script_args=[
+                        "--no-split-catalyst",
+                        # "--max-epochs=1000",
+                        # "--cv-folds=5",
+                        # "-verbose=0",
+                        "--no-print-warnings",
                         "data/baumgartner_suzuki/ord/baumgartner_suzuki.pb",
                         "data/baumgartner_suzuki/emulator",
                         "figures/",
-                        "--no-split-catalyst",
-                        "--max-epochs 1000",
-                        "--cv-folds 5",
-                        "-verbose 0",
-                        "--no-print-warnings",
                     ],
                     parallel=True,
                 )
-                for case in range(1, 5)
-            }
+            ]
 
             # Train Reizman benchmarks
-            reizman_runs = {
-                uuid.uuid4(): TracerPythonScript(
+            reizman_runs = [
+                BenchmarkTraining(
                     script_path=ops.join(
                         ops.dirname(__file__), "suzuki_benchmark_training.py"
                     ),
@@ -85,46 +83,44 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                         f"data/reizman_suzuki/ord/reizman_suzuki_case_{case}.pb",
                         f"data/reizman_suzuki/emulator_case_{case}/",
                         "figures/",
-                        "--no-split-catalyst",
-                        "--max-epochs 1000",
-                        "--cv-folds 5",
-                        "-verbose 0",
+                        # "--no-split-catalyst",
+                        # "--max-epochs 1000",
+                        # "--cv-folds 5",
+                        # "-verbose 0",
                         "--no-print-warnings",
                     ],
                     parallel=True,
                 )
                 for case in range(1, 5)
-            }
-            for id, r in reizman_runs + baumgartner_runs:
+            ]
+            for r in reizman_runs + baumgartner_runs:
                 r.run()
-                self.benchmark_runs[id] = r
 
         # Single task benchmarking
-        elif request.method == "run_single_task_benchmarks":
-            runs = {
-                uuid.uuid4(): SuzukiWork(**config)
+        if self.run_single_task:
+            runs = [
+                SuzukiWork(**config)
                 for config in self.generate_suzuki_configs_single_task(
                     max_experiments=self.max_experiments,
                     batch_size=self.batch_size,
                     repeats=self.repeats,
                 )
-            }
-            for id, r in runs.items():
+            ]
+            for r in runs.items():
                 r.run()
-                self.suzuki_single_task_runs[id] = r
+
         # Multi task benchmarking
-        elif request.method == "run_multi_task_benchmarks":
-            runs = {
-                uuid.uuid4(): SuzukiWork(**config)
+        if self.run_multi_task:
+            runs = [
+                SuzukiWork(**config)
                 for config in self.generate_suzuki_configs_multitask(
                     max_experiments=self.max_experiments,
                     batch_size=self.batch_size,
                     repeats=self.repeats,
                 )
-            }
-            for id, r in runs.items():
+            ]
+            for r in runs.items():
                 r.run()
-                self.suzuki_multi_task_runs[id] = r
 
     @staticmethod
     def generate_suzuki_configs_single_task(
@@ -229,66 +225,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             + baumgartner_mtbo_configs_reizman_one
         )
 
-    def configure_layout(self):
-        return StreamlitFrontend(render_fn=render_fn)
 
-
-def render_fn(state):
-    import time
-    import streamlit as st
-
-    # Training
-    st.markdown(
-        """
-        # Multitask Benchmarking
-
-        ## 1. Benchmark Training
-        """
+app = L.LightningApp(
+    MultitaskBenchmarkStudy(
+        run_benchmark_training=True, run_single_task=False, run_multi_task=False
     )
-    st.write("State")
-    st.write(state._state)
-    training_works = state._state["structures"]["train_benchmarks"]["works"]
-    if len(training_works) > 0:
-
-        # Should tag runs and print that tag out
-        st.markdown("See results on [wandb](https://wandb.ai/ceb-sre/multitask)!")
-
-        # Display a progress bar?
-    else:
-        if st.button("Train benchmarks"):
-            state.requests.append(Request("train_benchmarks"))
-
-    # Benchmarking
-    st.markdown(
-        """
-        ## 2. Suzuki Benchmarking
-        """
-    )
-    if st.button("Run single task benchmarking"):
-        # Should tag runs and print that tag out
-        st.write("Running single task benchmarking")
-        st.markdown("See results on [wandb](https://wandb.ai/ceb-sre/multitask)")
-
-    if st.button("Run multitask benchmarking"):
-        # Should tag runs and print that tag out
-        st.write("Running multi task benchmarking")
-        st.markdown("See results on [wandb](https://wandb.ai/ceb-sre/multitask)")
-
-
-class RootFlow(L.LightningFlow):
-    def __init__(self):
-        super().__init__()
-        self.flow = MultitaskBenchmarkStudy()
-
-    def run(self):
-        self.flow.run()
-
-    def configure_layout(self):
-        # Main UI
-        return {
-            "name": "Multitask Benchmarking",
-            "content": self.flow,
-        }
-
-
-app = L.LightningApp(RootFlow())
+)
