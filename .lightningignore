@@ -1,0 +1,9 @@
+data/
+figures/
+.vscode/
+.storage/
+artifacts/
+.dvc/
+nbs/
+wandb/
+.git/
