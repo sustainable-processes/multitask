@@ -13,7 +13,11 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
     """
 
     def __init__(
-        self, run_benchmark_training: bool, run_single_task: bool, run_multi_task: bool
+        self,
+        run_benchmark_training: bool,
+        run_single_task: bool,
+        run_multi_task: bool,
+        compute_type: str = "cpu-medium",
     ):
         super().__init__()
 
@@ -23,6 +27,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         self.run_benchmark_training = run_benchmark_training
         self.run_single_task = run_single_task
         self.run_multi_task = run_multi_task
+        self.compute_type = compute_type
 
     def run(self):
         # Benchmark training
@@ -34,6 +39,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     save_path="data/baumgartner_suzuki/emulator",
                     figure_path="figures/",
                     parallel=True,
+                    cloud_compute=L.CloudCompute(self.compute_type),
                 )
             ]
 
@@ -44,6 +50,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     save_path=f"data/reizman_suzuki/emulator_case_{case}/",
                     figure_path="figures/",
                     parallel=True,
+                    cloud_compute=L.CloudCompute(self.compute_type),
                 )
                 for case in range(1, 5)
             ]
@@ -59,7 +66,10 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         # Single task benchmarking
         if self.run_single_task:
             runs = [
-                SuzukiWork(**config)
+                SuzukiWork(
+                    **config,
+                    cloud_compute=L.CloudCompute(self.compute_type),
+                )
                 for config in self.generate_suzuki_configs_single_task(
                     max_experiments=self.max_experiments,
                     batch_size=self.batch_size,
@@ -72,7 +82,10 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         # Multi task benchmarking
         if self.run_multi_task:
             runs = [
-                SuzukiWork(**config)
+                SuzukiWork(
+                    **config,
+                    cloud_compute=L.CloudCompute(self.compute_type),
+                )
                 for config in self.generate_suzuki_configs_multitask(
                     max_experiments=self.max_experiments,
                     batch_size=self.batch_size,
@@ -193,6 +206,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
 app = L.LightningApp(
     MultitaskBenchmarkStudy(
-        run_benchmark_training=False, run_single_task=True, run_multi_task=True
+        run_benchmark_training=False,
+        run_single_task=True,
+        run_multi_task=True,
+        compute_type="cpu",
     )
 )

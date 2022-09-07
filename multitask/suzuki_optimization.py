@@ -61,8 +61,11 @@ class SuzukiWork(L.LightningWork):
         wandb_artifact_name: Optional[str] = None,
         print_warnings: Optional[bool] = True,
         parallel: bool = True,
+        **kwargs,
     ):
-        super().__init__(parallel=parallel, cloud_build_config=SummitBuildConfig())
+        super().__init__(
+            parallel=parallel, cloud_build_config=SummitBuildConfig(), **kwargs
+        )
         self.strategy = strategy
         self.model_name = model_name
         self.wandb_benchmark_artifact_name = wandb_benchmark_artifact_name
