@@ -98,7 +98,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "batch_size": batch_size,
                 "repeats": repeats,
                 "acquisition_function": "qNEI",
-                "parallel": False,
+                "parallel": True,
             }
             for case in range(1, 5)
         ]
