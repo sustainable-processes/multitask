@@ -193,6 +193,6 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
 app = L.LightningApp(
     MultitaskBenchmarkStudy(
-        run_benchmark_training=False, run_single_task=True, run_multi_task=False
+        run_benchmark_training=False, run_single_task=True, run_multi_task=True
     )
 )
