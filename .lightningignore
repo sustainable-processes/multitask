@@ -5,3 +5,4 @@ figures/
 .dvc/
 nbs/
 wandb/
+.git/
