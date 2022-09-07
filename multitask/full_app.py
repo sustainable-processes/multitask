@@ -17,9 +17,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
     ):
         super().__init__()
 
-        self.max_experiments = 20
+        self.max_experiments = 2
         self.batch_size = 1
-        self.repeats = 20
+        self.repeats = 1
         self.run_benchmark_training = run_benchmark_training
         self.run_single_task = run_single_task
         self.run_multi_task = run_multi_task
@@ -68,7 +68,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     repeats=self.repeats,
                 )
             ]
-            for r in runs.items():
+            for r in runs:
                 r.run()
 
         # Multi task benchmarking
@@ -81,25 +81,26 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     repeats=self.repeats,
                 )
             ]
-            for r in runs.items():
+            for r in runs:
                 r.run()
 
     @staticmethod
     def generate_suzuki_configs_single_task(
         max_experiments: int, batch_size: int, repeats: int
     ):
-        # MTBO Reizman
+        # STBO Reizman
         reizman_stbo_configs = [
             {
                 "strategy": "STBO",
+                "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case}:latest",
                 "model_name": f"reizman_suzuki_case_{case}",
-                "benchmark_path": f"data/reizman_suzuki/emulator_case_{case}",
                 "output_path": f"data/reizman_suzuki/results_stbo_case_{case}/",
+                "wandb_artifact_name": "stbo_reizman_suzuki",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
                 "acquisition_function": "qNEI",
-                "parallel": True,
+                "parallel": False,
             }
             for case in range(1, 5)
         ]
@@ -108,16 +109,16 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         baumgartner_stbo_configs = [
             {
                 "strategy": "STBO",
-                "model_name": f"baumgartner_suzuki_case_{case}",
-                "benchmark_path": f"data/baumgartner_suzuki/emulator_case_{case}",
-                "output_path": f"data/baumgarnter_suzuki/results_stbo_case_{case}/",
+                "model_name": f"baumgartner_suzuki",
+                "wandb_benchmark_artifact_name": "benchmark_baumgartner_suzuki:latest",
+                "output_path": f"data/baumgarnter_suzuki/results_stbo/",
+                "wandb_artifact_name": "stbo_baumgartner_suzuki",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
                 "acquisition_function": "qNEI",
                 "parallel": True,
             }
-            for case in range(1, 5)
         ]
 
         return reizman_stbo_configs + baumgartner_stbo_configs
@@ -131,9 +132,11 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             {
                 "strategy": "MTBO",
                 "model_name": f"reizman_suzuki_case_{case}",
-                "benchmark_path": f"data/reizman_suzuki/emulator_case_{case}",
+                "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case}:latest",
                 "output_path": f"data/multitask_results/results_reizman_suzuki_{case}_cotrain_baumgartner_suzuki",
-                "ct_data_paths": [f"data/baumgartner_suzuki/ord/baumgartner_suzuki.pb"],
+                "wandb_dataset_artifact_name": "baumgartner_suzuki:latest",
+                "ct_dataset_names": [f"baumgartner_suzuki"],
+                "wandb_artifact_name": "mtbo_reizman_suzuki_one_cotraining_baumgartner_suzuki",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
@@ -148,11 +151,11 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             {
                 "strategy": "MTBO",
                 "model_name": f"reizman_suzuki_case_{case_main}",
-                "benchmark_path": f"data/reizman_suzuki/emulator_case_{case_main}",
+                "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case_main}:latest",
                 "output_path": f"data/multitask_results/results_reizman_suzuki_case_{case_main}_cotrain_reizman_suzuki_case_{case_aux}",
-                "ct_data_paths": [
-                    f"data/reizman_suzuki/ord/reizman_suzuki_case_{case_aux}.pb"
-                ],
+                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "ct_dataset_names": [f"reizman_suzuki_case_{case_aux}"],
+                "wandb_artifact_name": f"mtbo_reizman_suzuki_{case_main}_one_cotraining_reizman_suzuki_case_{case_aux}",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
@@ -168,11 +171,13 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             {
                 "strategy": "MTBO",
                 "model_name": f"baumgartner_suzuki",
-                "benchmark_path": f"data/baumgartner_suzuki/emulator",
+                "wandb_benchmark_artifact_name": "benchmark_baumgartner_suzuki:latest",
                 "output_path": f"data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_case_{case}",
-                "ct_data_paths": [
-                    f"data/reizman_suzuki/ord/reizman_suzuki_case_{case}.pb",
+                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "ct_dataset_names": [
+                    f"reizman_suzuki_case_{case}",
                 ],
+                "wandb_artifact_name": f"mtbo_baumgartner_suzuki_one_cotraining_reizman_suzuki_case_{case}",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
@@ -190,6 +195,6 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
 app = L.LightningApp(
     MultitaskBenchmarkStudy(
-        run_benchmark_training=True, run_single_task=False, run_multi_task=False
+        run_benchmark_training=False, run_single_task=True, run_multi_task=False
     )
 )
