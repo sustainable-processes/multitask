@@ -11,14 +11,54 @@ from ord_schema.proto.reaction_pb2 import *
 from rdkit import Chem
 from pint import UnitRegistry
 
+
+import lightning as L
+import wandb
 import typer
-from tqdm.auto import tqdm, trange
 from pathlib import Path
-import pkg_resources
-from typing import Iterable, Tuple, Dict, Union, List, Optional
+from typing import Tuple, Dict, Union, List, Optional
 import pandas as pd
 import logging
-import json
+import os
+
+
+class BenchmarkTraining(L.LightningWork):
+    def __init__(
+        self,
+        data_path: str,
+        save_path: str,
+        figure_path: str,
+        parallel: bool = False,
+    ):
+        super().__init__(parallel=parallel)
+        self.data_path = data_path
+        self.save_path = save_path
+        self.figure_path = figure_path
+
+    def run(self, **kwargs):
+        # Download data
+        wandb_run = wandb.init(
+            job_type="training",
+            entity=os.environ["WANDB_ENTITY"],
+            project=os.environ["WANDB_PROJECT"],
+        )
+
+        # Train model using script
+        emulator = train_benchmark(
+            data_path=self.data_path,
+            save_path=self.save_path,
+            figure_path=self.figure_path,
+            **kwargs,
+        )
+
+        # Upload to wandb
+        name = emulator.model_name
+        artifact = wandb.Artifact(f"benchmark_{name}", type="model")
+        artifact.add_dir(self.save_path)
+        figure_path = Path(self.figure_path)
+        artifact.add_file(figure_path / f"{name}_parity_plot.png")
+        wandb_run.log_artifact(artifact)
+        wandb_run.finish()
 
 
 def train_benchmark(
@@ -32,7 +72,7 @@ def train_benchmark(
     max_epochs: Optional[int] = 1000,
     cv_folds: Optional[int] = 5,
     verbose: Optional[int] = 0,
-) -> None:
+) -> SuzukiEmulator:
     """Train a Suzuki benchmark"""
     # Get data
     ds, domain = prepare_domain_data(
@@ -60,6 +100,8 @@ def train_benchmark(
 
     # Save emulator
     emulator.save(save_dir=save_path)
+
+    return emulator
 
 
 def create_suzuki_domain(

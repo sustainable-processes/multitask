@@ -116,8 +116,8 @@ class SuzukiWork(L.LightningWork):
                     warnings.simplefilter("ignore")
                     try:
                         run = wandb.init(
-                            entity=WANDB_SETTINGS["wandb_entity"],
-                            project=WANDB_SETTINGS["wandb_project"],
+                            entity=os.environ["WANDB_ENTITY"],
+                            project=os.environ["WANDB_PROJECT"],
                             # config=args,
                             tags=[self.strategy],
                         )

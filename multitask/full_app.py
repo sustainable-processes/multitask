@@ -1,10 +1,7 @@
-from pathlib import Path
-import os.path as osp
 from multitask.suzuki_optimization import SuzukiWork
-from typing import Dict, Optional, Literal
+from multitask.suzuki_benchmark_training import BenchmarkTraining
 import lightning as L
 from lightning.app import structures
-from lightning.app.frontend import StreamlitFrontend
 from lightning_app.components.python import TracerPythonScript
 import wandb
 import logging
@@ -12,27 +9,6 @@ import os.path as ops
 
 
 logger = logging.getLogger(__name__)
-
-
-class BenchmarkTraining(TracerPythonScript):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.wandb_run = None
-
-    def run(self):
-        # Download data
-        wandb_run = wandb.init(job_type="training")
-
-        # Train model using script
-        super().run()
-
-        # Upload to wandb
-        name = Path(self.script_args[-3]).parts[-1].rstrip(".pb")
-        artifact = wandb.Artifact(name, type="model")
-        artifact.add_dir(self.script_args[-2])
-        artifact.add_file(osp.join(self.script_args[-1], f"/{name}_parity_plot.png"))
-        wandb_run.log_artifact(artifact)
-        wandb_run.finish()
 
 
 class MultitaskBenchmarkStudy(L.LightningFlow):
@@ -56,19 +32,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             # Train Baumgartner benchmark
             baumgartner_runs = [
                 BenchmarkTraining(
-                    script_path=ops.join(
-                        ops.dirname(__file__), "suzuki_benchmark_training.py"
-                    ),
-                    script_args=[
-                        "--no-split-catalyst",
-                        # "--max-epochs=1000",
-                        # "--cv-folds=5",
-                        # "-verbose=0",
-                        "--no-print-warnings",
-                        "data/baumgartner_suzuki/ord/baumgartner_suzuki.pb",
-                        "data/baumgartner_suzuki/emulator",
-                        "figures/",
-                    ],
+                    data_path="data/baumgartner_suzuki/ord/baumgartner_suzuki.pb",
+                    save_path="data/baumgartner_suzuki/emulator",
+                    figure_path="figures/",
                     parallel=True,
                 )
             ]
@@ -76,25 +42,21 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             # Train Reizman benchmarks
             reizman_runs = [
                 BenchmarkTraining(
-                    script_path=ops.join(
-                        ops.dirname(__file__), "suzuki_benchmark_training.py"
-                    ),
-                    script_args=[
-                        f"data/reizman_suzuki/ord/reizman_suzuki_case_{case}.pb",
-                        f"data/reizman_suzuki/emulator_case_{case}/",
-                        "figures/",
-                        # "--no-split-catalyst",
-                        # "--max-epochs 1000",
-                        # "--cv-folds 5",
-                        # "-verbose 0",
-                        "--no-print-warnings",
-                    ],
+                    data_path=f"data/reizman_suzuki/ord/reizman_suzuki_case_{case}.pb",
+                    save_path=f"data/reizman_suzuki/emulator_case_{case}/",
+                    figure_path="figures/",
                     parallel=True,
                 )
                 for case in range(1, 5)
             ]
             for r in reizman_runs + baumgartner_runs:
-                r.run()
+                r.run(
+                    split_catalyst=False,
+                    max_epochs=1000,
+                    cv_folds=5,
+                    verbose=1,
+                    print_warnings=False,
+                )
 
         # Single task benchmarking
         if self.run_single_task:
