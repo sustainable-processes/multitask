@@ -37,6 +37,13 @@ logger.addHandler(handler)
 WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
 
 
+class SummitBuildConfig(L.BuildConfig):
+    def build_commands(self) -> List[str]:
+        return [
+            "pip install .",
+        ]
+
+
 class SuzukiWork(L.LightningWork):
     def __init__(
         self,
@@ -55,7 +62,7 @@ class SuzukiWork(L.LightningWork):
         print_warnings: Optional[bool] = True,
         parallel: bool = True,
     ):
-        super().__init__(parallel=parallel)
+        super().__init__(parallel=parallel, cloud_build_config=SummitBuildConfig())
         self.strategy = strategy
         self.model_name = model_name
         self.wandb_benchmark_artifact_name = wandb_benchmark_artifact_name

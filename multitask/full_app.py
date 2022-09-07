@@ -1,30 +1,28 @@
 from multitask.suzuki_optimization import SuzukiWork
 from multitask.suzuki_benchmark_training import BenchmarkTraining
 import lightning as L
-from lightning.app import structures
-from lightning_app.components.python import TracerPythonScript
-import wandb
 import logging
-import os.path as ops
 
 
 logger = logging.getLogger(__name__)
 
 
 class MultitaskBenchmarkStudy(L.LightningFlow):
+    """
+    Benchmarking study of single task vs multitask optimization
+    """
+
     def __init__(
         self, run_benchmark_training: bool, run_single_task: bool, run_multi_task: bool
     ):
         super().__init__()
 
-        self.max_experiments = 2
+        self.max_experiments = 20
         self.batch_size = 1
-        self.repeats = 1
+        self.repeats = 20
         self.run_benchmark_training = run_benchmark_training
         self.run_single_task = run_single_task
         self.run_multi_task = run_multi_task
-
-        # Download data if not already downloaded
 
     def run(self):
         # Benchmark training
