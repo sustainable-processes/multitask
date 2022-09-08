@@ -111,7 +111,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "batch_size": batch_size,
                 "repeats": repeats,
                 "acquisition_function": "qNEI",
-                "parallel": True,
+                "parallel": False,
             }
             for case in range(1, 5)
         ]
@@ -209,6 +209,6 @@ app = L.LightningApp(
         run_benchmark_training=False,
         run_single_task=True,
         run_multi_task=True,
-        compute_type="cpu",
+        compute_type="cpu-medium",
     )
 )

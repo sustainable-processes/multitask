@@ -453,7 +453,3 @@ def run_mtbo(
     )
     r.run(skip_wandb_intialization=True)
     return r
-
-
-if __name__ == "__main__":
-    app()
