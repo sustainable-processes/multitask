@@ -1,5 +1,6 @@
 # Specific data
 data/kinetic_models
+wandb/
 
 .DS_Store
 .idea/
