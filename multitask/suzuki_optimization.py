@@ -8,6 +8,7 @@ import gpytorch
 import torch
 import wandb
 from wandb.wandb_run import Run
+import typer
 from tqdm.auto import tqdm, trange
 from pathlib import Path
 from typing import List, Optional
@@ -36,6 +37,7 @@ logger.addHandler(handler)
 
 WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
 
+app = typer.Typer()
 
 class SummitBuildConfig(L.BuildConfig):
     def build_commands(self) -> List[str]:
@@ -128,7 +130,6 @@ class SuzukiWork(L.LightningWork):
 
         # Load benchmark
         exp = SuzukiEmulator.load(model_name=self.model_name, save_dir=benchmark_path)
-
         # Load auxiliary datasets
         if self.strategy == "MTBO":
             dataset_artifact = run.use_artifact(self.wandb_dataset_artifact_name)
@@ -158,7 +159,21 @@ class SuzukiWork(L.LightningWork):
         else:
             categorical_method = "one-hot"
 
+        # Set config
+        wandb.config =  {
+            "model_name": self.model_name,
+            "ct_dataset_names": self.ct_dataset_names,
+            "max_iterations": max_iterations,
+            "batch_size": self.batch_size,
+            "strategy": self.strategy,
+            "brute_force_categorical": self.brute_force_categorical,
+            "categorical_method": categorical_method,
+            "acquisition_function": self.acquisition_function,
+        }
+
+
         # Run optimization
+        # torch.set_num_threads(10)
         if self.strategy == "STBO":
             result = run_stbo(
                 exp,
@@ -181,17 +196,6 @@ class SuzukiWork(L.LightningWork):
                 acquisition_function=self.cquisition_function,
             )
 
-        # Add configuration to wandb
-        wandb.config = {
-            "model_name": self.model_name,
-            "ct_dataset_names": self.ct_dataset_names,
-            "max_iterations": max_iterations,
-            "batch_size": self.batch_size,
-            "strategy": self.strategy,
-            "brute_force_categorical": self.brute_force_categorical,
-            "categorical_method": categorical_method,
-            "acquisition_function": self.acquisition_function,
-        }
 
         # Save results
         result.save(output_path / f"repeat_{repeat}.json")
@@ -207,10 +211,10 @@ class SuzukiWork(L.LightningWork):
             benchmark_artifact.add_file(output_path / f"repeat_{repeat}_model.pth")
             run.log_artifact(benchmark_artifact)
 
-
+@app.command()
 def stbo(
     model_name: str,
-    benchmark_path: str,
+    benchmark_artifact_name: str,
     output_path: str,
     max_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
@@ -245,11 +249,6 @@ def stbo(
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
 
-    # Load benchmark
-    exp = SuzukiEmulator.load(model_name=model_name, save_dir=benchmark_path)
-
-    output_path = Path(output_path)
-    output_path.mkdir(exist_ok=True)
 
     # Single-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
@@ -271,6 +270,11 @@ def stbo(
                         config=args,
                         tags=["STBO"],
                     )
+                    # Download benchmark weights from wandb and load
+                    benchmark_artifact = run.use_artifact(benchmark_artifact_name)
+                    benchmark_path = benchmark_artifact.download()
+                    exp = SuzukiEmulator.load(model_name=model_name, save_dir=benchmark_path)
+                    # Run optimization
                     result = run_stbo(
                         exp,
                         max_iterations=max_iterations,
@@ -301,7 +305,7 @@ def stbo(
                 )
                 done = True
 
-
+@app.command()
 def mtbo(
     model_name: str,
     benchmark_path: str,

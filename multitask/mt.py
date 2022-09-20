@@ -25,6 +25,7 @@ from typing import Type, Tuple, Union, Optional, List
 import torch
 from torch import Tensor
 
+dtype = torch.double
 
 class NewMTBO(Strategy):
     """Multitask Bayesian Optimisation
@@ -110,6 +111,7 @@ class NewMTBO(Strategy):
         self.brute_force_categorical = kwargs.get("brute_force_categorical", False)
         self.acquistion_function = acquisition_function
         self.model_type = model_type if model_type is not None else self.ICM
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.reset()
 
     def suggest_experiments(self, num_experiments, prev_res: DataSet = None, **kwargs):
@@ -645,6 +647,8 @@ class NewSTBO(Strategy):
                 "categorical_method must be one of 'one-hot' or 'descriptors'."
             )
         self.brute_force_categorical = kwargs.get("brute_force_categorical", False)
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = "cpu"
         self.acquistion_function = acquisition_function
         self.reset()
 
@@ -699,14 +703,14 @@ class NewSTBO(Strategy):
                     cat_dimensions.append(i)
 
             self.model = MixedSingleTaskGP(
-                torch.tensor(inputs.data_to_numpy().astype(float)).double(),
-                torch.tensor(output.data_to_numpy().astype(float)).double(),
+                torch.tensor(inputs.data_to_numpy().astype(float), device=self.device, dtype=dtype),
+                torch.tensor(output.data_to_numpy().astype(float), device=self.device, dtype=dtype),
                 cat_dims=cat_dimensions,
             )
         else:
             self.model = SingleTaskGP(
-                torch.tensor(inputs.data_to_numpy().astype(float)).double(),
-                torch.tensor(output.data_to_numpy().astype(float)).double(),
+                torch.tensor(inputs.data_to_numpy().astype(float), device=self.device, dtype=dtype),
+                torch.tensor(output.data_to_numpy().astype(float), device=self.device, dtype=dtype),
             )
 
         # Train model
@@ -721,8 +725,7 @@ class NewSTBO(Strategy):
                 self.acq = qNEI(
                     self.model,
                     X_baseline=torch.tensor(
-                        inputs.data_to_numpy().astype(float)
-                    ).double(),
+                        inputs.data_to_numpy().astype(float), device=self.device, dtype=dtype),
                 )
             elif self.acquistion_function == "UCB":
                 self.acq = UCB(self.model, beta=1.5)
@@ -761,8 +764,7 @@ class NewSTBO(Strategy):
                     self.domain,
                     self.model,
                     X_baseline=torch.tensor(
-                        inputs.data_to_numpy().astype(float).astype(float)
-                    ).double(),
+                        inputs.data_to_numpy().astype(float),  device=self.device, dtype=dtype),
                 )
             else:
                 raise ValueError(
@@ -778,7 +780,7 @@ class NewSTBO(Strategy):
 
         # Convert result to datset
         result = DataSet(
-            results.detach().numpy(),
+            results.cpu().detach().numpy(),
             columns=inputs.data_columns,
         )
 
@@ -840,7 +842,7 @@ class NewSTBO(Strategy):
                 bounds += [[0, 1] for _ in v.levels]
             elif isinstance(v, CategoricalVariable) and self.categorical_method is None:
                 bounds.append([0, len(v.levels)])
-        return torch.tensor(bounds).T.double()
+        return torch.tensor(bounds, dtype=dtype, device=self.device).T
 
     def reset(self):
         """Reset MTBO state"""
