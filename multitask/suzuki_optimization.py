@@ -17,6 +17,7 @@ import pandas as pd
 import logging
 import json
 import warnings
+import os
 
 
 N_RETRIES = 5
@@ -40,7 +41,6 @@ WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
 app = typer.Typer()
 
 
-@app.command()
 def stbo(
     model_name: str,
     benchmark_artifact_name: str,
@@ -299,7 +299,3 @@ def run_mtbo(
     )
     r.run(skip_wandb_intialization=True)
     return r
-
-
-if __name__ == "__main__":
-    app()
