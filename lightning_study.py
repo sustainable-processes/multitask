@@ -1,7 +1,9 @@
 from multitask.suzuki_optimization import SuzukiWork
 from multitask.suzuki_benchmark_training import BenchmarkTraining
 import lightning as L
+import wandb
 import logging
+import os
 
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         run_single_task: bool,
         run_multi_task: bool,
         compute_type: str = "cpu-medium",
-        parallel: bool = True
+        parallel: bool = True,
     ):
         super().__init__()
 
@@ -103,22 +105,22 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
     def generate_suzuki_configs_single_task(
         max_experiments: int, batch_size: int, repeats: int, parallel: bool
     ):
-        # # STBO Reizman
-        # reizman_stbo_configs = [
-        #     {
-        #         "strategy": "STBO",
-        #         "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case}:latest",
-        #         "model_name": f"reizman_suzuki_case_{case}",
-        #         "output_path": f"data/reizman_suzuki/results_stbo_case_{case}/",
-        #         "wandb_artifact_name": "stbo_reizman_suzuki",
-        #         "max_experiments": max_experiments,
-        #         "batch_size": batch_size,
-        #         "repeats": repeats,
-        #         "acquisition_function": "EI",
-        #         "parallel": parallel,
-        #     }
-        #     for case in range(1, 5)
-        # ]
+        # STBO Reizman
+        reizman_stbo_configs = [
+            {
+                "strategy": "STBO",
+                "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case}:latest",
+                "model_name": f"reizman_suzuki_case_{case}",
+                "output_path": f"data/reizman_suzuki/results_stbo_case_{case}/",
+                "wandb_artifact_name": "stbo_reizman_suzuki",
+                "max_experiments": max_experiments,
+                "batch_size": batch_size,
+                "repeats": repeats,
+                "acquisition_function": "qNEI",
+                "parallel": parallel,
+            }
+            for case in range(1, 5)
+        ]
 
         # STBO Baumgartner
         baumgartner_stbo_configs = [
@@ -136,8 +138,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             }
         ]
 
-        # return reizman_stbo_configs + baumgartner_stbo_configs
-        return baumgartner_stbo_configs
+        return reizman_stbo_configs + baumgartner_stbo_configs
 
     @staticmethod
     def generate_suzuki_configs_multitask(
@@ -215,6 +216,6 @@ app = L.LightningApp(
         run_single_task=True,
         run_multi_task=False,
         compute_type="cpu",
-        parallel=True
+        parallel=False,
     )
 )
