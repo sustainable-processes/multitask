@@ -17,7 +17,6 @@ import pandas as pd
 import logging
 import json
 import warnings
-import os
 
 
 N_RETRIES = 5
@@ -39,72 +38,6 @@ logger.addHandler(handler)
 WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
 
 app = typer.Typer()
-
-
-class SummitBuildConfig(L.BuildConfig):
-    def build_commands(self) -> List[str]:
-        return [
-            "pip install .",
-        ]
-
-
-class SuzukiWork(L.LightningWork):
-    def __init__(
-        self,
-        strategy: str,
-        model_name: str,
-        wandb_benchmark_artifact_name: str,
-        output_path: str,
-        wandb_dataset_artifact_name: Optional[str] = None,
-        ct_dataset_names: Optional[List[str]] = None,
-        max_experiments: Optional[int] = 20,
-        batch_size: Optional[int] = 1,
-        brute_force_categorical: Optional[bool] = False,
-        acquisition_function: Optional[str] = "EI",
-        repeats: Optional[int] = 20,
-        wandb_artifact_name: Optional[str] = None,
-        print_warnings: Optional[bool] = True,
-        parallel: bool = True,
-        **kwargs,
-    ):
-        super().__init__(
-            parallel=parallel, cloud_build_config=SummitBuildConfig(), **kwargs
-        )
-        self.strategy = strategy
-        self.model_name = model_name
-        self.wandb_benchmark_artifact_name = wandb_benchmark_artifact_name
-        self.wandb_dataset_artifact_name = wandb_dataset_artifact_name
-        self.ct_dataset_names = ct_dataset_names
-        self.output_path = output_path
-        self.max_experiments = max_experiments
-        self.batch_size = batch_size
-        self.brute_force_categorical = brute_force_categorical
-        self.acquisition_function = acquisition_function
-        self.repeats = repeats
-        self.wandb_artifact_name = wandb_artifact_name
-        self.print_warnings = print_warnings
-
-        # login to wandb
-        wandb.login(key=os.environ.get("WANDB_API_KEY"))
-        self.wandb_run_id = None
-        self.wandb_run_name = None
-        self.wandb_project = None
-        self.wandb_entity = None
-
-    def run(self):
-        cmd = f"""
-        python multitask/suzuki_optimization.py {self.strategy.lower()} \
-        {self.model_name} \
-        {self.wandb_benchmark_artifact_name} \
-        {self.output_path} \
-        --max-experiments {self.max_experiments} \
-        --batch-size {self.batch_size} \
-        --repeats {self.repeats} \
-        --wandb-artifact-name {self.wandb_artifact_name}
-        """
-        if self.brute_force_categorical:
-            cmd += "--brute-force-categorical"
-        subprocess.run(cmd, shell=True, check=True)
 
 
 @app.command()
@@ -179,7 +112,6 @@ def stbo(
                         brute_force_categorical=brute_force_categorical,
                         categorical_method=categorical_method,
                         acquisition_function=acquisition_function,
-                        wandb_runner_kwargs=WANDB_SETTINGS,
                     )
                     result.save(output_path / f"repeat_{i}.json")
                     torch.save(
@@ -207,7 +139,8 @@ def stbo(
 def mtbo(
     model_name: str,
     benchmark_artifact_name: str,
-    ct_data_paths: List[str],
+    wandb_dataset_artifact_name: str,
+    ct_dataset_names: List[str],
     output_path: str,
     max_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
@@ -221,19 +154,6 @@ def mtbo(
     args = dict(locals())
     args["strategy"] = "MTBO"
 
-    # Load suzuki dataset
-    ds_list = [
-        get_suzuki_dataset(
-            ct_data_path,
-            split_catalyst=exp.split_catalyst,
-            print_warnings=print_warnings,
-        )
-        for ct_data_path in ct_data_paths
-    ]
-    for i, ds in enumerate(ds_list):
-        ds["task", "METADATA"] = i
-    big_ds = pd.concat(ds_list)
-
     # Saving
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
@@ -243,7 +163,7 @@ def mtbo(
     # Multi-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
     max_iterations += 1 if max_experiments % batch_size != 0 else 0
-    opt_task = len(ds_list)
+
     if brute_force_categorical:
         categorical_method = None
     else:
@@ -255,18 +175,38 @@ def mtbo(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
+                    # Initialize wandb
                     run = wandb.init(
                         entity=WANDB_SETTINGS["wandb_entity"],
                         project=WANDB_SETTINGS["wandb_project"],
                         config=args,
                         tags=["MTBO"],
                     )
+
                     # Download benchmark weights from wandb and load
                     benchmark_artifact = run.use_artifact(benchmark_artifact_name)
                     benchmark_path = benchmark_artifact.download()
                     exp = SuzukiEmulator.load(
                         model_name=model_name, save_dir=benchmark_path
                     )
+
+                    # Load suzuki dataset
+                    dataset_artifact = run.use_artifact(wandb_dataset_artifact_name)
+                    datasets_path = Path(dataset_artifact.download())
+                    ds_list = [
+                        get_suzuki_dataset(
+                            data_path=datasets_path / f"{ct_dataset_name}.pb",
+                            split_catalyst=exp.split_catalyst,
+                            print_warnings=print_warnings,
+                        )
+                        for ct_dataset_name in ct_dataset_names
+                    ]
+                    for i, ds in enumerate(ds_list):
+                        ds["task", "METADATA"] = i
+                    big_ds = pd.concat(ds_list)
+                    opt_task = len(ds_list)
+
+                    # Run optimization
                     result = run_mtbo(
                         exp,
                         ct_data=big_ds,
