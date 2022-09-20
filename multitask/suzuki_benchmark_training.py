@@ -29,9 +29,8 @@ class BenchmarkTraining(L.LightningWork):
         save_path: str,
         figure_path: str,
         parallel: bool = False,
-        **kwargs,
     ):
-        super().__init__(parallel=parallel, **kwargs)
+        super().__init__(parallel=parallel)
         self.data_path = data_path
         self.save_path = save_path
         self.figure_path = figure_path

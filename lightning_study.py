@@ -1,10 +1,88 @@
-from multitask.suzuki_optimization import SuzukiWork
+import subprocess
+from typing import List, Optional
 from multitask.suzuki_benchmark_training import BenchmarkTraining
 import lightning as L
+from lightning_app.structures.dict import Dict
 import logging
+import wandb
+import os
 
 
 logger = logging.getLogger(__name__)
+
+
+class SummitBuildConfig(L.BuildConfig):
+    def build_commands(self) -> List[str]:
+        return [
+            "pip install .",
+        ]
+
+
+class SuzukiWork(L.LightningWork):
+    def __init__(
+        self,
+        strategy: str,
+        model_name: str,
+        wandb_benchmark_artifact_name: str,
+        output_path: str,
+        wandb_dataset_artifact_name: Optional[str] = None,
+        ct_dataset_names: Optional[List[str]] = None,
+        max_experiments: Optional[int] = 20,
+        batch_size: Optional[int] = 1,
+        brute_force_categorical: Optional[bool] = False,
+        acquisition_function: Optional[str] = "EI",
+        repeats: Optional[int] = 20,
+        wandb_artifact_name: Optional[str] = None,
+        print_warnings: Optional[bool] = True,
+        parallel: bool = True,
+        **kwargs,
+    ):
+        super().__init__(
+            parallel=parallel, cloud_build_config=SummitBuildConfig(), **kwargs
+        )
+        self.strategy = strategy
+        self.model_name = model_name
+        self.wandb_benchmark_artifact_name = wandb_benchmark_artifact_name
+        self.wandb_dataset_artifact_name = wandb_dataset_artifact_name
+        self.ct_dataset_names = ct_dataset_names
+        self.output_path = output_path
+        self.max_experiments = max_experiments
+        self.batch_size = batch_size
+        self.brute_force_categorical = brute_force_categorical
+        self.acquisition_function = acquisition_function
+        self.repeats = repeats
+        self.wandb_artifact_name = wandb_artifact_name
+        self.print_warnings = print_warnings
+
+        # login to wandb
+        wandb.login(key=os.environ.get("WANDB_API_KEY"))
+        self.wandb_run_id = None
+        self.wandb_run_name = None
+        self.wandb_project = None
+        self.wandb_entity = None
+
+    def run(self):
+        cmd = f"""
+        python multitask/suzuki_optimization.py \
+        {self.strategy.lower()} \
+        {self.model_name} \
+        {self.wandb_benchmark_artifact_name} \
+        """
+        if self.strategy == "MTBO":
+            cmd += f" {self.wandb_dataset_artifact_name} "
+            cmd += " ".join([c + " " for c in self.ct_dataset_names])
+        cmd += f" {self.output_path}"
+        options = f"""
+        --max-experiments {self.max_experiments} \
+        --batch-size {self.batch_size} \
+        --repeats {self.repeats} \
+        --wandb-artifact-name {self.wandb_artifact_name}  \
+        --acquisition-function {self.acquisition_function} \
+        --print-warnings {self.print_warnings}
+        """
+        if self.brute_force_categorical:
+            options += "\n--brute-force-categorical"
+        subprocess.run(cmd + options, shell=True, check=True)
 
 
 class MultitaskBenchmarkStudy(L.LightningFlow):
@@ -18,6 +96,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         run_single_task: bool,
         run_multi_task: bool,
         compute_type: str = "cpu-medium",
+        parallel: bool = True,
     ):
         super().__init__()
 
@@ -28,10 +107,14 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         self.run_single_task = run_single_task
         self.run_multi_task = run_multi_task
         self.compute_type = compute_type
+        self.parallel = parallel
+
+        # Workers
+        self.all_running = False
 
     def run(self):
         # Benchmark training
-        if self.run_benchmark_training:
+        if self.run_benchmark_training and not self.all_running:
             # Train Baumgartner benchmark
             baumgartner_runs = [
                 BenchmarkTraining(
@@ -64,7 +147,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 )
 
         # Single task benchmarking
-        if self.run_single_task:
+        if self.run_single_task and not self.all_running:
             runs = [
                 SuzukiWork(
                     **config,
@@ -74,13 +157,14 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     max_experiments=self.max_experiments,
                     batch_size=self.batch_size,
                     repeats=self.repeats,
+                    parallel=self.parallel,
                 )
             ]
             for r in runs:
                 r.run()
 
         # Multi task benchmarking
-        if self.run_multi_task:
+        if self.run_multi_task and not self.all_running:
             runs = [
                 SuzukiWork(
                     **config,
@@ -90,14 +174,17 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     max_experiments=self.max_experiments,
                     batch_size=self.batch_size,
                     repeats=self.repeats,
+                    parallel=self.parallel,
                 )
             ]
             for r in runs:
                 r.run()
 
+        self.all_running = True
+
     @staticmethod
     def generate_suzuki_configs_single_task(
-        max_experiments: int, batch_size: int, repeats: int
+        max_experiments: int, batch_size: int, repeats: int, parallel: bool
     ):
         # STBO Reizman
         reizman_stbo_configs = [
@@ -111,7 +198,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "batch_size": batch_size,
                 "repeats": repeats,
                 "acquisition_function": "qNEI",
-                "parallel": False,
+                "parallel": parallel,
             }
             for case in range(1, 5)
         ]
@@ -128,7 +215,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "batch_size": batch_size,
                 "repeats": repeats,
                 "acquisition_function": "qNEI",
-                "parallel": True,
+                "parallel": parallel,
             }
         ]
 
@@ -136,7 +223,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
     @staticmethod
     def generate_suzuki_configs_multitask(
-        max_experiments: int, batch_size: int, repeats: int
+        max_experiments: int, batch_size: int, repeats: int, parallel: bool
     ):
         # MTBO Reizman one cotraining with Baumgartner
         reizman_mtbo_configs_baugmartner_one = [
@@ -152,7 +239,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "batch_size": batch_size,
                 "repeats": repeats,
                 "acquisition_function": "qNEI",
-                "parallel": True,
+                "parallel": parallel,
             }
             for case in range(1, 5)
         ]
@@ -171,7 +258,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "batch_size": batch_size,
                 "repeats": repeats,
                 "acquisition_function": "qNEI",
-                "parallel": True,
+                "parallel": parallel,
             }
             for case_main in range(1, 5)
             for case_aux in range(1, 5)
@@ -193,7 +280,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "batch_size": batch_size,
                 "repeats": repeats,
                 "acquisition_function": "qNEI",
-                "parallel": True,
+                "parallel": parallel,
             }
             for case in range(1, 5)
         ]
@@ -210,5 +297,6 @@ app = L.LightningApp(
         run_single_task=True,
         run_multi_task=True,
         compute_type="cpu-medium",
+        parallel=False,
     )
 )
