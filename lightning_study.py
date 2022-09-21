@@ -58,7 +58,7 @@ class SuzukiWork(L.LightningWork):
         self.print_warnings = print_warnings
 
     def run(self):
-        wandb.login(key=os.environ.get("WANDB_API_KEY"))
+        # wandb.login(key=os.environ.get("WANDB_API_KEY"))
 
         cmd = f"""
         python multitask/suzuki_optimization.py \
@@ -69,22 +69,20 @@ class SuzukiWork(L.LightningWork):
         if self.strategy == "MTBO":
             cmd += f" {self.wandb_dataset_artifact_name} "
             cmd += " ".join([c + " " for c in self.ct_dataset_names])
-        cmd += f" {self.output_path} \ "
+        cmd += f"""{self.output_path} """
         options = f"""
         --max-experiments {self.max_experiments} \
         --batch-size {self.batch_size} \
         --repeats {self.repeats} \
         --wandb-artifact-name {self.wandb_artifact_name}  \
         --acquisition-function {self.acquisition_function} \
-        --print-warnings {self.print_warnings}
         """
+        if not self.print_warnings:
+            options += "--no-print-warnings \n "
         if self.brute_force_categorical:
-            options += "\n--brute-force-categorical"
-        options = ""
-        try:
-            subprocess.run(cmd + options, shell=True, check=True)
-        except subprocess.CalledProcessError as e:
-            raise (e)
+            options += "--brute-force-categorical"
+        print(cmd + options)
+        subprocess.run(cmd + options, shell=True)
 
 
 class MultitaskBenchmarkStudy(L.LightningFlow):
@@ -157,37 +155,32 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 repeats=self.repeats,
                 parallel=self.parallel,
             )
-            self.runner = SuzukiWork(
-                **configs[0],
-                cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
-            )
-        #     for i, config in enumerate(configs):
-        #         self.workers[str(self.count + i)] = SuzukiWork(
-        #             **config,
-        #             cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
-        #         )
-        #     self.count += len(configs)
+            for i, config in enumerate(configs):
+                self.workers[str(self.count + i)] = SuzukiWork(
+                    **config,
+                    cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
+                )
+            self.count += len(configs)
 
-        # # Multi task benchmarking
-        # if self.run_multi_task and not self.all_running:
-        #     configs = self.generate_suzuki_configs_multitask(
-        #         max_experiments=self.max_experiments,
-        #         batch_size=self.batch_size,
-        #         repeats=self.repeats,
-        #         parallel=self.parallel,
-        #     )
-        #     for i, config in enumerate(configs):
-        #         self.workers[str(self.count + i)] = SuzukiWork(
-        #             **config,
-        #             cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
-        #         )
-        #     self.count += len(configs)
+        # Multi task benchmarking
+        if self.run_multi_task and not self.all_running:
+            configs = self.generate_suzuki_configs_multitask(
+                max_experiments=self.max_experiments,
+                batch_size=self.batch_size,
+                repeats=self.repeats,
+                parallel=self.parallel,
+            )
+            for i, config in enumerate(configs):
+                self.workers[str(self.count + i)] = SuzukiWork(
+                    **config,
+                    cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
+                )
+            self.count += len(configs)
 
     def run(self):
         if not self.all_running:
-            self.runner.run()
-            # for i in range(self.count):
-            #     self.workers[str(i)].run()
+            for i in range(self.count):
+                self.workers[str(i)].run()
             self.all_running = True
 
     @staticmethod
