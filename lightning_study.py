@@ -1,5 +1,5 @@
 import subprocess
-from typing import List, Optional
+from typing import Dict, List, Optional
 from multitask.suzuki_benchmark_training import BenchmarkTraining
 import lightning as L
 from lightning_app.structures.dict import Dict
@@ -11,11 +11,11 @@ import os
 logger = logging.getLogger(__name__)
 
 
-class SummitBuildConfig(L.BuildConfig):
-    def build_commands(self) -> List[str]:
-        return [
-            "pip install .",
-        ]
+# class SummitBuildConfig(L.BuildConfig):
+#     def build_commands(self) -> List[str]:
+#         return [
+#             "pip install .",
+#         ]
 
 
 class SuzukiWork(L.LightningWork):
@@ -40,7 +40,7 @@ class SuzukiWork(L.LightningWork):
     ):
         super().__init__(
             parallel=parallel,
-            cloud_build_config=SummitBuildConfig(),
+            # cloud_build_config=SummitBuildConfig(),
             cloud_compute=cloud_compute,
         )
         self.strategy = strategy
@@ -81,7 +81,6 @@ class SuzukiWork(L.LightningWork):
             options += "--no-print-warnings \n "
         if self.brute_force_categorical:
             options += "--brute-force-categorical"
-        print(cmd + options)
         subprocess.run(cmd + options, shell=True)
 
 
@@ -97,6 +96,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         run_multi_task: bool,
         compute_type: str = "cpu-medium",
         parallel: bool = True,
+        max_workers: int = 10,
     ):
         super().__init__()
 
@@ -110,12 +110,17 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         self.parallel = parallel
 
         # Workers
-        self.all_running = False
-        self.workers = {}
-        self.count = 0
+        self.max_workers = max_workers
+        # self.workers: Dict[int, L.LightningWork] = {}
+        self.workers = Dict()
+        self.total_jobs = 0
+        self.current_workers: List[int] = []
+        self.succeded: List[int] = []
+        self.all_initialized = False
 
+    def run(self):
         # Benchmark training
-        if self.run_benchmark_training and not self.all_running:
+        if self.run_benchmark_training and self.all_initialized:
             # Train Baumgartner benchmark
             baumgartner_runs = [
                 BenchmarkTraining(
@@ -148,7 +153,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 )
 
         # Single task benchmarking
-        if self.run_single_task and not self.all_running:
+        if self.run_single_task and not self.all_initialized:
             configs = self.generate_suzuki_configs_single_task(
                 max_experiments=self.max_experiments,
                 batch_size=self.batch_size,
@@ -156,14 +161,16 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 parallel=self.parallel,
             )
             for i, config in enumerate(configs):
-                self.workers[str(self.count + i)] = SuzukiWork(
+                self.workers[str(self.total_jobs + i)] = SuzukiWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
+                    cloud_compute=L.CloudCompute(
+                        self.compute_type, shm_size=4096, idle_timeout=60
+                    ),
                 )
-            self.count += len(configs)
+            self.total_jobs += len(configs)
 
         # Multi task benchmarking
-        if self.run_multi_task and not self.all_running:
+        if self.run_multi_task and not self.all_initialized:
             configs = self.generate_suzuki_configs_multitask(
                 max_experiments=self.max_experiments,
                 batch_size=self.batch_size,
@@ -171,17 +178,29 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 parallel=self.parallel,
             )
             for i, config in enumerate(configs):
-                self.workers[str(self.count + i)] = SuzukiWork(
+                self.workers[str(self.total_jobs + i)] = SuzukiWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
+                    cloud_compute=L.CloudCompute(
+                        self.compute_type, shm_size=4096, idle_timeout=60
+                    ),
                 )
-            self.count += len(configs)
+            self.total_jobs += len(configs)
 
-    def run(self):
-        if not self.all_running:
-            for i in range(self.count):
+        self.all_initialized = True
+
+        # Check for finished jobs
+        for i in self.current_workers:
+            if self.workers[str(i)].has_succeeded:
+                self.current_workers.remove(i)
+                self.succeded.append(i)
+
+        # Queue new jobs
+        i = 0
+        while len(self.current_workers) < self.max_workers and i < self.total_jobs:
+            if i not in self.succeded or i not in self.current_workers:
                 self.workers[str(i)].run()
-            self.all_running = True
+                self.current_workers.append(i)
+            i += 1
 
     @staticmethod
     def generate_suzuki_configs_single_task(
