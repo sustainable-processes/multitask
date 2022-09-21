@@ -35,10 +35,13 @@ class SuzukiWork(L.LightningWork):
         wandb_artifact_name: Optional[str] = None,
         print_warnings: Optional[bool] = True,
         parallel: bool = True,
+        cloud_compute=None,
         **kwargs,
     ):
         super().__init__(
-            parallel=parallel, cloud_build_config=SummitBuildConfig(), **kwargs
+            parallel=parallel,
+            cloud_build_config=SummitBuildConfig(),
+            cloud_compute=cloud_compute,
         )
         self.strategy = strategy
         self.model_name = model_name
@@ -110,10 +113,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
         # Workers
         self.all_running = False
-        self.workers = Dict()
+        self.workers = {}
+        self.count = 0
 
-    def run(self):
-        count = 0
         # Benchmark training
         if self.run_benchmark_training and not self.all_running:
             # Train Baumgartner benchmark
@@ -134,7 +136,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     save_path=f"data/reizman_suzuki/emulator_case_{case}/",
                     figure_path="figures/",
                     parallel=True,
-                    cloud_compute=L.CloudCompute(self.compute_type),
+                    cloud_compute=L.CloudCompute(name=self.compute_type),
                 )
                 for case in range(1, 5)
             ]
@@ -155,41 +157,37 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 repeats=self.repeats,
                 parallel=self.parallel,
             )
-            self.workers.update(
-                {
-                    count
-                    + i: SuzukiWork(
-                        **config,
-                        cloud_compute=L.CloudCompute(self.compute_type),
-                    )
-                    for i, config in enumerate(configs)
-                }
+            self.runner = SuzukiWork(
+                **configs[0],
+                cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
             )
-            count += len(configs)
+        #     for i, config in enumerate(configs):
+        #         self.workers[str(self.count + i)] = SuzukiWork(
+        #             **config,
+        #             cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
+        #         )
+        #     self.count += len(configs)
 
-        # Multi task benchmarking
-        if self.run_multi_task and not self.all_running:
-            configs = self.generate_suzuki_configs_multitask(
-                max_experiments=self.max_experiments,
-                batch_size=self.batch_size,
-                repeats=self.repeats,
-                parallel=self.parallel,
-            )
-            self.workers.update(
-                {
-                    count
-                    + i: SuzukiWork(
-                        **config,
-                        cloud_compute=L.CloudCompute(self.compute_type),
-                    )
-                    for i, config in enumerate(configs)
-                }
-            )
-            count += len(configs)
+        # # Multi task benchmarking
+        # if self.run_multi_task and not self.all_running:
+        #     configs = self.generate_suzuki_configs_multitask(
+        #         max_experiments=self.max_experiments,
+        #         batch_size=self.batch_size,
+        #         repeats=self.repeats,
+        #         parallel=self.parallel,
+        #     )
+        #     for i, config in enumerate(configs):
+        #         self.workers[str(self.count + i)] = SuzukiWork(
+        #             **config,
+        #             cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
+        #         )
+        #     self.count += len(configs)
 
+    def run(self):
         if not self.all_running:
-            for w in self.workers.values():
-                w.run()
+            self.runner.run()
+            # for i in range(self.count):
+            #     self.workers[str(i)].run()
             self.all_running = True
 
     @staticmethod
@@ -307,6 +305,6 @@ app = L.LightningApp(
         run_single_task=True,
         run_multi_task=True,
         compute_type="cpu-medium",
-        parallel=True,
+        parallel=False,
     )
 )

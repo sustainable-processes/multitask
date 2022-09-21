@@ -8,21 +8,21 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "aiobotocore"
-version = "2.1.2"
+version = "2.4.0"
 description = "Async client for aws services using botocore and aiohttp"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 
 [package.dependencies]
 aiohttp = ">=3.3.1"
 aioitertools = ">=0.5.1"
-botocore = ">=1.23.24,<1.23.25"
+botocore = ">=1.27.59,<1.27.60"
 wrapt = ">=1.10.10"
 
 [package.extras]
-awscli = ["awscli (>=1.22.24,<1.22.25)"]
-boto3 = ["boto3 (>=1.20.24,<1.20.25)"]
+awscli = ["awscli (>=1.25.60,<1.25.61)"]
+boto3 = ["boto3 (>=1.24.59,<1.24.60)"]
 
 [[package]]
 name = "aiohttp"
@@ -140,6 +140,17 @@ cffi = ">=1.0.1"
 [package.extras]
 dev = ["pytest", "cogapp", "pre-commit", "wheel"]
 tests = ["pytest"]
+
+[[package]]
+name = "arrow"
+version = "1.2.3"
+description = "Better dates & times for Python"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+python-dateutil = ">=2.7.0"
 
 [[package]]
 name = "asgiref"
@@ -290,19 +301,19 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "botocore"
-version = "1.23.24"
+version = "1.27.59"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
-python-versions = ">= 3.6"
+python-versions = ">= 3.7"
 
 [package.dependencies]
-jmespath = ">=0.7.1,<1.0.0"
+jmespath = ">=0.7.1,<2.0.0"
 python-dateutil = ">=2.1,<3.0.0"
 urllib3 = ">=1.25.4,<1.27"
 
 [package.extras]
-crt = ["awscrt (==0.12.5)"]
+crt = ["awscrt (==0.14.0)"]
 
 [[package]]
 name = "botorch"
@@ -595,6 +606,18 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
+name = "fire"
+version = "0.4.0"
+description = "A library for automatically generating command line interfaces."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+six = "*"
+termcolor = "*"
+
+[[package]]
 name = "flask"
 version = "2.2.2"
 description = "A simple framework for building complex web applications."
@@ -657,14 +680,14 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "fsspec"
-version = "2022.1.0"
+version = "2022.8.2"
 description = "File-system specification"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 
 [package.dependencies]
-aiohttp = {version = "*", optional = true, markers = "extra == \"http\""}
+aiohttp = {version = "<4.0.0a0 || >4.0.0a0,<4.0.0a1 || >4.0.0a1", optional = true, markers = "extra == \"http\""}
 requests = {version = "*", optional = true, markers = "extra == \"http\""}
 
 [package.extras]
@@ -681,13 +704,14 @@ github = ["requests"]
 gs = ["gcsfs"]
 gui = ["panel"]
 hdfs = ["pyarrow (>=1)"]
-http = ["requests", "aiohttp"]
+http = ["requests", "aiohttp (!=4.0.0a0,!=4.0.0a1)"]
 libarchive = ["libarchive-c"]
 oci = ["ocifs"]
 s3 = ["s3fs"]
 sftp = ["paramiko"]
 smb = ["smbprotocol"]
 ssh = ["paramiko"]
+tqdm = ["tqdm"]
 
 [[package]]
 name = "future"
@@ -1148,46 +1172,46 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "lightning"
-version = "2022.8.17"
+version = "2022.9.8"
 description = "Use Lightning Apps to build everything from production-ready, multi-cloud ML systems to simple research demos."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-lightning-app = ">=0.5.2,<0.6.0"
+lightning-app = ">=0.6.0,<0.7.0"
 pytorch-lightning = ">=1.7.0,<1.8.0"
 
 [[package]]
 name = "lightning-app"
-version = "0.5.7"
+version = "0.6.1"
 description = "Use Lightning Apps to build everything from production-ready, multi-cloud ML systems to simple research demos."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-croniter = "*"
+arrow = ">=1.2.0"
+croniter = ">=1.3.0,<1.4.0"
 deepdiff = ">=5.7.0"
-fsspec = "2022.01.0"
-jinja2 = "3.0.3"
-lightning-cloud = "0.5.3"
+fsspec = ">=2022.5.0"
+lightning-cloud = "0.5.7"
+lightning-utilities = ">=0.3.0,<0.4.0"
 packaging = "*"
-py = "*"
-s3fs = "2022.1.0"
+s3fs = ">=2022.5.0"
 starsessions = ">=1.2.1,<2.0"
-traitlets = "*"
+traitlets = ">=5.3.0"
 
 [package.extras]
-all = ["redis (==4.1.0)", "docker (==5.0.3)", "setuptools (==59.5.0)", "s3fs (==2022.1.0)", "streamlit (>=1.3.1)"]
-cloud = ["redis (==4.1.0)", "docker (==5.0.3)", "setuptools (==59.5.0)", "s3fs (==2022.1.0)"]
-dev = ["redis (==4.1.0)", "docker (==5.0.3)", "setuptools (==59.5.0)", "s3fs (==2022.1.0)", "streamlit (>=1.3.1)", "coverage (>=5.0)", "codecov (>=2.1)", "pytest (>=5.0)", "pytest-timeout", "pytest-cov", "playwright (==1.22.0)", "flake8 (>=3.0)", "check-manifest", "twine (>=3.2)", "isort (>=5.0)", "mypy (>=0.720)", "trio", "pympler"]
-test = ["coverage (>=5.0)", "codecov (>=2.1)", "pytest (>=5.0)", "pytest-timeout", "pytest-cov", "playwright (==1.22.0)", "flake8 (>=3.0)", "check-manifest", "twine (>=3.2)", "isort (>=5.0)", "mypy (>=0.720)", "trio", "pympler"]
-ui = ["streamlit (>=1.3.1)"]
+ui = ["panel (>=0.12)", "streamlit (>=1.3.1)"]
+test = ["psutil", "pympler", "trio", "playwright (==1.22.0)", "pytest-cov", "pytest-timeout", "pytest (>=7.0)", "codecov (>=2.1)", "coverage (>=6.4)"]
+dev = ["psutil", "pympler", "trio", "playwright (==1.22.0)", "pytest-cov", "pytest-timeout", "pytest (>=7.0)", "codecov (>=2.1)", "coverage (>=6.4)", "panel (>=0.12)", "streamlit (>=1.3.1)", "docker (>=5.0.0)", "redis (>=4.0.0)"]
+cloud = ["docker (>=5.0.0)", "redis (>=4.0.0)"]
+all = ["panel (>=0.12)", "streamlit (>=1.3.1)", "docker (>=5.0.0)", "redis (>=4.0.0)"]
 
 [[package]]
 name = "lightning-cloud"
-version = "0.5.3"
+version = "0.5.7"
 description = "Lightning Cloud"
 category = "main"
 optional = false
@@ -1202,6 +1226,17 @@ rich = "*"
 six = "*"
 urllib3 = "*"
 websocket-client = "*"
+
+[[package]]
+name = "lightning-utilities"
+version = "0.3.0"
+description = "PyTorch Lightning Sample project."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+fire = "*"
 
 [[package]]
 name = "llvmlite"
@@ -2168,20 +2203,20 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "s3fs"
-version = "2022.1.0"
+version = "2022.8.2"
 description = "Convenient Filesystem interface over S3"
 category = "main"
 optional = false
-python-versions = ">= 3.6"
+python-versions = ">= 3.7"
 
 [package.dependencies]
-aiobotocore = ">=2.1.0,<2.2.0"
-aiohttp = "<=4"
-fsspec = "2022.01.0"
+aiobotocore = ">=2.4.0,<2.5.0"
+aiohttp = "<4.0.0a0 || >4.0.0a0,<4.0.0a1 || >4.0.0a1"
+fsspec = "2022.8.2"
 
 [package.extras]
-awscli = ["aiobotocore[awscli] (>=2.1.0,<2.2.0)"]
-boto3 = ["aiobotocore[boto3] (>=2.1.0,<2.2.0)"]
+awscli = ["aiobotocore[awscli] (>=2.4.0,<2.5.0)"]
+boto3 = ["aiobotocore[boto3] (>=2.4.0,<2.5.0)"]
 
 [[package]]
 name = "scikit-learn"
@@ -2537,6 +2572,17 @@ description = "What-If Tool TensorBoard plugin."
 category = "main"
 optional = false
 python-versions = "*"
+
+[[package]]
+name = "termcolor"
+version = "2.0.1"
+description = "ANSI color formatting for output in terminal"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+tests = ["pytest-cov", "pytest"]
 
 [[package]]
 name = "terminado"
@@ -3089,6 +3135,7 @@ argon2-cffi-bindings = [
     {file = "argon2_cffi_bindings-21.2.0-pp38-pypy38_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ed2937d286e2ad0cc79a7087d3c272832865f779430e0cc2b4f3718d3159b0cb"},
     {file = "argon2_cffi_bindings-21.2.0-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:5e00316dabdaea0b2dd82d141cc66889ced0cdcbfa599e8b471cf22c620c329a"},
 ]
+arrow = []
 asgiref = [
     {file = "asgiref-3.5.2-py3-none-any.whl", hash = "sha256:1d2880b792ae8757289136f1db2b7b99100ce959b2aa57fd69dab783d05afac4"},
     {file = "asgiref-3.5.2.tar.gz", hash = "sha256:4a29362a6acebe09bf1d6640db38c1dc3d9217c68e6f9f6204d72667fc19a424"},
@@ -3338,6 +3385,7 @@ fastprogress = [
     {file = "fastprogress-0.2.6-py3-none-any.whl", hash = "sha256:f13593b2b1f33d93377b7e680a31a8f283862118cc6b95dcb6570b9431ea6bae"},
     {file = "fastprogress-0.2.6.tar.gz", hash = "sha256:163ec01c0b4262cfa2fe3a5d3b59bd6d5f784d4c99939e3720cd67ac411cf38d"},
 ]
+fire = []
 flask = []
 flask-compress = [
     {file = "Flask-Compress-1.12.tar.gz", hash = "sha256:e2159499f39d618a4d56ba0484e7b58b57956b9a2c6d3510f095f5bb14b7afc5"},
@@ -3345,10 +3393,7 @@ flask-compress = [
 ]
 fonttools = []
 frozenlist = []
-fsspec = [
-    {file = "fsspec-2022.1.0-py3-none-any.whl", hash = "sha256:256e2be44e62430c9ca8dac2e480384b00a3c52aef4e2b0b7204163fdc861d37"},
-    {file = "fsspec-2022.1.0.tar.gz", hash = "sha256:0bdd519bbf4d8c9a1d893a50b5ebacc89acd0e1fe0045d2f7b0e0c1af5990edc"},
-]
+fsspec = []
 future = [
     {file = "future-0.18.2.tar.gz", hash = "sha256:b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"},
 ]
@@ -3507,6 +3552,7 @@ kiwisolver = []
 lightning = []
 lightning-app = []
 lightning-cloud = []
+lightning-utilities = []
 llvmlite = [
     {file = "llvmlite-0.38.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:a7dd2bd1d6406e7789273e3f8a304ed5d9adcfaa5768052fca7dc233a857be98"},
     {file = "llvmlite-0.38.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:7a5e0ed215a576f0f872f47a70b8cb49864e0aefc8586aff5ce83e3bff47bc23"},
@@ -4244,6 +4290,7 @@ tensorboard-data-server = [
     {file = "tensorboard_data_server-0.6.1-py3-none-manylinux2010_x86_64.whl", hash = "sha256:d8237580755e58eff68d1f3abefb5b1e39ae5c8b127cc40920f9c4fb33f4b98a"},
 ]
 tensorboard-plugin-wit = []
+termcolor = []
 terminado = [
     {file = "terminado-0.15.0-py3-none-any.whl", hash = "sha256:0d5f126fbfdb5887b25ae7d9d07b0d716b1cc0ccaacc71c1f3c14d228e065197"},
     {file = "terminado-0.15.0.tar.gz", hash = "sha256:ab4eeedccfcc1e6134bfee86106af90852c69d602884ea3a1e8ca6d4486e9bfe"},
