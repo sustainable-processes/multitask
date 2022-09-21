@@ -292,12 +292,13 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         )
 
 
-app = L.LightningApp(
-    MultitaskBenchmarkStudy(
-        run_benchmark_training=False,
-        run_single_task=True,
-        run_multi_task=True,
-        compute_type="cpu-medium",
-        parallel=False,
+if __name__ == "__main__":
+    app = L.LightningApp(
+        MultitaskBenchmarkStudy(
+            run_benchmark_training=False,
+            run_single_task=True,
+            run_multi_task=True,
+            compute_type="cpu-medium",
+            parallel=True,
+        )
     )
-)

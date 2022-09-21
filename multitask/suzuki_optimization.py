@@ -77,7 +77,7 @@ def stbo(
 
     # Ouptut path
     output_path = Path(output_path)
-    output_path.mkdir(exist_ok=True)
+    output_path.mkdir(exist_ok=True, parents=True)
 
     # Single-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
@@ -157,7 +157,7 @@ def mtbo(
 
     # Saving
     output_path = Path(output_path)
-    output_path.mkdir(exist_ok=True)
+    output_path.mkdir(exist_ok=True, parents=True)
     with open(output_path / "args.json", "w") as f:
         json.dump(args, f)
 

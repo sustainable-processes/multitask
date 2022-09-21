@@ -4,7 +4,7 @@ import subprocess
 
 class MyWork(L.LightningWork):
     def __init__(self):
-        super().__init__()
+        super().__init__(cloud_compute=L.CloudCompute("cpu"), parallel=True)
 
     def run(self):
         subprocess.run(
@@ -12,7 +12,6 @@ class MyWork(L.LightningWork):
             python multitask/suzuki_optimization.py stbo baumgartner_suzuki benchmark_baumgartner_suzuki:latest data/baumgartner_suzuki/results_stbo_mixed_domain  --brute-force-categorical --max-experiments 20 --batch-size 1 --repeats 1 --wandb-artifact-name stbo_baumgartner_suzuki
             """,
             shell=True,
-            # executable
         )
 
 
