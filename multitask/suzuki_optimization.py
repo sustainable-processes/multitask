@@ -126,9 +126,12 @@ def stbo(
                         artifact.add_file(output_path / f"repeat_{i}.json")
                         artifact.add_file(output_path / f"repeat_{i}_model.pth")
                         run.log_artifact(artifact)
+
                     done = True
                 except gpytorch.utils.errors.NotPSDError:
                     retries += 1
+                finally:
+                    wandb.finish()
             if retries >= N_RETRIES:
                 logger.info(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"

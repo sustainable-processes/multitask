@@ -27,6 +27,7 @@ from torch import Tensor
 
 dtype = torch.double
 
+
 class NewMTBO(Strategy):
     """Multitask Bayesian Optimisation
 
@@ -257,7 +258,7 @@ class NewMTBO(Strategy):
             raise ValueError(f"{self.model_type} not available")
 
         mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
-        fit_gpytorch_model(mll)
+        fit_gpytorch_model(mll, max_retries=20)
 
         # Train an extra model for the current task
         if self.acquistion_function == "WeightedEI":
@@ -703,14 +704,30 @@ class NewSTBO(Strategy):
                     cat_dimensions.append(i)
 
             self.model = MixedSingleTaskGP(
-                torch.tensor(inputs.data_to_numpy().astype(float), device=self.device, dtype=dtype),
-                torch.tensor(output.data_to_numpy().astype(float), device=self.device, dtype=dtype),
+                torch.tensor(
+                    inputs.data_to_numpy().astype(float),
+                    device=self.device,
+                    dtype=dtype,
+                ),
+                torch.tensor(
+                    output.data_to_numpy().astype(float),
+                    device=self.device,
+                    dtype=dtype,
+                ),
                 cat_dims=cat_dimensions,
             )
         else:
             self.model = SingleTaskGP(
-                torch.tensor(inputs.data_to_numpy().astype(float), device=self.device, dtype=dtype),
-                torch.tensor(output.data_to_numpy().astype(float), device=self.device, dtype=dtype),
+                torch.tensor(
+                    inputs.data_to_numpy().astype(float),
+                    device=self.device,
+                    dtype=dtype,
+                ),
+                torch.tensor(
+                    output.data_to_numpy().astype(float),
+                    device=self.device,
+                    dtype=dtype,
+                ),
             )
 
         # Train model
@@ -725,7 +742,10 @@ class NewSTBO(Strategy):
                 self.acq = qNEI(
                     self.model,
                     X_baseline=torch.tensor(
-                        inputs.data_to_numpy().astype(float), device=self.device, dtype=dtype),
+                        inputs.data_to_numpy().astype(float),
+                        device=self.device,
+                        dtype=dtype,
+                    ),
                 )
             elif self.acquistion_function == "UCB":
                 self.acq = UCB(self.model, beta=1.5)
@@ -764,7 +784,10 @@ class NewSTBO(Strategy):
                     self.domain,
                     self.model,
                     X_baseline=torch.tensor(
-                        inputs.data_to_numpy().astype(float),  device=self.device, dtype=dtype),
+                        inputs.data_to_numpy().astype(float),
+                        device=self.device,
+                        dtype=dtype,
+                    ),
                 )
             else:
                 raise ValueError(

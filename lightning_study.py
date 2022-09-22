@@ -1,11 +1,11 @@
 import subprocess
 from typing import Dict, List, Optional
+
+import wandb
 from multitask.suzuki_benchmark_training import BenchmarkTraining
 import lightning as L
 from lightning_app.structures.dict import Dict
 import logging
-import wandb
-import os
 
 
 logger = logging.getLogger(__name__)
@@ -163,9 +163,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.workers[str(self.total_jobs + i)] = SuzukiWork(
                     **config,
-                    cloud_compute=L.CloudCompute(
-                        self.compute_type, shm_size=4096, idle_timeout=60
-                    ),
+                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
                 )
             self.total_jobs += len(configs)
 
@@ -180,9 +178,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.workers[str(self.total_jobs + i)] = SuzukiWork(
                     **config,
-                    cloud_compute=L.CloudCompute(
-                        self.compute_type, shm_size=4096, idle_timeout=60
-                    ),
+                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
                 )
             self.total_jobs += len(configs)
 
@@ -317,7 +313,8 @@ if __name__ == "__main__":
             run_benchmark_training=False,
             run_single_task=True,
             run_multi_task=True,
-            compute_type="cpu-medium",
+            compute_type="gpu",
             parallel=True,
+            max_workers=10,
         )
     )
