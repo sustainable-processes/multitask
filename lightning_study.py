@@ -315,6 +315,6 @@ if __name__ == "__main__":
             run_multi_task=True,
             compute_type="gpu",
             parallel=True,
-            max_workers=10,
+            max_workers=5,
         )
     )

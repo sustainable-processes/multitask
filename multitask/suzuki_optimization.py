@@ -74,6 +74,7 @@ def stbo(
     """
     args = dict(locals())
     args["strategy"] = "STBO"
+    args["torch_num_threads"] = torch.get_num_threads()
 
     # Ouptut path
     output_path = Path(output_path)
@@ -157,6 +158,7 @@ def mtbo(
     """Optimization of a Suzuki benchmark with Multitask Bayesian Optimziation"""
     args = dict(locals())
     args["strategy"] = "MTBO"
+    args["torch_num_threads"] = torch.get_num_threads()
 
     # Saving
     output_path = Path(output_path)
