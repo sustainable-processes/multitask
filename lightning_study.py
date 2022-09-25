@@ -69,6 +69,7 @@ class SuzukiWork(L.LightningWork):
         if self.strategy == "MTBO":
             cmd += f" {self.wandb_dataset_artifact_name} "
             cmd += " ".join([c + " " for c in self.ct_dataset_names])
+            cmd += " "
         cmd += f"""{self.output_path} """
         options = f"""
         --max-experiments {self.max_experiments} \
@@ -311,7 +312,7 @@ if __name__ == "__main__":
     app = L.LightningApp(
         MultitaskBenchmarkStudy(
             run_benchmark_training=False,
-            run_single_task=True,
+            run_single_task=False,
             run_multi_task=True,
             compute_type="gpu",
             parallel=True,
