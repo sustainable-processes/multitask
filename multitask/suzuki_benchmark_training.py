@@ -12,7 +12,6 @@ from rdkit import Chem
 from pint import UnitRegistry
 
 
-import lightning as L
 import wandb
 import typer
 from pathlib import Path
@@ -20,45 +19,6 @@ from typing import Tuple, Dict, Union, List, Optional
 import pandas as pd
 import logging
 import os
-
-
-class BenchmarkTraining(L.LightningWork):
-    def __init__(
-        self,
-        data_path: str,
-        save_path: str,
-        figure_path: str,
-        parallel: bool = False,
-    ):
-        super().__init__(parallel=parallel)
-        self.data_path = data_path
-        self.save_path = save_path
-        self.figure_path = figure_path
-
-    def run(self, **kwargs):
-        # Download data
-        wandb_run = wandb.init(
-            job_type="training",
-            entity=os.environ["WANDB_ENTITY"],
-            project=os.environ["WANDB_PROJECT"],
-        )
-
-        # Train model using script
-        emulator = train_benchmark(
-            data_path=self.data_path,
-            save_path=self.save_path,
-            figure_path=self.figure_path,
-            **kwargs,
-        )
-
-        # Upload to wandb
-        name = emulator.model_name
-        artifact = wandb.Artifact(f"benchmark_{name}", type="model")
-        artifact.add_dir(self.save_path)
-        figure_path = Path(self.figure_path)
-        artifact.add_file(figure_path / f"{name}_parity_plot.png")
-        wandb_run.log_artifact(artifact)
-        wandb_run.finish()
 
 
 def train_benchmark(
@@ -94,7 +54,11 @@ def train_benchmark(
     emulator.train(max_epochs=max_epochs, cv_folds=cv_folds, verbose=verbose)
 
     # Parity plot
-    fig, _ = emulator.parity_plot(include_test=True)
+    fig, axes = emulator.parity_plot(include_test=True)
+    ax = axes[0]
+    ax.set_title("")
+    ax.set_xlabel("Measured Yield (%)")
+    ax.set_ylabel("Predicted Yield (%)")
     figure_path = Path(figure_path)
     fig.savefig(figure_path / f"{dataset_name}_parity_plot.png", dpi=300)
 

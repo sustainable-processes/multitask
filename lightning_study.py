@@ -1,6 +1,7 @@
+from pathlib import Path
 import subprocess
 from typing import List, Optional
-from multitask.suzuki_benchmark_training import BenchmarkTraining
+from multitask.suzuki_benchmark_training import train_benchmark
 import lightning as L
 from lightning_app.structures.dict import Dict
 import logging
@@ -16,6 +17,50 @@ class SummitBuildConfig(L.BuildConfig):
         return [
             "pip install .",
         ]
+
+
+WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
+
+
+class BenchmarkTraining(L.LightningWork):
+    def __init__(
+        self,
+        data_path: str,
+        save_path: str,
+        figure_path: str,
+        parallel: bool = False,
+        **kwargs,
+    ):
+        super().__init__(parallel=parallel, **kwargs)
+        self.data_path = data_path
+        self.save_path = save_path
+        self.figure_path = figure_path
+
+    def run(self, **kwargs):
+        # Download data
+        wandb_run = wandb.init(
+            job_type="training",
+            entity=WANDB_SETTINGS["wandb_entity"],
+            project=WANDB_SETTINGS["wandb_project"],
+            tags=["benchmark"],
+        )
+
+        # Train model using script
+        emulator = train_benchmark(
+            data_path=self.data_path,
+            save_path=self.save_path,
+            figure_path=self.figure_path,
+            **kwargs,
+        )
+
+        # Upload to wandb
+        name = emulator.model_name
+        artifact = wandb.Artifact(f"benchmark_{name}", type="model")
+        artifact.add_dir(self.save_path)
+        figure_path = Path(self.figure_path)
+        artifact.add_file(figure_path / f"{name}_parity_plot.png")
+        wandb_run.log_artifact(artifact)
+        wandb_run.finish()
 
 
 class SuzukiWork(L.LightningWork):
@@ -97,6 +142,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         run_multi_task: bool,
         compute_type: str = "cpu-medium",
         parallel: bool = True,
+        max_workers: int = 10,
     ):
         super().__init__()
 
@@ -110,12 +156,17 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         self.parallel = parallel
 
         # Workers
-        self.all_running = False
-        self.workers = {}
-        self.count = 0
+        self.max_workers = max_workers
+        # self.workers: Dict[int, L.LightningWork] = {}
+        self.workers = Dict()
+        self.total_jobs = 0
+        self.current_workers: List[int] = []
+        self.succeded: List[int] = []
+        self.all_initialized = False
 
+    def run(self):
         # Benchmark training
-        if self.run_benchmark_training and not self.all_running:
+        if self.run_benchmark_training and self.all_initialized:
             # Train Baumgartner benchmark
             baumgartner_runs = [
                 BenchmarkTraining(
@@ -147,23 +198,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     print_warnings=False,
                 )
 
-        # Single task benchmarking
-        if self.run_single_task and not self.all_running:
-            configs = self.generate_suzuki_configs_single_task(
-                max_experiments=self.max_experiments,
-                batch_size=self.batch_size,
-                repeats=self.repeats,
-                parallel=self.parallel,
-            )
-            for i, config in enumerate(configs):
-                self.workers[str(self.count + i)] = SuzukiWork(
-                    **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
-                )
-            self.count += len(configs)
-
         # Multi task benchmarking
-        if self.run_multi_task and not self.all_running:
+        if self.run_multi_task and not self.all_initialized:
             configs = self.generate_suzuki_configs_multitask(
                 max_experiments=self.max_experiments,
                 batch_size=self.batch_size,
@@ -171,17 +207,42 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 parallel=self.parallel,
             )
             for i, config in enumerate(configs):
-                self.workers[str(self.count + i)] = SuzukiWork(
+                self.workers[str(self.total_jobs + i)] = SuzukiWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, shm_size=4096),
+                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
                 )
-            self.count += len(configs)
+            self.total_jobs += len(configs)
 
-    def run(self):
-        if not self.all_running:
-            for i in range(self.count):
+        # Single task benchmarking
+        if self.run_single_task and not self.all_initialized:
+            configs = self.generate_suzuki_configs_single_task(
+                max_experiments=self.max_experiments,
+                batch_size=self.batch_size,
+                repeats=self.repeats,
+                parallel=self.parallel,
+            )
+            for i, config in enumerate(configs):
+                self.workers[str(self.total_jobs + i)] = SuzukiWork(
+                    **config,
+                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
+                )
+            self.total_jobs += len(configs)
+
+        self.all_initialized = True
+
+        # Check for finished jobs
+        for i in self.current_workers:
+            if self.workers[str(i)].has_succeeded:
+                self.current_workers.remove(i)
+                self.succeded.append(i)
+
+        # Queue new jobs
+        i = 0
+        while len(self.current_workers) < self.max_workers and i < self.total_jobs:
+            if i not in self.succeded or i not in self.current_workers:
                 self.workers[str(i)].run()
-            self.all_running = True
+                self.current_workers.append(i)
+            i += 1
 
     @staticmethod
     def generate_suzuki_configs_single_task(
@@ -295,10 +356,11 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 if __name__ == "__main__":
     app = L.LightningApp(
         MultitaskBenchmarkStudy(
-            run_benchmark_training=False,
-            run_single_task=True,
-            run_multi_task=True,
+            run_benchmark_training=True,
+            run_single_task=False,
+            run_multi_task=False,
             compute_type="cpu-medium",
             parallel=True,
+            max_workers=1,
         )
     )
