@@ -238,6 +238,8 @@ def mtbo(
                     done = True
                 except (RuntimeError, gpytorch.utils.errors.NotPSDError):
                     retries += 1
+                finally:
+                    wandb.finish()
             if retries >= N_RETRIES:
                 logger.info(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"

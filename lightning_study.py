@@ -59,30 +59,36 @@ class SuzukiWork(L.LightningWork):
 
     def run(self):
         # wandb.login(key=os.environ.get("WANDB_API_KEY"))
-
-        cmd = f"""
-        python multitask/suzuki_optimization.py \
-        {self.strategy.lower()} \
-        {self.model_name} \
-        {self.wandb_benchmark_artifact_name} \
-        """
-        if self.strategy == "MTBO":
-            cmd += f" {self.wandb_dataset_artifact_name} "
-            cmd += " ".join([c + " " for c in self.ct_dataset_names])
-            cmd += " "
-        cmd += f"""{self.output_path} """
-        options = f"""
-        --max-experiments {self.max_experiments} \
-        --batch-size {self.batch_size} \
-        --repeats {self.repeats} \
-        --wandb-artifact-name {self.wandb_artifact_name}  \
-        --acquisition-function {self.acquisition_function} \
-        """
+        print(self.wandb_dataset_artifact_name)
+        cmd = [
+            "python",
+            "multitask/suzuki_optimization.py",
+            self.strategy.lower(),
+            self.model_name,
+            self.wandb_benchmark_artifact_name,
+        ]
+        if self.strategy.lower() == "mtbo":
+            cmd += [self.wandb_dataset_artifact_name]
+            cmd += self.ct_dataset_names
+        cmd += [self.output_path]
+        options = [
+            "--max-experiments",
+            str(self.max_experiments),
+            "--batch-size",
+            str(self.batch_size),
+            "--repeats",
+            str(self.repeats),
+            "--wandb-artifact-name",
+            str(self.wandb_artifact_name),
+            "--acquisition-function",
+            str(self.acquisition_function),
+        ]
         if not self.print_warnings:
-            options += "--no-print-warnings \n "
+            options += ["--no-print-warning"]
         if self.brute_force_categorical:
-            options += "--brute-force-categorical"
-        subprocess.run(cmd + options, shell=True)
+            options += ["--brute-force-categorical"]
+        print(cmd + options)
+        subprocess.run(cmd + options, shell=False)
 
 
 class MultitaskBenchmarkStudy(L.LightningFlow):
@@ -153,9 +159,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     print_warnings=False,
                 )
 
-        # Single task benchmarking
-        if self.run_single_task and not self.all_initialized:
-            configs = self.generate_suzuki_configs_single_task(
+        # Multi task benchmarking
+        if self.run_multi_task and not self.all_initialized:
+            configs = self.generate_suzuki_configs_multitask(
                 max_experiments=self.max_experiments,
                 batch_size=self.batch_size,
                 repeats=self.repeats,
@@ -168,9 +174,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 )
             self.total_jobs += len(configs)
 
-        # Multi task benchmarking
-        if self.run_multi_task and not self.all_initialized:
-            configs = self.generate_suzuki_configs_multitask(
+        # Single task benchmarking
+        if self.run_single_task and not self.all_initialized:
+            configs = self.generate_suzuki_configs_single_task(
                 max_experiments=self.max_experiments,
                 batch_size=self.batch_size,
                 repeats=self.repeats,
