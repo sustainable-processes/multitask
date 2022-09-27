@@ -1,7 +1,6 @@
 from pathlib import Path
 from summit import *
 from rdkit import Chem
-import torch
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,6 +9,8 @@ from matplotlib import font_manager
 from typing import Dict, List, Optional
 import typer
 import wandb
+import logging
+import string
 from wandb.apis.public import Run
 
 
@@ -204,6 +205,7 @@ def make_baumgartner_plots(runs: List[Run]):
 def make_reizman_auxiliary_baumgartner_plots(
     runs: List[Run], num_iterations: int = 20, figure_dir: str = "figures"
 ):
+    logger = logging.getLogger(__name__)
     # Setup figure
     fig = plt.figure(figsize=(15, 5))
     fig.subplots_adjust(wspace=0.2, hspace=0.5)
@@ -211,6 +213,7 @@ def make_reizman_auxiliary_baumgartner_plots(
     axis_fontsize = 14
 
     # Make subplots for each case
+    letters = ["a", "b", "c", "d"]
     for i in range(1, 5):
         # Filter data
         stbo_dfs = [
@@ -237,6 +240,9 @@ def make_reizman_auxiliary_baumgartner_plots(
             raise ValueError("No Reizman STBO runs found")
         if len(mtbo_dfs) == 0:
             raise ValueError("No Reizman MTBO runs found")
+        logger.info(
+            f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Baumgarnter Suzuki",
+        )
 
         # Make subplot
         ax = fig.add_subplot(1, 4, k)
@@ -248,7 +254,7 @@ def make_reizman_auxiliary_baumgartner_plots(
         )
 
         # Format subplot
-        ax.set_title(f"Case {i}", fontsize=21)
+        ax.set_title(f"({letters[i - 1]})", fontsize=21)
         ax.set_xlim(0, 20)
         ax.tick_params("y", labelsize=axis_fontsize)
         xlabels = np.arange(0, 21, 5)
@@ -272,19 +278,90 @@ def make_reizman_auxiliary_baumgartner_plots(
     )
 
 
+def make_reizman_auxiliary_reizman_plots(
+    runs: List[Run], num_iterations: int = 20, figure_dir: str = "figures"
+):
+    # Setup figure
+    fig = plt.figure(figsize=(15, 15))
+    fig.subplots_adjust(wspace=0.2, hspace=0.5)
+    k = 1
+    axis_fontsize = 14
+
+    # Make subplots for each case
+    letters = list(string.ascii_lowercase)
+    for i in range(1, 5):
+        # Filter STBO data
+        stbo_dfs = [
+            run.history()
+            for run in runs
+            if run.config.get("model_name") == f"reizman_suzuki_case_{i}"
+            and run.config.get("strategy") == "STBO"
+        ]
+        stbo_dfs = [
+            stbo_df for stbo_df in stbo_dfs if stbo_df.shape[0] == num_iterations
+        ]
+        if len(stbo_dfs) == 0:
+            raise ValueError("No Reizman STBO runs found")
+        for j in range(1, 5):
+            if i != j:
+                # Filter MTBO data
+                mtbo_dfs = [
+                    run.history()
+                    for run in runs
+                    if run.config.get("strategy") == "MTBO"
+                    and run.config.get("model_name") == f"reizman_suzuki_case_{i}"
+                    and run.config.get("ct_dataset_names")[0]
+                    == "reizman_suzuki_case_{j}"
+                    and len(run.config.get("ct_dataset_names")) == 1
+                ]
+                mtbo_dfs = [
+                    mtbo_df
+                    for mtbo_df in mtbo_dfs
+                    if mtbo_df.shape[0] == num_iterations
+                ]
+                if len(mtbo_dfs) == 0:
+                    raise ValueError(
+                        f"No Reizman MTBO runs found for case {i} (auxiliary reizman {j})"
+                    )
+                logger.info(
+                    f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Reizman Suzuki case {j}"
+                )
+
+                # Make subplot
+                ax = fig.add_subplot(4, 3, k)
+                make_comparison_plot(
+                    dict(results=stbo_dfs, label="STBO", color="#a50026"),
+                    dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+                    ax=ax,
+                )
+                ax.set_title(f"({letters[k-1]}) Case {i} - Auxiliary {j}")
+                ax.set_ylim(0, 100)
+                k += 1
+
+    # Format plot
+    fig.suptitle("Reizman Optimization")
+    fig.supxlabel("Number of reactions")
+    fig.supylabel("Yield (%)")
+    fig.tight_layout()
+    figure_dir = Path(figure_dir)
+    fig.savefig(figure_dir / "reizman_reizman_one_cotraining_optimization.png", dpi=300)
+
+
 def main(
+    num_iterations: int = 20,
     include_tags: Optional[List[str]] = None,
     filter_tags: Optional[List[str]] = None,
     only_finished_runs: bool = True,
     wandb_entity: str = "ceb-sre",
     wandb_project: str = "multitask",
     figure_dir: str = "figures",
-    num_iterations: int = 20,
 ):
-    """ "
+    """Generate figures for the paper
 
     Parameters
     ----------
+    num_iterations : int, optional
+        Number of iterations to plot, by default 20
     include_tags : list of str, optional
         Only include runs with these tags, by default None
     filter_tags : list of str, optional
@@ -320,7 +397,26 @@ def main(
     make_reizman_auxiliary_baumgartner_plots(
         runs, num_iterations=num_iterations, figure_dir=figure_dir
     )
+    # make_reizman_auxiliary_reizman_plots(
+    #     runs, num_iterations=num_iterations, figure_dir=figure_dir
+    # )
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    # create a file handler
+    handler = logging.FileHandler("suzuki_optimization.log")
+    handler.setLevel(logging.INFO)
+
+    # create a logging format
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    handler.setFormatter(formatter)
+
+    # add the file handler to the logger
+    logger.addHandler(handler)
+
     typer.run(main)
