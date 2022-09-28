@@ -65,7 +65,8 @@ def main(
     reactions = []
     df_rxn_data = pd.read_excel(input_file, sheet_name=rxn_sheet_name)
     df_stock_solutions = pd.read_excel(input_file, sheet_name=stock_sheet_name)
-
+    cat_nucleophile = df_rxn_data["Optimization"].str.split(" - ", expand=True)
+    
     # Transform
     tqdm.pandas(desc="Converting to ORD")
     reactions.extend(
@@ -122,47 +123,54 @@ def inner_loop(row: pd.Series, stock_df: pd.DataFrame) -> Reaction:
     return reaction
 
 
+nucleophile_to_case = {
+    1: "Aniline",
+    2: "Benzamide",
+    3: "Benzylamine",
+    4: "Morpholine",
+}
+
 nucleophiles = {
-    "Aniline": {"SMILES": "c1ccc(cc1)N", "name": "Aniline"},
-    "Benzamide": {"SMILES": "c1ccc(cc1)C(=O)N", "name": "Benzamide"},
-    "Phenethylamine": {"SMILES": "NCCc1ccccc1", "name": "Phenethylamine"},
-    "Morpholine": {"SMILES": "C1CNCCO1", "name": "Morpholine"},
+    "Aniline": {"smiles": "c1ccc(cc1)N", "name": "Aniline"},
+    "Benzamide": {"smiles": "c1ccc(cc1)C(=O)N", "name": "Benzamide"},
+    "Phenethylamine": {"smiles": "NCCc1ccccc1", "name": "Phenethylamine"},
+    "Morpholine": {"smiles": "C1CNCCO1", "name": "Morpholine"},
 }
 
 
 ligands = {
     "EPhos": {
-        "SMILES": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=C(C(=CC=C2)OC(C)C)P(C3CCCCC3)C4CCCCC4)C(C)C",
+        "smiles": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=C(C(=CC=C2)OC(C)C)P(C3CCCCC3)C4CCCCC4)C(C)C",
         "name": "EPhos",
     },
     "tBuXPhos": {
-        "SMILES": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=CC=CC=C2P(C(C)(C)C)C(C)(C)C)C(C)C",
+        "smiles": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=CC=CC=C2P(C(C)(C)C)C(C)(C)C)C(C)C",
         "name": "tBuXPhos",
     },
     "tBuBrettPhos": {
-        "SMILES": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=C(C=CC(=C2P(C(C)(C)C)C(C)(C)C)OC)OC)C(C)C",
+        "smiles": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=C(C=CC(=C2P(C(C)(C)C)C(C)(C)C)OC)OC)C(C)C",
         "name": "tBuBrettPhos",
     },
     "AlPhos": {
-        "SMILES": "CCCCC1=C(C(=C(C(=C1F)F)C2=C(C=C(C(=C2C(C)C)C3=C(C(=CC=C3)OC)P(C45CC6CC(C4)CC(C6)C5)C78CC9CC(C7)CC(C9)C8)C(C)C)C(C)C)F)F",
+        "smiles": "CCCCC1=C(C(=C(C(=C1F)F)C2=C(C=C(C(=C2C(C)C)C3=C(C(=CC=C3)OC)P(C45CC6CC(C4)CC(C6)C5)C78CC9CC(C7)CC(C9)C8)C(C)C)C(C)C)F)F",
         "name": "AlPhos",
     },
 }
 
 solvents = {
-    "2-MeTHF": {"SMILES": "O1C(C)CCC1", "name": "2-MeTHF"},
-    "DMSO": {"SMILES": "CS(C)=O", "name": "DMSO"},
+    "2-MeTHF": {"smiles": "O1C(C)CCC1", "name": "2-MeTHF"},
+    "DMSO": {"smiles": "CS(C)=O", "name": "DMSO"},
 }
 
 bases = {
-    "TEA": {"SMILES": "CCN(CC)CC", "name": "TEA"},
-    "Triethylamine": {"SMILES": "CCN(CC)CC", "name": "TEA"},
-    "TMG": {"SMILES": "CN(C)C(=N)N(C)C", "name": "TMG"},
-    "BTMG": {"SMILES": "CC(C)(C)N=C(N(C)C)N(C)C", "name": "BTMG"},
-    "DBU": {"SMILES": "C1CCC2=NCCCN2CC1", "name": "DBU"},
-    "MTBD": {"SMILES": "CN1CCCN2C1=NCCC2", "name": "MTBD"},
-    "BTTP": {"SMILES": "CC(C)(C)N=P(N1CCCC1)(N2CCCC2)N3CCCC3", "name": "BTTP"},
-    "P2Et": {"SMILES": "CCN=P(N=P(N(C)C)(N(C)C)N(C)C)(N(C)C)N(C)C", "name": "P2Et"},
+    "TEA": {"smiles": "CCN(CC)CC", "name": "TEA"},
+    "Triethylamine": {"smiles": "CCN(CC)CC", "name": "TEA"},
+    "TMG": {"smiles": "CN(C)C(=N)N(C)C", "name": "TMG"},
+    "BTMG": {"smiles": "CC(C)(C)N=C(N(C)C)N(C)C", "name": "BTMG"},
+    "DBU": {"smiles": "C1CCC2=NCCCN2CC1", "name": "DBU"},
+    "MTBD": {"smiles": "CN1CCCN2C1=NCCC2", "name": "MTBD"},
+    "BTTP": {"smiles": "CC(C)(C)N=P(N1CCCC1)(N2CCCC2)N3CCCC3", "name": "BTTP"},
+    "P2Et": {"smiles": "CCN=P(N=P(N(C)C)(N(C)C)N(C)C)(N(C)C)N(C)C", "name": "P2Et"},
 }
 
 # the key for the products is actually the N-H nucleophile,
@@ -170,18 +178,18 @@ bases = {
 # use the nucleophile as key to link the the appropriate product
 products = {
     "Aniline": {
-        "SMILES": "CC1=CC=C(C=C1)NC2=CC=CC=C2",
+        "smiles": "CC1=CC=C(C=C1)NC2=CC=CC=C2",
         "name": "4-methyl-N-phenylaniline",
     },
     "Benzamide": {
-        "SMILES": "CC1=CC=C(C=C1)NC(=O)C2=CC=CC=C2",
+        "smiles": "CC1=CC=C(C=C1)NC(=O)C2=CC=CC=C2",
         "name": "N-(4-Methylphenyl)benzamide",
     },
     "Phenethylamine": {
-        "SMILES": "CC1=CC=C(C=C1)NCCC2=CC=CC=C2",
+        "smiles": "CC1=CC=C(C=C1)NCCC2=CC=CC=C2",
         "name": "4-methyl-N-phenethylaniline",
     },
-    "Morpholine": {"SMILES": "CC1=CC=C(C=C1)N2CCOCC2", "name": "4-(p-tolyl)morpholine"},
+    "Morpholine": {"smiles": "CC1=CC=C(C=C1)N2CCOCC2", "name": "4-(p-tolyl)morpholine"},
 }
 
 
@@ -209,7 +217,7 @@ def stock_concentration(Reagent_Name: str, row: pd.Series, stock_df) -> (float):
 
 def solvent_details(solvent_id: str):
     sol = solvents[solvent_id]
-    smiles = sol["SMILES"]
+    smiles = sol["smiles"]
     name = sol["name"]
     return name, smiles
 
@@ -237,7 +245,7 @@ def specify_solvent(
     sol_id = row["Make-Up Solvent ID"]
     name, smiles = solvent_details(sol_id)
     solvent.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
+    solvent.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
 
     solvent.amount.volume.units = Volume.MICROLITER
     solvent.amount.volume.value = final_solute_conc * droplet_volume / stock_conc
@@ -264,7 +272,7 @@ def add_electrophile(reaction: Reaction, row: pd.Series, stock_df):
     pTTf.reaction_role = ReactionRole.REACTANT
     pTTf.identifiers.add(value="p-Tolyl triflate", type=CompoundIdentifier.NAME)
     pTTf.identifiers.add(
-        value="CC1=CC=C(C=C1)OS(=O)(=O)C(F)(F)F", type=CompoundIdentifier.SMILES
+        value="CC1=CC=C(C=C1)OS(=O)(=O)C(F)(F)F", type=CompoundIdentifier.smiles
     )
     pTTf_conc = row["Aryl triflate concentration (M)"]
     pTTf.amount.moles.units = Moles.MICROMOLE
@@ -280,7 +288,7 @@ def add_electrophile(reaction: Reaction, row: pd.Series, stock_df):
         value="1-fluoronaphthalene", type=CompoundIdentifier.NAME
     )
     internal_std.identifiers.add(
-        value="C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.SMILES
+        value="C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.smiles
     )
     istd_conc = row["Internal Standard Concentration 1-fluoronaphthalene (g/L)"]
     amount = internal_std.amount
@@ -293,7 +301,7 @@ def add_electrophile(reaction: Reaction, row: pd.Series, stock_df):
 
 def nucleophile_details(nucleophile_id: str):
     nuc = nucleophiles[nucleophile_id]
-    smiles = nuc["SMILES"]
+    smiles = nuc["smiles"]
     name = nuc["name"]
     return name, smiles
 
@@ -314,7 +322,7 @@ def add_nucleophile(reaction: Reaction, row: pd.Series, stock_df):
 
     name, smiles = nucleophile_details(nuc_id)
     nucleophile.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    nucleophile.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
+    nucleophile.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
     nuc_conc = row["N-H nucleophile concentration (M)"]
     nucleophile.amount.moles.units = Moles.MICROMOLE
     nucleophile.amount.moles.value = nuc_conc * droplet_volume
@@ -328,10 +336,10 @@ def add_nucleophile(reaction: Reaction, row: pd.Series, stock_df):
 
 def catalyst_details(ligand_id: str):
     # https://www.strem.com/catalog/v/46-0308/51/palladium_225931-80-6
-    pre_cat = {"SMILES": "C1CC=CCCC=C1.C[Si](C)(C)C[Pd]C[Si](C)(C)C", "name": "cycloPd"}
-    additive = {"SMILES": "CC1=CC=C(C=C1)Cl", "name": "4-Chlorotoluene"}
+    pre_cat = {"smiles": "C1CC=CCCC=C1.C[Si](C)(C)C[Pd]C[Si](C)(C)C", "name": "cycloPd"}
+    additive = {"smiles": "CC1=CC=C(C=C1)Cl", "name": "4-Chlorotoluene"}
     ligand = ligands[ligand_id]
-    smiles = f"""{pre_cat["SMILES"]}.{ligand["SMILES"]}.{additive["SMILES"]}"""
+    smiles = f"""{pre_cat["smiles"]}.{ligand["smiles"]}.{additive["smiles"]}"""
     name = pre_cat["name"] + " " + ligand["name"] + " " + additive["name"]
     return name, smiles
 
@@ -349,7 +357,7 @@ def add_catalyst(reaction: Reaction, row: pd.Series):
     precat_id = precat_id.replace(" (Preliminary)", "")
     name, smiles = catalyst_details(precat_id)
     catalyst.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    catalyst.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
+    catalyst.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
     cat_mol_percent = row["Precatalyst loading in mol%"]
     aryl_triflate_conc = row["Aryl triflate concentration (M)"]
     droplet_volume = row["Quench Outlet Injection (uL)"]
@@ -381,7 +389,7 @@ def add_solvent(reaction: Reaction, row: pd.Series):
     sol_id = row["Make-Up Solvent ID"]
     name, smiles = solvent_details(sol_id)
     solvent.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
+    solvent.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
 
     solvent.amount.volume.units = Volume.MICROLITER
     solvent.amount.volume.value = solvent_volume
@@ -391,7 +399,7 @@ def add_solvent(reaction: Reaction, row: pd.Series):
 
 def base_details(base_id: str):
     base = bases[base_id]
-    smiles = base["SMILES"]
+    smiles = base["smiles"]
     name = base["name"]
     return name, smiles
 
@@ -408,7 +416,7 @@ def add_base(reaction: Reaction, row: pd.Series, stock_df):
     base_id = row["Base"]
     name, smiles = base_details(base_id)
     base.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    base.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
+    base.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
     base_conc = row["Base concentration (M)"]
     base.amount.moles.value = base_conc * droplet_volume
     base.amount.moles.units = Moles.MICROMOLE
@@ -521,7 +529,7 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
     quench_solvent_id = row["Make-Up Solvent ID"]
     name, smiles = solvent_details(quench_solvent_id)
     quench_solvent.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    quench_solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
+    quench_solvent.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
     quench_solvent.amount.volume.value = reaction_volume
     quench_solvent.amount.volume.units = Volume.MICROLITER
 
@@ -552,7 +560,7 @@ def add_standard(measurement: ProductMeasurement, row: pd.Series):
     #     value="1-fluoronaphthalene", type=CompoundIdentifier.NAME
     # )
     # int_standard.identifiers.add(
-    #     value="C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.SMILES
+    #     value="C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.smiles
     # )
     # int_standard.reaction_role = ReactionRole.INTERNAL_STANDARD
     # int_standard_prep = standard.preparations.add()
@@ -577,7 +585,7 @@ def add_standard(measurement: ProductMeasurement, row: pd.Series):
 
     name, smiles = specify_outcome_details(nuc_id)
     auth_standard.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    auth_standard.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
+    auth_standard.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
     auth_standard.reaction_role = ReactionRole.AUTHENTIC_STANDARD
     auth_standard_prep = auth_standard.preparations.add()
     auth_standard_prep.type = CompoundPreparation.SYNTHESIZED
@@ -625,7 +633,7 @@ def define_measurement(measurement: ProductMeasurement, row: pd.Series):
 # can be inferred from the nucleophile alone
 def specify_outcome_details(nuc_id: str):
     prod = products[nuc_id]
-    smiles = prod["SMILES"]
+    smiles = prod["smiles"]
     name = prod["name"]
     return name, smiles
 
@@ -649,7 +657,7 @@ def specify_outcome(reaction: Reaction, row: pd.Series):
 
     name, smiles = specify_outcome_details(nuc_id)
     product.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    product.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
+    product.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
     product.is_desired_product = True
     product.reaction_role = ReactionRole.PRODUCT
 

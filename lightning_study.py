@@ -1,9 +1,14 @@
-from multitask.benchmarks.suzuki_benchmark_training import train_benchmark
+from multitask.benchmarks.suzuki_benchmark_training import (
+    train_benchmark as train_suzuki_benchmark,
+)
+from multitask.benchmarks.cn_benchmark_training import (
+    train_benchmark as train_cn_benchmark,
+)
 import lightning as L
 from lightning_app.structures.dict import Dict
 from pathlib import Path
 import subprocess
-from typing import List, Optional
+from typing import List, Optional, Literal
 import logging
 import wandb
 
@@ -16,6 +21,7 @@ WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
 class BenchmarkTraining(L.LightningWork):
     def __init__(
         self,
+        benchmark_type: Literal["suzuki", "cn"],
         data_path: str,
         save_path: str,
         figure_path: str,
@@ -23,6 +29,7 @@ class BenchmarkTraining(L.LightningWork):
         **kwargs,
     ):
         super().__init__(parallel=parallel, **kwargs)
+        self.benchmark_type = benchmark_type
         self.data_path = data_path
         self.save_path = save_path
         self.figure_path = figure_path
@@ -37,12 +44,20 @@ class BenchmarkTraining(L.LightningWork):
         )
 
         # Train model using script
-        emulator = train_benchmark(
-            data_path=self.data_path,
-            save_path=self.save_path,
-            figure_path=self.figure_path,
-            **kwargs,
-        )
+        if self.benchmark_type == "suzuki":
+            emulator = train_suzuki_benchmark(
+                data_path=self.data_path,
+                save_path=self.save_path,
+                figure_path=self.figure_path,
+                **kwargs,
+            )
+        else:
+            emulator = train_cn_benchmark(
+                data_path=self.data_path,
+                save_path=self.save_path,
+                figure_path=self.figure_path,
+                **kwargs,
+            )
 
         # Upload to wandb
         name = emulator.model_name

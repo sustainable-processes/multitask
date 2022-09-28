@@ -16,7 +16,7 @@ app.add_typer(
 )
 app.add_typer(
     visualization_cli,
-    name="visualization",
+    name="viz",
     help="Visualize the results of the benchmarks",
 )
 

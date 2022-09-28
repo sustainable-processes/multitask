@@ -2,7 +2,6 @@ from multitask.utils import *
 from multitask.etl.suzuki_data_utils import *
 from multitask.benchmarks.suzuki_emulator import SuzukiEmulator
 from summit import *
-import typer
 from pathlib import Path
 from typing import Tuple, Optional
 import logging
@@ -161,7 +160,3 @@ def prepare_domain_data(
         logger.info("Number of catalysts:", len(catalysts))
         domain = create_suzuki_domain(split_catalyst=False, catalyst_list=catalysts)
     return ds, domain
-
-
-if __name__ == "__main__":
-    typer.run(train_benchmark)
