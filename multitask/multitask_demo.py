@@ -68,7 +68,12 @@ botorch.fit.fit_gpytorch_model(mll_mt)
 st.markdown(
     "Red is for Auxiliary Task, and blue is for Main Task. Dotted lines are the ground truth. Dots are training observations, and translucent lines are posterior samples of the trained model for each task."
 )
-
+title_fontsize = 21
+axis_fontsize = 21
+legend_fontsize = 12
+ticksize = 14
+alpha = 0.05
+marker_size = 50
 fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey=True)
 fig.subplots_adjust(wspace=0.3)
 
@@ -76,21 +81,22 @@ fig.subplots_adjust(wspace=0.3)
 # Ground truth
 X_plot = np.atleast_2d(np.linspace(0, 1, 100)).T
 X_plot = torch.tensor(X_plot).float()
-axes[0].plot(X_plot, f_main(X_plot), "--", label="Main Task", alpha=1, c="b")
-axes[1].plot(X_plot, f_aux(X_plot), "--", label="Auxiliary Task", alpha=1, c="r")
-axes[1].plot(X_plot, f_main(X_plot), "--", label="Main Task", alpha=1, c="b")
+axes[0].plot(X_plot, f_main(X_plot), "--", label="Ground Truth", alpha=1, c="b")
+axes[1].plot(
+    X_plot, f_aux(X_plot), "--", label="Ground Truth Auxiliary Task", alpha=1, c="r"
+)
+axes[1].plot(
+    X_plot, f_main(X_plot), "--", label="Ground Truth Main Task", alpha=1, c="b"
+)
 
 
 # Observations
-marker_size = 50
 axes[0].scatter(X_main, train_Y_f_main, c="b", s=marker_size)
 axes[1].scatter(X_aux, train_Y_f_aux, c="r", s=marker_size)
 axes[1].scatter(X_main, train_Y_f_main, c="b", s=marker_size)
 
 
 # Posterior of model
-alpha = 0.05
-
 with torch.no_grad():
     posterior_st = model_st.posterior(X_plot)
     posterior_mt = model_mt.posterior(X_plot)
@@ -100,7 +106,7 @@ with torch.no_grad():
     # Auxiliary Task
     for i in range(100):
         y = posterior_mt.sample()[0, :, 0] * train_Y_std + train_Y_mean
-        axes[1].plot(X_plot, y, alpha=alpha, color="r")
+        axes[1].plot(X_plot, y, alpha=0.02, color="r")
     # Main Task
     for i in range(100):
         y = posterior_mt.sample()[0, :, 1] * train_Y_std + train_Y_mean
@@ -108,15 +114,19 @@ with torch.no_grad():
 
 
 # Plot formatting
-axes[0].legend(loc="best")
-axes[0].set_title("Single-Task")
-axes[0].tick_params(direction="in")
-axes[1].legend(loc="best")
-axes[1].set_title("Multitask")
-axes[1].tick_params(direction="in")
-axes[0].set_xlabel("x")
-axes[1].set_xlabel("x")
-fig.supylabel("y")
+# axes[0].legend(loc="best", fontsize=legend_fontsize)
+axes[0].set_title("Single-task", fontsize=title_fontsize)
+axes[0].tick_params(direction="in", length=5)
+# axes[1].legend(loc="best", fontsize=legend_fontsize)
+axes[0].xaxis.set_tick_params(labelsize=ticksize)
+axes[0].yaxis.set_tick_params(labelsize=ticksize)
+axes[1].set_title("Multi-task", fontsize=title_fontsize)
+axes[1].tick_params(direction="in", length=5)
+axes[0].set_xlabel("x", fontsize=axis_fontsize)
+axes[1].set_xlabel("x", fontsize=axis_fontsize)
+axes[1].xaxis.set_tick_params(labelsize=ticksize)
+axes[1].yaxis.set_tick_params(labelsize=ticksize)
+fig.supylabel("y", fontsize=axis_fontsize)
 axes[0].set_xlim(0, 1)
 axes[1].set_xlim(0, 1)
 st.write(fig)
