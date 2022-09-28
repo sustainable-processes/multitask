@@ -22,7 +22,7 @@ ureg = UnitRegistry()
 
 
 def main(input_file: str, output_path: str):
-    """Entrypoint for running ETL job"""
+    """Extracts the Baumgartner-Suzuki Excel file (input_file) and saves as ORD protobuf (output_file)."""
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
     # Extract data

@@ -21,7 +21,7 @@ from typing import Tuple
 
 
 def main(input_path: str, output_path: str):
-    """Entrypoint for running ETL job"""
+    """Extracts the Reizman-Suzuki Excel file (input_file) and saves as ORD protobuf (output_file)."""
     input_path = Path(input_path)
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True)
