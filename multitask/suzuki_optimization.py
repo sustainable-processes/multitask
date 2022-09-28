@@ -94,11 +94,14 @@ def stbo(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
+                    tags= ["MTBO", "correct_options"]
+                    if os.environ.get("lightning_cloud"):
+                        tag.append("lightning_cloud")
                     run = wandb.init(
                         entity=WANDB_SETTINGS["wandb_entity"],
                         project=WANDB_SETTINGS["wandb_project"],
                         config=args,
-                        tags=["STBO"],
+                        tags=tags,
                     )
                     # Download benchmark weights from wandb and load
                     benchmark_artifact = run.use_artifact(benchmark_artifact_name)
@@ -181,12 +184,15 @@ def mtbo(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
+                    tags= ["MTBO", "correct_options"]
+                    if os.environ.get("lightning_cloud"):
+                        tag.append("lightning_cloud")
                     # Initialize wandb
                     run = wandb.init(
                         entity=WANDB_SETTINGS["wandb_entity"],
                         project=WANDB_SETTINGS["wandb_project"],
                         config=args,
-                        tags=["MTBO"],
+                        tags=tags,
                     )
 
                     # Download benchmark weights from wandb and load
