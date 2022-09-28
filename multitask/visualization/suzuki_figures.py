@@ -1,6 +1,8 @@
 """
 Make figures for publication
 """
+from multitask.utils import download_runs_wandb
+from .plots import make_comparison_plot, remove_frame
 from pathlib import Path
 from summit import *
 from rdkit import Chem
@@ -10,143 +12,34 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib import font_manager
 from typing import Dict, List, Optional
-import typer
 import wandb
 import logging
 import string
-from wandb.apis.public import Run
 
 
-font_manager.findfont("Calibri", fontext="afm", rebuild_if_missing=True)
-plt.rcParams.update(
-    {
-        "font.family": "sans-serif",
-        # Use LaTeX default serif font.
-        "font.serif": ["Calibri"],
-    }
-)
+logger = logging.getLogger(__name__)
 
 
-def make_average_plot(
-    results: List[pd.DataFrame],
-    output_name: str,
-    ax,
-    label: Optional[str] = None,
-    color: Optional[str] = None,
-):
-    yields = [df[output_name] for df in results]
-    yields = np.array(yields)
-    mean_yield = np.mean(yields, axis=0)
-    std_yield = np.std(yields, axis=0)
-    x = np.arange(0, len(mean_yield), 1).astype(int)
-    ax.plot(x, mean_yield, label=label, linewidth=4, c=color)
-    ax.fill_between(
-        x,
-        mean_yield - 1.96 * std_yield,
-        mean_yield + 1.96 * std_yield,
-        alpha=0.1,
-        color=color,
-    )
-
-
-def make_repeats_plot(
-    results: List[pd.DataFrame], output_name: str, ax, label=None, color=None
-):
-    yields = [df[output_name] for df in results]
-    x = np.arange(0, len(yields[0]), 1).astype(int)
-    line = ax.plot(
-        x,
-        yields[0],
-        label=label,
-        linewidth=2,
-        alpha=0.25,
-        c=color,
-        solid_capstyle="round",
-    )
-    for data in yields[1:]:
-        line = ax.plot(
-            x, data, linewidth=2, alpha=0.25, c=color, solid_capstyle="round"
-        )
-
-
-def make_comparison_plot(*args, output_name: str, ax, plot_type: str = "average"):
-    for arg in args:
-        if plot_type == "average":
-            make_average_plot(
-                arg["results"],
-                output_name,
-                ax,
-                label=arg["label"],
-                color=arg.get("color"),
-            )
-        elif plot_type == "repeats":
-            make_repeats_plot(
-                arg["results"],
-                output_name,
-                ax,
-                label=arg["label"],
-                color=arg.get("color"),
-            )
-        else:
-            raise ValueError(f"{plot_type} must be average or repeats")
-    fontdict = fontdict = {"size": 12}
-    if plot_type == "average":
-        ax.legend(prop=fontdict, framealpha=0.0)
-    else:
-        ax.legend(prop=fontdict)
-    ax.set_xlim(0, 20)
-    ax.set_xticks(np.arange(0, 20, 2).astype(int))
-    ax.tick_params(direction="in")
-    return ax
-
-
-def remove_frame(ax, sides=["top", "left", "right"]):
-    for side in sides:
-        ax_side = ax.spines[side]
-        ax_side.set_visible(False)
-
-
-def download_runs_wandb(
-    api: wandb.Api,
-    wandb_entity: str = "ceb-sre",
-    wandb_project: str = "multitask",
+def baumgartner_suzuki_auxiliary_reizman_suzuki(
+    num_iterations: int = 20,
     include_tags: Optional[List[str]] = None,
     filter_tags: Optional[List[str]] = None,
     only_finished_runs: bool = True,
-) -> List[Run]:
-    """
-    Parameters
-    ----------
-    api : wandb.Api
-        The wandb API object.
-    wandb_entity : str, optional
-        The wandb entity to search, by default "ceb-sre"
-    wandb_project : str, optional
-        The wandb project to search, by default "multitask"
-    include_tags : Optional[List[str]], optional
-        A list of tags that the run must have, by default None
-    filter_tags : Optional[List[str]], optional
-        A list of tags that the run must not have, by default None
+    wandb_entity: str = "ceb-sre",
+    wandb_project: str = "multitask",
+    figure_dir: str = "figures",
+):
+    # Get runs
+    api = wandb.Api()
+    runs = download_runs_wandb(
+        api,
+        wandb_entity,
+        wandb_project,
+        only_finished_runs=only_finished_runs,
+        include_tags=include_tags,
+        filter_tags=filter_tags,
+    )
 
-    """
-    runs = api.runs(f"{wandb_entity}/{wandb_project}")
-
-    final_runs = []
-    for run in runs:
-        # Filtering
-        if include_tags is not None:
-            if not all([tag in run.tags for tag in include_tags]):
-                continue
-            if any([tag in run.tags for tag in filter_tags]):
-                continue
-        if only_finished_runs and run.state != "finished":
-            continue
-        # Append runs
-        final_runs.append(run)
-    return final_runs
-
-
-def make_baumgartner_plots(runs: List[Run]):
     # Filter data
     stbo_dfs = [
         run.history()
@@ -205,10 +98,26 @@ def make_baumgartner_plots(runs: List[Run]):
     )
 
 
-def make_reizman_auxiliary_baumgartner_plots(
-    runs: List[Run], num_iterations: int = 20, figure_dir: str = "figures"
+def reizman_suzuki_auxiliary_baumgartner_suzuki(
+    num_iterations: int = 20,
+    include_tags: Optional[List[str]] = None,
+    filter_tags: Optional[List[str]] = None,
+    only_finished_runs: bool = True,
+    wandb_entity: str = "ceb-sre",
+    wandb_project: str = "multitask",
+    figure_dir: str = "figures",
 ):
-    logger = logging.getLogger(__name__)
+    # Get runs
+    api = wandb.Api()
+    runs = download_runs_wandb(
+        api,
+        wandb_entity,
+        wandb_project,
+        only_finished_runs=only_finished_runs,
+        include_tags=include_tags,
+        filter_tags=filter_tags,
+    )
+
     # Setup figure
     fig = plt.figure(figsize=(15, 5))
     fig.subplots_adjust(wspace=0.2, hspace=0.5)
@@ -281,9 +190,27 @@ def make_reizman_auxiliary_baumgartner_plots(
     )
 
 
-def make_reizman_auxiliary_reizman_plots(
-    runs: List[Run], num_iterations: int = 20, figure_dir: str = "figures"
+def reizman_suzuki_auxiliary_reizman_suzuki(
+    num_iterations: int = 20,
+    include_tags: Optional[List[str]] = None,
+    filter_tags: Optional[List[str]] = None,
+    only_finished_runs: bool = True,
+    wandb_entity: str = "ceb-sre",
+    wandb_project: str = "multitask",
+    figure_dir: str = "figures",
 ):
+    """Make plots for Reizman Suzuki optimization with auxiliary of Reizman Suzuki."""
+    # Get runs
+    api = wandb.Api()
+    runs = download_runs_wandb(
+        api,
+        wandb_entity,
+        wandb_project,
+        only_finished_runs=only_finished_runs,
+        include_tags=include_tags,
+        filter_tags=filter_tags,
+    )
+
     # Setup figure
     fig = plt.figure(figsize=(15, 15))
     fig.subplots_adjust(wspace=0.2, hspace=0.5)
@@ -348,78 +275,3 @@ def make_reizman_auxiliary_reizman_plots(
     fig.tight_layout()
     figure_dir = Path(figure_dir)
     fig.savefig(figure_dir / "reizman_reizman_one_cotraining_optimization.png", dpi=300)
-
-
-def main(
-    num_iterations: int = 20,
-    include_tags: Optional[List[str]] = None,
-    filter_tags: Optional[List[str]] = None,
-    only_finished_runs: bool = True,
-    wandb_entity: str = "ceb-sre",
-    wandb_project: str = "multitask",
-    figure_dir: str = "figures",
-):
-    """Generate figures for the paper
-
-    Parameters
-    ----------
-    num_iterations : int, optional
-        Number of iterations to plot, by default 20
-    include_tags : list of str, optional
-        Only include runs with these tags, by default None
-    filter_tags : list of str, optional
-        Exclude runs with these tags, by default None
-    only_finished_runs : bool, optional
-        Only include runs that have finished, by default True
-    wandb_entity : str, optional
-        The wandb entity to search, by default "ceb-sre"
-    wandb_project : str, optional
-        The wandb project to search, by default "multitask"
-    figure_dir : str, optional
-        The directory to save figures to, by default "figures"
-    num_iterations : int, optional
-
-
-    """
-    # Setup wandb
-    wandb.login()
-    api = wandb.Api()
-
-    # Get runs
-    runs = download_runs_wandb(
-        api,
-        wandb_entity,
-        wandb_project,
-        only_finished_runs=only_finished_runs,
-        include_tags=include_tags,
-        filter_tags=filter_tags,
-    )
-
-    # Make plots
-    # make_baumgartner_plots(runs)
-    make_reizman_auxiliary_baumgartner_plots(
-        runs, num_iterations=num_iterations, figure_dir=figure_dir
-    )
-    # make_reizman_auxiliary_reizman_plots(
-    #     runs, num_iterations=num_iterations, figure_dir=figure_dir
-    # )
-
-
-if __name__ == "__main__":
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-
-    # create a file handler
-    handler = logging.FileHandler("suzuki_optimization.log")
-    handler.setLevel(logging.INFO)
-
-    # create a logging format
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    handler.setFormatter(formatter)
-
-    # add the file handler to the logger
-    logger.addHandler(handler)
-
-    typer.run(main)

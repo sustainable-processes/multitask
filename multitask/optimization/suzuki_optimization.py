@@ -6,7 +6,6 @@ from summit import *
 import gpytorch
 import torch
 import wandb
-import typer
 from tqdm.auto import trange
 from pathlib import Path
 from typing import List, Optional
@@ -18,25 +17,10 @@ import warnings
 N_RETRIES = 5
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-# create a file handler
-handler = logging.FileHandler("suzuki_optimization.log")
-handler.setLevel(logging.INFO)
-
-# create a logging format
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-
-# add the file handler to the logger
-logger.addHandler(handler)
 
 WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
 
-app = typer.Typer()
 
-
-@app.command()
 def stbo(
     model_name: str,
     benchmark_artifact_name: str,
@@ -131,7 +115,6 @@ def stbo(
                 done = True
 
 
-@app.command()
 def mtbo(
     model_name: str,
     benchmark_artifact_name: str,
@@ -295,7 +278,3 @@ def run_mtbo(
     )
     r.run(skip_wandb_intialization=True)
     return r
-
-
-if __name__ == "__main__":
-    app()
