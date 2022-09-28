@@ -1,3 +1,6 @@
+"""
+Make figures for publication
+"""
 from pathlib import Path
 from summit import *
 from rdkit import Chem

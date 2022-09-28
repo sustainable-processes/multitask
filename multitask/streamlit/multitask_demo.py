@@ -1,7 +1,7 @@
 import streamlit as st
 import botorch
 from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikelihood
-from multitask.mixed_gp_regression import LCMMultitaskGP
+from multitask.strategies.mixed_gp_regression import LCMMultitaskGP
 import torch
 import matplotlib.pyplot as plt
 import numpy as np

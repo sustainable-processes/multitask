@@ -1,5 +1,5 @@
-from multitask.mt import NewSTBO, NewMTBO
-from multitask.kinetic_models import MITKinetics
+from multitask.strategies.mt import NewSTBO, NewMTBO
+from multitask.benchmarks.kinetic_models import MITKinetics
 from summit import *
 import gpytorch
 import torch

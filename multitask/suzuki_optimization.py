@@ -1,24 +1,19 @@
-from multitask.suzuki_emulator import SuzukiEmulator
-from multitask.suzuki_data_utils import get_suzuki_dataset
-from multitask.mt import NewSTBO, NewMTBO
+from multitask.benchmarks.suzuki_emulator import SuzukiEmulator
+from multitask.etl.suzuki_data_utils import get_suzuki_dataset
+from multitask.strategies import NewSTBO, NewMTBO
 from multitask.utils import WandbRunner
-import lightning as L
 from summit import *
 import gpytorch
 import torch
 import wandb
-from wandb.wandb_run import Run
-import subprocess
 import typer
-from tqdm.auto import tqdm, trange
+from tqdm.auto import trange
 from pathlib import Path
 from typing import List, Optional
 import pandas as pd
 import logging
 import json
 import warnings
-import os
-
 
 N_RETRIES = 5
 

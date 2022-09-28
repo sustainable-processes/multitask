@@ -1,6 +1,6 @@
 import streamlit as st
 from summit import *
-from multitask.mt import NewMTBO
+from multitask.strategies.mt import NewMTBO
 import pandas as pd
 
 

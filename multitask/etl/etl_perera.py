@@ -1,5 +1,5 @@
 from multitask.utils import get_reactant_smiles
-from multitask.suzuki_data_utils import contains_boron
+from multitask.etl.suzuki_data_utils import contains_boron
 
 from ord_schema import message_helpers, validations
 from ord_schema.proto import dataset_pb2

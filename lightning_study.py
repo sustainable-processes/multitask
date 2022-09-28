@@ -1,22 +1,13 @@
+from multitask.benchmarks.suzuki_benchmark_training import train_benchmark
+import lightning as L
+from lightning_app.structures.dict import Dict
 from pathlib import Path
 import subprocess
 from typing import List, Optional
-from multitask.suzuki_benchmark_training import train_benchmark
-import lightning as L
-from lightning_app.structures.dict import Dict
 import logging
 import wandb
-import os
-
 
 logger = logging.getLogger(__name__)
-
-
-class SummitBuildConfig(L.BuildConfig):
-    def build_commands(self) -> List[str]:
-        return [
-            "pip install .",
-        ]
 
 
 WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
@@ -85,8 +76,8 @@ class SuzukiWork(L.LightningWork):
     ):
         super().__init__(
             parallel=parallel,
-            cloud_build_config=SummitBuildConfig(),
             cloud_compute=cloud_compute,
+            **kwargs,
         )
         self.strategy = strategy
         self.model_name = model_name

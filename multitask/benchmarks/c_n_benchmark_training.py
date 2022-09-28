@@ -1,6 +1,6 @@
 from multitask.utils import *
-from multitask.suzuki_data_utils import *
-from multitask.suzuki_emulator import SuzukiEmulator
+from multitask.etl.suzuki_data_utils import *
+from multitask.benchmarks.suzuki_emulator import SuzukiEmulator
 from summit import *
 
 import ord_schema
