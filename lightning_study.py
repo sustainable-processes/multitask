@@ -1,24 +1,83 @@
 import subprocess
 from typing import Dict, List, Optional
-
 import wandb
-from multitask.suzuki_benchmark_training import BenchmarkTraining
+from multitask.benchmarks.suzuki_benchmark_training import (
+    train_benchmark as train_suzuki_benchmark,
+)
+from multitask.benchmarks.cn_benchmark_training import (
+    train_benchmark as train_cn_benchmark,
+)
 import lightning as L
 from lightning_app.structures.dict import Dict
+from pathlib import Path
+import subprocess
+from typing import List, Optional, Literal
 import logging
-
+import wandb
 
 logger = logging.getLogger(__name__)
 
 
-# class SummitBuildConfig(L.BuildConfig):
-#     def build_commands(self) -> List[str]:
-#         return [
-#             "pip install .",
-#         ]
+WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
 
 
-class SuzukiWork(L.LightningWork):
+class SummitWork(L.LightningWork):
+    finished = False
+
+
+class BenchmarkTraining(SummitWork):
+    def __init__(
+        self,
+        benchmark_type: Literal["suzuki", "cn"],
+        data_path: str,
+        save_path: str,
+        figure_path: str,
+        parallel: bool = False,
+        **kwargs,
+    ):
+        super().__init__(parallel=parallel, **kwargs)
+        self.benchmark_type = benchmark_type
+        self.data_path = data_path
+        self.save_path = save_path
+        self.figure_path = figure_path
+
+    def run(self, **kwargs):
+        # Download data
+        wandb_run = wandb.init(
+            job_type="training",
+            entity=WANDB_SETTINGS["wandb_entity"],
+            project=WANDB_SETTINGS["wandb_project"],
+            tags=["benchmark"],
+        )
+
+        # Train model using script
+        if self.benchmark_type == "suzuki":
+            emulator = train_suzuki_benchmark(
+                data_path=self.data_path,
+                save_path=self.save_path,
+                figure_path=self.figure_path,
+                **kwargs,
+            )
+        else:
+            emulator = train_cn_benchmark(
+                data_path=self.data_path,
+                save_path=self.save_path,
+                figure_path=self.figure_path,
+                **kwargs,
+            )
+
+        # Upload to wandb
+        name = emulator.model_name
+        artifact = wandb.Artifact(f"benchmark_{name}", type="model")
+        artifact.add_dir(self.save_path)
+        figure_path = Path(self.figure_path)
+        artifact.add_file(figure_path / f"{name}_parity_plot.png")
+        wandb_run.log_artifact(artifact)
+        wandb_run.finish()
+        self.finished = True
+
+
+class SuzukiWork(SummitWork):
     def __init__(
         self,
         strategy: str,
@@ -40,8 +99,8 @@ class SuzukiWork(L.LightningWork):
     ):
         super().__init__(
             parallel=parallel,
-            # cloud_build_config=SummitBuildConfig(),
             cloud_compute=cloud_compute,
+            **kwargs,
         )
         self.strategy = strategy
         self.model_name = model_name
@@ -56,7 +115,6 @@ class SuzukiWork(L.LightningWork):
         self.repeats = repeats
         self.wandb_artifact_name = wandb_artifact_name
         self.print_warnings = print_warnings
-        self.finished = False
 
     def run(self):
         # wandb.login(key=os.environ.get("WANDB_API_KEY"))
@@ -119,7 +177,6 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
         # Workers
         self.max_workers = max_workers
-        # self.workers: Dict[int, L.LightningWork] = {}
         self.workers = Dict()
         self.total_jobs = 0
         self.current_workers: List[int] = []
@@ -129,29 +186,19 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
     def run(self):
         # Benchmark training
         if self.run_benchmark_training and self.all_initialized:
-            # Train Baumgartner benchmark
-            baumgartner_runs = [
+            # Train Baumgartner CN benchmark
+            baumgartner_cn_runs = [
                 BenchmarkTraining(
-                    data_path="data/baumgartner_suzuki/ord/baumgartner_suzuki.pb",
-                    save_path="data/baumgartner_suzuki/emulator",
+                    benchmark_type="cn",
+                    data_path=f"data/baumgartner_cn/ord/baumgartner_cn_case_{case}.pb",
+                    save_path=f"data/baumgartner_cn/emulator_case_{case}/",
                     figure_path="figures/",
-                    parallel=True,
-                    cloud_compute=L.CloudCompute(self.compute_type),
-                )
-            ]
-
-            # Train Reizman benchmarks
-            reizman_runs = [
-                BenchmarkTraining(
-                    data_path=f"data/reizman_suzuki/ord/reizman_suzuki_case_{case}.pb",
-                    save_path=f"data/reizman_suzuki/emulator_case_{case}/",
-                    figure_path="figures/",
-                    parallel=True,
+                    parallel=self.parallel,
                     cloud_compute=L.CloudCompute(name=self.compute_type),
                 )
                 for case in range(1, 5)
             ]
-            for r in reizman_runs + baumgartner_runs:
+            for r in baumgartner_cn_runs:
                 r.run(
                     split_catalyst=False,
                     max_epochs=1000,
@@ -159,6 +206,41 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     verbose=1,
                     print_warnings=False,
                 )
+
+            # # Train Baumgartner Suzuki benchmark
+            # baumgartner_suzuki_runs = [
+            #     BenchmarkTraining(
+            #         benchmark_type="suzuki",
+            #         data_path="data/baumgartner_suzuki/ord/baumgartner_suzuki.pb",
+            #         save_path="data/baumgartner_suzuki/emulator",
+            #         figure_path="figures/",
+            #         parallel=self.parallel,
+            #         cloud_compute=L.CloudCompute(self.compute_type),
+            #     )
+            # ]
+
+            # # Train Reizman Suzuki benchmarks
+            # reizman_suzuki_runs = [
+            #     BenchmarkTraining(
+            #         benchmark_type="suzuki",
+            #         data_path=f"data/reizman_suzuki/ord/reizman_suzuki_case_{case}.pb",
+            #         save_path=f"data/reizman_suzuki/emulator_case_{case}/",
+            #         figure_path="figures/",
+            #         parallel=self.parallel,
+            #         cloud_compute=L.CloudCompute(name=self.compute_type),
+            #     )
+            #     for case in range(1, 5)
+            # ]
+            # for r in (
+            #     baumgartner_cn_runs + reizman_suzuki_runs + baumgartner_suzuki_runs
+            # ):
+            #     r.run(
+            #         split_catalyst=False,
+            #         max_epochs=1000,
+            #         cv_folds=5,
+            #         verbose=1,
+            #         print_warnings=False,
+            #     )
 
         # Multi task benchmarking
         if self.run_multi_task and not self.all_initialized:
@@ -171,7 +253,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.workers[str(self.total_jobs + i)] = SuzukiWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=5),
+                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
                 )
             self.total_jobs += len(configs)
 
@@ -186,7 +268,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.workers[str(self.total_jobs + i)] = SuzukiWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=5),
+                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
                 )
             self.total_jobs += len(configs)
 
@@ -207,7 +289,6 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 self.current_workers.append(i)
                 print(f"Job {i+1} of {self.total_jobs} queued")
             i += 1
-
 
     @staticmethod
     def generate_suzuki_configs_single_task(

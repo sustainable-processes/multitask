@@ -1,16 +1,15 @@
 import os
 from summit import *
 from fastprogress.fastprogress import progress_bar
-import wandb
 from ord_schema import message_helpers, validations
 from ord_schema.proto import dataset_pb2
 from ord_schema.proto.reaction_pb2 import *
 from ord_schema import units
-
 from rdkit import Chem
 from pint import UnitRegistry
-
 from pathlib import Path
+import wandb
+from wandb.apis.public import Run
 from typing import List, Optional
 import pandas as pd
 import numpy as np
@@ -138,6 +137,46 @@ def fullfact(levels):
         H[:, i] = rng
 
     return H
+
+
+def download_runs_wandb(
+    api: wandb.Api,
+    wandb_entity: str = "ceb-sre",
+    wandb_project: str = "multitask",
+    include_tags: Optional[List[str]] = None,
+    filter_tags: Optional[List[str]] = None,
+    only_finished_runs: bool = True,
+) -> List[Run]:
+    """
+    Parameters
+    ----------
+    api : wandb.Api
+        The wandb API object.
+    wandb_entity : str, optional
+        The wandb entity to search, by default "ceb-sre"
+    wandb_project : str, optional
+        The wandb project to search, by default "multitask"
+    include_tags : Optional[List[str]], optional
+        A list of tags that the run must have, by default None
+    filter_tags : Optional[List[str]], optional
+        A list of tags that the run must not have, by default None
+
+    """
+    runs = api.runs(f"{wandb_entity}/{wandb_project}")
+
+    final_runs = []
+    for run in runs:
+        # Filtering
+        if include_tags is not None:
+            if not all([tag in run.tags for tag in include_tags]):
+                continue
+            if any([tag in run.tags for tag in filter_tags]):
+                continue
+        if only_finished_runs and run.state != "finished":
+            continue
+        # Append runs
+        final_runs.append(run)
+    return final_runs
 
 
 class WandbRunner(Runner):
