@@ -23,11 +23,6 @@ You can run commands from inside the poetry virtual environment in one of two wa
       - Run `poetry show -v`. Copy the path specified after "Using virtualenv"
       - Activate the virtual environemnt at that path. So, if the path is `/Users/Kobi/Library/Caches/pypoetry/virtualenvs/multitask-z7ErTcQa-py3.7`, you would run `source /Users/Kobi/Library/Caches/pypoetry/virtualenvs/multitask-z7ErTcQa-py3.7/bin/activate`
   
-[DVC](https://dvc.org/doc) is used for tracking data and keeping it in sync with git. When you first clone the project, you will need to download the existing data:
-
-    dvc pull
-
-This will ask you to authenticate with Google Drive. Make sure to use your Cambridge account (or an account you shared the [Multitask Bayesian Optimization shared drive](https://drive.google.com/drive/u/2/folders/0AGWGXkw78NfUUk9PVA) with).
 
 ### Apple M1
 
@@ -41,8 +36,10 @@ You might run into some issues when installing scientific python packages such a
 Replace the llvm path with the version of llvm installed by brew.
 
 
-### Lightning
+## Running Scripts
 
+
+To run everything:
 ```
 lightning run app lightning_study.py \
  --name multitask \
@@ -52,6 +49,15 @@ lightning run app lightning_study.py \
 ```
 
 Add you wandb api key.
+
+For step by step:
+
+1. **ETL**: Transform data from spreadsheets into ORD protobuf files. This assumes `data/` is setup.
+
+    ```bash
+    multitask etl all
+    ```
+2. **Benchmark training**: 
 
 ## Coding Guidelines
 
