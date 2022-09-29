@@ -51,11 +51,17 @@ def cn_reaction_to_dataframe(reactions: Iterable[Reaction]) -> pd.DataFrame:
     # Convert dataset to pandas dataframe
     df = message_helpers.messages_to_dataframe(reactions, drop_constant_columns=True)
 
+    # Calculate base equivalents
+    df["base_equiv"] = (
+        df['inputs["Base"].components[0].amount.moles.value']
+        / df['inputs["Electrophile"].components[0].amount.moles.value']
+    )
+
     # Rename columns
     column_map = {
         'inputs["Catalyst"].components[0].identifiers[0].value': "catalyst",
         'inputs["Base"].components[0].identifiers[0].value': "base",
-        'inputs["Solvent"].components[0].identifiers[0].value': "solvent",
+        # 'inputs["Solvent"].components[0].identifiers[0].value': "solvent",
         "outcomes[0].reaction_time.value": "time",
         "conditions.temperature.setpoint.value": "temperature",
         "outcomes[0].products[0].measurements[0].percentage.value": "yld",
@@ -63,6 +69,6 @@ def cn_reaction_to_dataframe(reactions: Iterable[Reaction]) -> pd.DataFrame:
     df = df.rename(columns=column_map)
 
     # Only keep needed columns
-    df = df[list(column_map.values())]
+    df = df[list(column_map.values()) + ["base_equiv"]]
 
     return df

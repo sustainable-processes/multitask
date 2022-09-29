@@ -1,3 +1,4 @@
+import os
 from multitask.benchmarks.suzuki_emulator import SuzukiEmulator
 from multitask.etl.suzuki_data_utils import get_suzuki_dataset
 from multitask.strategies import NewSTBO, NewMTBO
@@ -18,12 +19,10 @@ N_RETRIES = 5
 
 logger = logging.getLogger(__name__)
 
-WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
-
 
 def stbo(
     model_name: str,
-    benchmark_artifact_name: str,
+    wandb_benchmark_artifact_name: str,
     output_path: str,
     max_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
@@ -31,6 +30,8 @@ def stbo(
     acquisition_function: Optional[str] = "EI",
     repeats: Optional[int] = 20,
     wandb_artifact_name: Optional[str] = None,
+    wandb_project: Optional[str] = "ceb-sre",
+    wandb_entity: Optional[str] = "multitask",
 ):
     """Optimization of a Suzuki benchmark with Single-Task Bayesian Optimziation
 
@@ -73,17 +74,17 @@ def stbo(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
-                    tags= ["MTBO", "correct_options"]
+                    tags = ["MTBO", "correct_options"]
                     if os.environ.get("lightning_cloud"):
-                        tag.append("lightning_cloud")
+                        tags.append("lightning_cloud")
                     run = wandb.init(
-                        entity=WANDB_SETTINGS["wandb_entity"],
-                        project=WANDB_SETTINGS["wandb_project"],
+                        entity=wandb_entity,
+                        project=wandb_project,
                         config=args,
                         tags=tags,
                     )
                     # Download benchmark weights from wandb and load
-                    benchmark_artifact = run.use_artifact(benchmark_artifact_name)
+                    benchmark_artifact = run.use_artifact(wandb_benchmark_artifact_name)
                     benchmark_path = benchmark_artifact.download()
                     exp = SuzukiEmulator.load(
                         model_name=model_name, save_dir=benchmark_path
@@ -124,7 +125,7 @@ def stbo(
 
 def mtbo(
     model_name: str,
-    benchmark_artifact_name: str,
+    wandb_benchmark_artifact_name: str,
     wandb_dataset_artifact_name: str,
     ct_dataset_names: List[str],
     output_path: str,
@@ -134,6 +135,8 @@ def mtbo(
     print_warnings: Optional[bool] = True,
     brute_force_categorical: bool = False,
     acquisition_function: Optional[str] = "EI",
+    wandb_project: Optional[str] = "ceb-sre",
+    wandb_entity: Optional[str] = "multitask",
     wandb_artifact_name: Optional[str] = None,
 ):
     """Optimization of a Suzuki benchmark with Multitask Bayesian Optimziation"""
@@ -162,19 +165,19 @@ def mtbo(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
-                    tags= ["MTBO", "correct_options"]
+                    tags = ["MTBO", "correct_options"]
                     if os.environ.get("lightning_cloud"):
-                        tag.append("lightning_cloud")
+                        tags.append("lightning_cloud")
                     # Initialize wandb
                     run = wandb.init(
-                        entity=WANDB_SETTINGS["wandb_entity"],
-                        project=WANDB_SETTINGS["wandb_project"],
+                        entity=wandb_entity,
+                        project=wandb_project,
                         config=args,
                         tags=tags,
                     )
 
                     # Download benchmark weights from wandb and load
-                    benchmark_artifact = run.use_artifact(benchmark_artifact_name)
+                    benchmark_artifact = run.use_artifact(wandb_benchmark_artifact_name)
                     benchmark_path = benchmark_artifact.download()
                     exp = SuzukiEmulator.load(
                         model_name=model_name, save_dir=benchmark_path

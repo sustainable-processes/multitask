@@ -4,25 +4,42 @@ from summit import *
 from pathlib import Path
 from typing import Tuple, Optional
 import logging
+import wandb
 
 
 def train_benchmark(
-    data_path: str,
+    dataset_name: Optional[str],
     save_path: str,
     figure_path: str,
-    dataset_name: Optional[str] = None,
+    wandb_dataset_artifact_name: Optional[str] = None,
+    data_file: Optional[str] = None,
     max_epochs: Optional[int] = 1000,
     cv_folds: Optional[int] = 5,
     verbose: Optional[int] = 0,
+    wandb_benchmark_artifact_name: str = None,
+    no_wandb: bool = False,
+    wandb_entity: Optional[str] = "ceb-sre",
+    wandb_project: Optional[str] = "multitask",
 ) -> ExperimentalEmulator:
     """Train a C-N benchmark"""
-    # Get data
-    ds, domain = prepare_domain_data(
-        data_path=data_path,
-    )
+    # Setup wandb
+    if not no_wandb:
+        run = wandb.init(
+            # job_type="training",
+            entity=wandb_entity,
+            project=wandb_project,
+            tags=["benchmark"],
+        )
 
-    if dataset_name is None:
-        dataset_name = Path(data_path).parts[-1].rstrip(".pb")
+    # Download data from wandb if not provided
+    if data_file is None and not no_wandb:
+        dataset_artifact = run.use_artifact(wandb_dataset_artifact_name)
+        data_file = Path(dataset_artifact.download()) / f"{dataset_name}.pb"
+    elif data_file is None and no_wandb:
+        raise ValueError("Must provide data path if not using wandb")
+
+    # Get data
+    ds, domain = prepare_domain_data(data_file=data_file)
 
     # Create emulator benchmark
     emulator = ExperimentalEmulator(dataset_name, domain, dataset=ds)
@@ -41,6 +58,17 @@ def train_benchmark(
 
     # Save emulator
     emulator.save(save_dir=save_path)
+
+    # Upload results to wandb
+    if not no_wandb:
+        if wandb_benchmark_artifact_name is None:
+            wandb_benchmark_artifact_name = f"benchmark_{dataset_name}"
+        artifact = wandb.Artifact(wandb_benchmark_artifact_name, type="model")
+        artifact.add_dir(save_path)
+        figure_path = Path(figure_path)
+        artifact.add_file(figure_path / f"{dataset_name}_parity_plot.png")
+        run.log_artifact(artifact)
+        run.finish()
 
     return emulator
 
@@ -78,14 +106,11 @@ def create_cn_domain() -> Domain:
         ],
     )
 
-    des_3 = "Solvent"
-    domain += CategoricalVariable(
-        name="solvent",
+    des_3 = "Base equivalents with respect to p-tolyl triflate (electrophile)"
+    domain += ContinuousVariable(
+        name="base_equiv",
         description=des_3,
-        levels=[
-            "2-MeTHF",
-            "DMSO",
-        ],
+        bounds=[1.0, 2.0],
     )
 
     des_4 = "Residence time in seconds (s)"
@@ -103,7 +128,7 @@ def create_cn_domain() -> Domain:
     domain += ContinuousVariable(
         name="yld",
         description=des_6,
-        bounds=[0, 105],
+        bounds=[0, 100],
         is_objective=True,
         maximize=True,
     )
@@ -111,12 +136,12 @@ def create_cn_domain() -> Domain:
 
 
 def prepare_domain_data(
-    data_path: str,
+    data_file: str,
 ) -> Tuple[dict, Domain]:
     """Prepare domain and data for downstream tasks"""
     logger = logging.getLogger(__name__)
     # Get data
-    ds = get_cn_dataset(data_path)
+    ds = get_cn_dataset(data_file)
 
     # Create domain
     domain = create_cn_domain()

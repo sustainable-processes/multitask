@@ -29,7 +29,8 @@ class BenchmarkTraining(SummitWork):
     def __init__(
         self,
         benchmark_type: Literal["suzuki", "cn"],
-        data_path: str,
+        wandb_dataset_artifact_name: str,
+        dataset_name: str,
         save_path: str,
         figure_path: str,
         parallel: bool = False,
@@ -37,7 +38,8 @@ class BenchmarkTraining(SummitWork):
     ):
         super().__init__(parallel=parallel, **kwargs)
         self.benchmark_type = benchmark_type
-        self.data_path = data_path
+        self.wandb_dataset_artifact_name = wandb_dataset_artifact_name
+        self.dataset_name = dataset_name
         self.save_path = save_path
         self.figure_path = figure_path
 
@@ -53,18 +55,21 @@ class BenchmarkTraining(SummitWork):
         # Train model using script
         if self.benchmark_type == "suzuki":
             emulator = train_suzuki_benchmark(
-                data_path=self.data_path,
+                dataset_name=self.dataset_name,
+                save_path=self.save_path,
+                figure_path=self.figure_path,
+                **kwargs,
+            )
+        elif self.benchmark_type == "cn":
+            emulator = train_cn_benchmark(
+                wandb_dataset_artifact_name=self.wandb_dataset_artifact_name,
+                dataset_name=self.dataset_name,
                 save_path=self.save_path,
                 figure_path=self.figure_path,
                 **kwargs,
             )
         else:
-            emulator = train_cn_benchmark(
-                data_path=self.data_path,
-                save_path=self.save_path,
-                figure_path=self.figure_path,
-                **kwargs,
-            )
+            raise ValueError(f"Invalid benchmark type: {self.benchmark_type}")
 
         # Upload to wandb
         name = emulator.model_name
@@ -190,7 +195,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             baumgartner_cn_runs = [
                 BenchmarkTraining(
                     benchmark_type="cn",
-                    data_path=f"data/baumgartner_cn/ord/baumgartner_cn_case_{case}.pb",
+                    dataset_name=f"baumgartner_cn_case_{case}",
+                    wandb_dataset_artifact_name="baumgartner_cn:latest",
                     save_path=f"data/baumgartner_cn/emulator_case_{case}/",
                     figure_path="figures/",
                     parallel=self.parallel,
@@ -200,11 +206,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             ]
             for r in baumgartner_cn_runs:
                 r.run(
-                    split_catalyst=False,
                     max_epochs=1000,
                     cv_folds=5,
                     verbose=1,
-                    print_warnings=False,
                 )
 
             # # Train Baumgartner Suzuki benchmark
@@ -402,9 +406,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 if __name__ == "__main__":
     app = L.LightningApp(
         MultitaskBenchmarkStudy(
-            run_benchmark_training=False,
+            run_benchmark_training=True,
             run_single_task=False,
-            run_multi_task=True,
+            run_multi_task=False,
             compute_type="cpu",
             parallel=True,
             max_workers=10,
