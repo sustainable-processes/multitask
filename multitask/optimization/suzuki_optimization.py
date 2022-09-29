@@ -53,6 +53,7 @@ def stbo(
     """
     args = dict(locals())
     args["strategy"] = "STBO"
+    args["torch_num_threads"] = torch.get_num_threads()
 
     # Ouptut path
     output_path = Path(output_path)
@@ -72,11 +73,14 @@ def stbo(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
+                    tags= ["MTBO", "correct_options"]
+                    if os.environ.get("lightning_cloud"):
+                        tag.append("lightning_cloud")
                     run = wandb.init(
                         entity=WANDB_SETTINGS["wandb_entity"],
                         project=WANDB_SETTINGS["wandb_project"],
                         config=args,
-                        tags=["STBO"],
+                        tags=tags,
                     )
                     # Download benchmark weights from wandb and load
                     benchmark_artifact = run.use_artifact(benchmark_artifact_name)
@@ -105,9 +109,12 @@ def stbo(
                         artifact.add_file(output_path / f"repeat_{i}.json")
                         artifact.add_file(output_path / f"repeat_{i}_model.pth")
                         run.log_artifact(artifact)
+
                     done = True
                 except gpytorch.utils.errors.NotPSDError:
                     retries += 1
+                finally:
+                    wandb.finish()
             if retries >= N_RETRIES:
                 logger.info(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
@@ -132,6 +139,7 @@ def mtbo(
     """Optimization of a Suzuki benchmark with Multitask Bayesian Optimziation"""
     args = dict(locals())
     args["strategy"] = "MTBO"
+    args["torch_num_threads"] = torch.get_num_threads()
 
     # Saving
     output_path = Path(output_path)
@@ -154,12 +162,15 @@ def mtbo(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
+                    tags= ["MTBO", "correct_options"]
+                    if os.environ.get("lightning_cloud"):
+                        tag.append("lightning_cloud")
                     # Initialize wandb
                     run = wandb.init(
                         entity=WANDB_SETTINGS["wandb_entity"],
                         project=WANDB_SETTINGS["wandb_project"],
                         config=args,
-                        tags=["MTBO"],
+                        tags=tags,
                     )
 
                     # Download benchmark weights from wandb and load
@@ -211,6 +222,8 @@ def mtbo(
                     done = True
                 except (RuntimeError, gpytorch.utils.errors.NotPSDError):
                     retries += 1
+                finally:
+                    wandb.finish()
             if retries >= N_RETRIES:
                 logger.info(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"

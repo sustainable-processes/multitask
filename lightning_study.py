@@ -1,3 +1,6 @@
+import subprocess
+from typing import Dict, List, Optional
+import wandb
 from multitask.benchmarks.suzuki_benchmark_training import (
     train_benchmark as train_suzuki_benchmark,
 )
@@ -18,7 +21,11 @@ logger = logging.getLogger(__name__)
 WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
 
 
-class BenchmarkTraining(L.LightningWork):
+class SummitWork(L.LightningWork):
+    finished = False
+
+
+class BenchmarkTraining(SummitWork):
     def __init__(
         self,
         benchmark_type: Literal["suzuki", "cn"],
@@ -67,9 +74,10 @@ class BenchmarkTraining(L.LightningWork):
         artifact.add_file(figure_path / f"{name}_parity_plot.png")
         wandb_run.log_artifact(artifact)
         wandb_run.finish()
+        self.finished = True
 
 
-class SuzukiWork(L.LightningWork):
+class SuzukiWork(SummitWork):
     def __init__(
         self,
         strategy: str,
@@ -110,30 +118,36 @@ class SuzukiWork(L.LightningWork):
 
     def run(self):
         # wandb.login(key=os.environ.get("WANDB_API_KEY"))
-
-        cmd = f"""
-        python multitask/suzuki_optimization.py \
-        {self.strategy.lower()} \
-        {self.model_name} \
-        {self.wandb_benchmark_artifact_name} \
-        """
-        if self.strategy == "MTBO":
-            cmd += f" {self.wandb_dataset_artifact_name} "
-            cmd += " ".join([c + " " for c in self.ct_dataset_names])
-        cmd += f"""{self.output_path} """
-        options = f"""
-        --max-experiments {self.max_experiments} \
-        --batch-size {self.batch_size} \
-        --repeats {self.repeats} \
-        --wandb-artifact-name {self.wandb_artifact_name}  \
-        --acquisition-function {self.acquisition_function} \
-        """
+        cmd = [
+            "python",
+            "multitask/suzuki_optimization.py",
+            self.strategy.lower(),
+            self.model_name,
+            self.wandb_benchmark_artifact_name,
+        ]
+        if self.strategy.lower() == "mtbo":
+            cmd += [self.wandb_dataset_artifact_name]
+            cmd += self.ct_dataset_names
+        cmd += [self.output_path]
+        options = [
+            "--max-experiments",
+            str(self.max_experiments),
+            "--batch-size",
+            str(self.batch_size),
+            "--repeats",
+            str(self.repeats),
+            "--wandb-artifact-name",
+            str(self.wandb_artifact_name),
+            "--acquisition-function",
+            str(self.acquisition_function),
+        ]
         if not self.print_warnings:
-            options += "--no-print-warnings \n "
+            options += ["--no-print-warning"]
         if self.brute_force_categorical:
-            options += "--brute-force-categorical"
-        print(cmd + options)
-        subprocess.run(cmd + options, shell=True)
+            options += ["--brute-force-categorical"]
+        # print(cmd + options)
+        subprocess.run(cmd + options, shell=False)
+        self.finished = True
 
 
 class MultitaskBenchmarkStudy(L.LightningFlow):
@@ -163,7 +177,6 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
         # Workers
         self.max_workers = max_workers
-        # self.workers: Dict[int, L.LightningWork] = {}
         self.workers = Dict()
         self.total_jobs = 0
         self.current_workers: List[int] = []
@@ -263,16 +276,18 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
         # Check for finished jobs
         for i in self.current_workers:
-            if self.workers[str(i)].has_succeeded:
+            if self.workers[str(i)].finished:
                 self.current_workers.remove(i)
                 self.succeded.append(i)
+                self.workers[str(i)].stop()
 
         # Queue new jobs
         i = 0
         while len(self.current_workers) < self.max_workers and i < self.total_jobs:
-            if i not in self.succeded or i not in self.current_workers:
+            if i not in self.succeded and i not in self.current_workers:
                 self.workers[str(i)].run()
                 self.current_workers.append(i)
+                print(f"Job {i+1} of {self.total_jobs} queued")
             i += 1
 
     @staticmethod
@@ -290,7 +305,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "qNEI",
+                "acquisition_function": "EI",
                 "parallel": parallel,
             }
             for case in range(1, 5)
@@ -307,7 +322,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "qNEI",
+                "acquisition_function": "EI",
                 "parallel": parallel,
             }
         ]
@@ -331,7 +346,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "qNEI",
+                "acquisition_function": "EI",
                 "parallel": parallel,
             }
             for case in range(1, 5)
@@ -350,7 +365,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "qNEI",
+                "acquisition_function": "EI",
                 "parallel": parallel,
             }
             for case_main in range(1, 5)
@@ -372,7 +387,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "qNEI",
+                "acquisition_function": "EI",
                 "parallel": parallel,
             }
             for case in range(1, 5)
@@ -387,11 +402,11 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 if __name__ == "__main__":
     app = L.LightningApp(
         MultitaskBenchmarkStudy(
-            run_benchmark_training=True,
+            run_benchmark_training=False,
             run_single_task=False,
-            run_multi_task=False,
-            compute_type="cpu-medium",
+            run_multi_task=True,
+            compute_type="cpu",
             parallel=True,
-            max_workers=1,
+            max_workers=10,
         )
     )

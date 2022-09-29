@@ -250,7 +250,7 @@ class NewMTBO(Strategy):
             raise ValueError(f"{self.model_type} not available")
 
         mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
-        fit_gpytorch_model(mll)
+        fit_gpytorch_model(mll, max_retries=20)
 
         # Train an extra model for the current task
         if self.acquistion_function == "WeightedEI":
