@@ -173,29 +173,54 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
     def run(self):
         # Benchmark training
         if self.run_benchmark_training and self.all_initialized:
-            # Train Baumgartner benchmark
-            baumgartner_runs = [
+            # Train Baumgartner CN benchmark
+            baumgartner_cn_runs = [
                 BenchmarkTraining(
-                    data_path="data/baumgartner_suzuki/ord/baumgartner_suzuki.pb",
-                    save_path="data/baumgartner_suzuki/emulator",
+                    benchmark_type="cn",
+                    data_path=f"data/baumgartner_cn/ord/baumgartner_cn_case_{case}.pb",
+                    save_path=f"data/baumgartner_cn/emulator_case_{case}/",
                     figure_path="figures/",
-                    parallel=True,
-                    cloud_compute=L.CloudCompute(self.compute_type),
-                )
-            ]
-
-            # Train Reizman benchmarks
-            reizman_runs = [
-                BenchmarkTraining(
-                    data_path=f"data/reizman_suzuki/ord/reizman_suzuki_case_{case}.pb",
-                    save_path=f"data/reizman_suzuki/emulator_case_{case}/",
-                    figure_path="figures/",
-                    parallel=True,
+                    parallel=self.parallel,
                     cloud_compute=L.CloudCompute(name=self.compute_type),
                 )
                 for case in range(1, 5)
             ]
-            for r in reizman_runs + baumgartner_runs:
+            for r in baumgartner_cn_runs:
+                r.run(
+                    split_catalyst=False,
+                    max_epochs=1000,
+                    cv_folds=5,
+                    verbose=1,
+                    print_warnings=False,
+                )
+
+            # Train Baumgartner Suzuki benchmark
+            baumgartner_suzuki_runs = [
+                BenchmarkTraining(
+                    benchmark_type="suzuki",
+                    data_path="data/baumgartner_suzuki/ord/baumgartner_suzuki.pb",
+                    save_path="data/baumgartner_suzuki/emulator",
+                    figure_path="figures/",
+                    parallel=self.parallel,
+                    cloud_compute=L.CloudCompute(self.compute_type),
+                )
+            ]
+
+            # Train Reizman Suzuki benchmarks
+            reizman_suzuki_runs = [
+                BenchmarkTraining(
+                    benchmark_type="suzuki",
+                    data_path=f"data/reizman_suzuki/ord/reizman_suzuki_case_{case}.pb",
+                    save_path=f"data/reizman_suzuki/emulator_case_{case}/",
+                    figure_path="figures/",
+                    parallel=self.parallel,
+                    cloud_compute=L.CloudCompute(name=self.compute_type),
+                )
+                for case in range(1, 5)
+            ]
+            for r in (
+                baumgartner_cn_runs + reizman_suzuki_runs + baumgartner_suzuki_runs
+            ):
                 r.run(
                     split_catalyst=False,
                     max_epochs=1000,

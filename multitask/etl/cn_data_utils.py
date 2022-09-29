@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 
-def get_cn_dataset(data_path, split_catalyst=True, print_warnings=True) -> DataSet:
+def get_cn_dataset(data_path, print_warnings=True) -> DataSet:
     """
     Get a Suzuki ORD dataset as a Summit DataSet
     """
@@ -29,7 +29,7 @@ def get_cn_dataset(data_path, split_catalyst=True, print_warnings=True) -> DataS
     valid_output = validations.validate_message(dataset)
     if print_warnings:
         print(valid_output.warnings)
-    df = cn_reaction_to_dataframe(dataset.reactions, split_catalyst=split_catalyst)
+    df = cn_reaction_to_dataframe(dataset.reactions)
     return DataSet.from_df(df)
 
 

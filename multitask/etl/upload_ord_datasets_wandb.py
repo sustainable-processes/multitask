@@ -11,6 +11,7 @@ run = wandb.init(
     job_type="processing",
 )
 
+
 # Process baumgartner Suzuki
 proceess_baugmartner_suzuki(
     input_file="data/baumgartner_suzuki/c8re00032h2.xlsx",
