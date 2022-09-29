@@ -33,13 +33,9 @@ NB 8: It seems I'm not allowed to specify an internal standard within the add_st
 
 """
 
-from typing import Type
-from typing_extensions import final
 from ord_schema.proto.reaction_pb2 import *
 from ord_schema.proto.dataset_pb2 import *
-from ord_schema.message_helpers import find_submessages
 from ord_schema import validations
-
 import typer
 from pint import UnitRegistry
 from tqdm.auto import tqdm
@@ -56,6 +52,7 @@ def main(
     output_path: str,
     rxn_sheet_name="Reaction data",
     stock_sheet_name="Stock solutions",
+    drop_preliminary=True,
 ):
     """Extracts the Baumgartner C-N Excel file (input_file) and saves as ORD protobuf (output_file)."""
     output_path = Path(output_path)
@@ -63,36 +60,47 @@ def main(
 
     # Extract data
     reactions = []
-    df_rxn_data = pd.read_excel(input_file, sheet_name=rxn_sheet_name)
+    df_all_rxn_data = pd.read_excel(input_file, sheet_name=rxn_sheet_name)
     df_stock_solutions = pd.read_excel(input_file, sheet_name=stock_sheet_name)
-    cat_nucleophile = df_rxn_data["Optimization"].str.split(" - ", expand=True)
-    
+    cat_nucleophile = df_all_rxn_data["Optimization"].str.split(" - ", expand=True)
+    df_all_rxn_data["nucleophile"] = cat_nucleophile[0]
+    if drop_preliminary:
+        df_all_rxn_data["Campaign/Figure reaction number  "] = df_all_rxn_data[
+            "Campaign/Figure reaction number  "
+        ].replace("-", None)
+        df_all_rxn_data = df_all_rxn_data.dropna(
+            subset="Campaign/Figure reaction number  "
+        )
+
     # Transform
-    tqdm.pandas(desc="Converting to ORD")
-    reactions.extend(
-        df_rxn_data.progress_apply(inner_loop, axis=1, args=(df_stock_solutions,))
-    )
-    for i, reaction in enumerate(reactions):
-        reaction.reaction_id = df_rxn_data.iloc[i]["Overall number"].astype(str)
+    for i, (nucleophile, df_rxn_data) in enumerate(
+        df_all_rxn_data.groupby("nucleophile")
+    ):
+        tqdm.pandas(desc="Converting to ORD")
+        reactions.extend(
+            df_rxn_data.progress_apply(inner_loop, axis=1, args=(df_stock_solutions,))
+        )
+        for j, reaction in enumerate(reactions):
+            reaction.reaction_id = str(j)
 
-    # Create dataset
-    dataset = Dataset()
-    dataset.name = "Baumgartner C-N Cross-Coupling"
-    dataset.reactions.extend(reactions)
-    dataset.dataset_id = str(1)
+        # Create dataset
+        dataset = Dataset()
+        dataset.name = "Baumgartner C-N Cross-Coupling"
+        dataset.reactions.extend(reactions)
+        dataset.dataset_id = str(1)
 
-    # Validate dataset
-    validation_output = validations.validate_message(dataset)
-    print(
-        f"First 5 Warnings. See {output_path / f'warnings_baumgartner_cn.json'} for full output"
-    )
-    print(validation_output.warnings[:5])
-    with open(output_path / f"warnings_baumgartner_cn.json", "w") as f:
-        json.dump(validation_output.warnings, f)
+        # Validate dataset
+        validation_output = validations.validate_message(dataset)
+        print(
+            f"First 5 Warnings. See {output_path / f'warnings_baumgartner_cn_case_{i+1}.json'} for full output"
+        )
+        print(validation_output.warnings[:5])
+        with open(output_path / f"warnings_baumgartner_cn_case_{i+1}.json", "w") as f:
+            json.dump(validation_output.warnings, f)
 
-    # Load back
-    with open(output_path / f"baumgartner_cn.pb", "wb") as f:
-        f.write(dataset.SerializeToString())
+        # Load back
+        with open(output_path / f"baumgartner_cn_case_{i+1}.pb", "wb") as f:
+            f.write(dataset.SerializeToString())
 
 
 def inner_loop(row: pd.Series, stock_df: pd.DataFrame) -> Reaction:
@@ -245,7 +253,7 @@ def specify_solvent(
     sol_id = row["Make-Up Solvent ID"]
     name, smiles = solvent_details(sol_id)
     solvent.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    solvent.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
+    solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
 
     solvent.amount.volume.units = Volume.MICROLITER
     solvent.amount.volume.value = final_solute_conc * droplet_volume / stock_conc
@@ -272,7 +280,7 @@ def add_electrophile(reaction: Reaction, row: pd.Series, stock_df):
     pTTf.reaction_role = ReactionRole.REACTANT
     pTTf.identifiers.add(value="p-Tolyl triflate", type=CompoundIdentifier.NAME)
     pTTf.identifiers.add(
-        value="CC1=CC=C(C=C1)OS(=O)(=O)C(F)(F)F", type=CompoundIdentifier.smiles
+        value="CC1=CC=C(C=C1)OS(=O)(=O)C(F)(F)F", type=CompoundIdentifier.SMILES
     )
     pTTf_conc = row["Aryl triflate concentration (M)"]
     pTTf.amount.moles.units = Moles.MICROMOLE
@@ -288,7 +296,7 @@ def add_electrophile(reaction: Reaction, row: pd.Series, stock_df):
         value="1-fluoronaphthalene", type=CompoundIdentifier.NAME
     )
     internal_std.identifiers.add(
-        value="C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.smiles
+        value="C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.SMILES
     )
     istd_conc = row["Internal Standard Concentration 1-fluoronaphthalene (g/L)"]
     amount = internal_std.amount
@@ -322,7 +330,7 @@ def add_nucleophile(reaction: Reaction, row: pd.Series, stock_df):
 
     name, smiles = nucleophile_details(nuc_id)
     nucleophile.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    nucleophile.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
+    nucleophile.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
     nuc_conc = row["N-H nucleophile concentration (M)"]
     nucleophile.amount.moles.units = Moles.MICROMOLE
     nucleophile.amount.moles.value = nuc_conc * droplet_volume
@@ -357,7 +365,7 @@ def add_catalyst(reaction: Reaction, row: pd.Series):
     precat_id = precat_id.replace(" (Preliminary)", "")
     name, smiles = catalyst_details(precat_id)
     catalyst.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    catalyst.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
+    catalyst.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
     cat_mol_percent = row["Precatalyst loading in mol%"]
     aryl_triflate_conc = row["Aryl triflate concentration (M)"]
     droplet_volume = row["Quench Outlet Injection (uL)"]
@@ -389,7 +397,7 @@ def add_solvent(reaction: Reaction, row: pd.Series):
     sol_id = row["Make-Up Solvent ID"]
     name, smiles = solvent_details(sol_id)
     solvent.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    solvent.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
+    solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
 
     solvent.amount.volume.units = Volume.MICROLITER
     solvent.amount.volume.value = solvent_volume
@@ -416,7 +424,7 @@ def add_base(reaction: Reaction, row: pd.Series, stock_df):
     base_id = row["Base"]
     name, smiles = base_details(base_id)
     base.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    base.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
+    base.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
     base_conc = row["Base concentration (M)"]
     base.amount.moles.value = base_conc * droplet_volume
     base.amount.moles.units = Moles.MICROMOLE
@@ -529,7 +537,7 @@ def quench_reaction(reaction: Reaction, row: pd.Series):
     quench_solvent_id = row["Make-Up Solvent ID"]
     name, smiles = solvent_details(quench_solvent_id)
     quench_solvent.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    quench_solvent.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
+    quench_solvent.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
     quench_solvent.amount.volume.value = reaction_volume
     quench_solvent.amount.volume.units = Volume.MICROLITER
 
@@ -560,7 +568,7 @@ def add_standard(measurement: ProductMeasurement, row: pd.Series):
     #     value="1-fluoronaphthalene", type=CompoundIdentifier.NAME
     # )
     # int_standard.identifiers.add(
-    #     value="C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.smiles
+    #     value="C1=CC=C2C(=C1)C=CC=C2F", type=CompoundIdentifier.SMILES
     # )
     # int_standard.reaction_role = ReactionRole.INTERNAL_STANDARD
     # int_standard_prep = standard.preparations.add()
@@ -585,7 +593,7 @@ def add_standard(measurement: ProductMeasurement, row: pd.Series):
 
     name, smiles = specify_outcome_details(nuc_id)
     auth_standard.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    auth_standard.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
+    auth_standard.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
     auth_standard.reaction_role = ReactionRole.AUTHENTIC_STANDARD
     auth_standard_prep = auth_standard.preparations.add()
     auth_standard_prep.type = CompoundPreparation.SYNTHESIZED
@@ -657,7 +665,7 @@ def specify_outcome(reaction: Reaction, row: pd.Series):
 
     name, smiles = specify_outcome_details(nuc_id)
     product.identifiers.add(value=name, type=CompoundIdentifier.NAME)
-    product.identifiers.add(value=smiles, type=CompoundIdentifier.smiles)
+    product.identifiers.add(value=smiles, type=CompoundIdentifier.SMILES)
     product.is_desired_product = True
     product.reaction_role = ReactionRole.PRODUCT
 
