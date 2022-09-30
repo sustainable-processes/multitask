@@ -1,3 +1,4 @@
+from re import I
 import streamlit as st
 import botorch
 from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikelihood
@@ -18,7 +19,7 @@ n_aux = st.slider("Auxiliary Task Observations", min_value=0, max_value=50, valu
 noise = st.slider(
     "Observation Noise", min_value=0.0, max_value=1.0, value=0.1, step=0.1
 )
-# use_fixed_noise = st.checkbox("Use Fixed Noise Model", False)
+legend = st.checkbox("Legend", True)
 
 # Random number generator
 gen = torch.Generator()
@@ -71,7 +72,7 @@ st.markdown(
 title_fontsize = 21
 axis_fontsize = 21
 legend_fontsize = 12
-ticksize = 14
+ticksize = 20
 alpha = 0.05
 marker_size = 50
 fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey=True)
@@ -116,24 +117,27 @@ with torch.no_grad():
 # Plot formatting
 # axes[0].legend(loc="best", fontsize=legend_fontsize)
 axes[0].set_title("Single-task", fontsize=title_fontsize)
-axes[0].tick_params(direction="in", length=5)
-# axes[1].legend(loc="best", fontsize=legend_fontsize)
-axes[0].xaxis.set_tick_params(labelsize=ticksize)
-axes[0].yaxis.set_tick_params(labelsize=ticksize)
 axes[1].set_title("Multi-task", fontsize=title_fontsize)
-axes[1].tick_params(direction="in", length=5)
-axes[0].set_xlabel("x", fontsize=axis_fontsize)
-axes[1].set_xlabel("x", fontsize=axis_fontsize)
-axes[1].xaxis.set_tick_params(labelsize=ticksize)
-axes[1].yaxis.set_tick_params(labelsize=ticksize)
+for i in [0, 1]:
+    axes[i].tick_params(direction="in", length=5)
+    if legend:
+        axes[i].legend(loc="best", fontsize=legend_fontsize)
+    axes[i].xaxis.set_tick_params(labelsize=ticksize)
+    axes[i].yaxis.set_tick_params(labelsize=ticksize)
+    axes[i].set_xlabel("x", fontsize=axis_fontsize)
+    axes[i].set_xlim(0, 1)
+    axes[i].set_xticks([0.0, 0.5, 1.0])
+    # axes[i].set_xticklabels(["", 0.2, 0.4, 0.6, 0.8, ""])
+    axes[i].set_ylim(-4, 6)
+    axes[i].set_yticks([-4, -2, 0, 2, 4, 6])
+    axes[i].set_yticklabels(["", -2, 0, 2, 4, 6])
 fig.supylabel("y", fontsize=axis_fontsize)
-axes[0].set_xlim(0, 1)
-axes[1].set_xlim(0, 1)
+
 st.write(fig)
 
 fn = "st_vs_mt.png"
 img = io.BytesIO()
-fig.savefig(img, format="png", dpi=300)
+fig.savefig(img, format="png", dpi=300, bbox_inches="tight")
 
 btn = st.download_button(
     label="Download image", data=img, file_name=fn, mime="image/png"

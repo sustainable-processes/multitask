@@ -1,4 +1,5 @@
 import subprocess
+import time
 from typing import Dict, List, Optional
 import wandb
 from multitask.benchmarks.suzuki_benchmark_training import (
@@ -21,11 +22,7 @@ logger = logging.getLogger(__name__)
 WANDB_SETTINGS = {"wandb_entity": "ceb-sre", "wandb_project": "multitask"}
 
 
-class SummitWork(L.LightningWork):
-    finished = False
-
-
-class BenchmarkTraining(SummitWork):
+class BenchmarkTraining(L.LightningWork):
     def __init__(
         self,
         benchmark_type: Literal["suzuki", "cn"],
@@ -33,7 +30,12 @@ class BenchmarkTraining(SummitWork):
         dataset_name: str,
         save_path: str,
         figure_path: str,
-        parallel: bool = False,
+        max_epochs: Optional[int] = 1000,
+        cv_folds: Optional[int] = 5,
+        verbose: Optional[int] = 0,
+        parallel: Optional[bool] = False,
+        wandb_entity: Optional[str] = None,
+        wandb_project: Optional[str] = "multitask",
         **kwargs,
     ):
         super().__init__(parallel=parallel, **kwargs)
@@ -42,47 +44,79 @@ class BenchmarkTraining(SummitWork):
         self.dataset_name = dataset_name
         self.save_path = save_path
         self.figure_path = figure_path
+        self.verbose = verbose
+        self.wandb_entity = wandb_entity
+        self.wandb_project = wandb_project
+        self.max_epochs = max_epochs
+        self.cv_folds = cv_folds
+        self.finished = False
 
     def run(self, **kwargs):
-        # Download data
-        wandb_run = wandb.init(
-            job_type="training",
-            entity=WANDB_SETTINGS["wandb_entity"],
-            project=WANDB_SETTINGS["wandb_project"],
-            tags=["benchmark"],
-        )
+        cmd = [
+            "multitask",
+            "benchmarks",
+            "train-cn" if self.benchmark_type == "cn" else "train-suzuki",
+            self.dataset_name,
+            self.save_path,
+            self.figure_path,
+            "--wandb-dataset-artifact-name",
+            self.wandb_dataset_artifact_name,
+            "--wandb-project",
+            self.wandb_project,
+            "--max-epochs",
+            str(self.max_epochs),
+            "--cv-folds",
+            str(self.cv_folds),
+        ]
+        if self.wandb_entity:
+            cmd += ["--wandb_entity", self.wandb_entity]
+        if self.verbose:
+            cmd += ["--verbose 1"]
+        print(cmd)
+        subprocess.run(cmd, shell=False)
 
-        # Train model using script
-        if self.benchmark_type == "suzuki":
-            emulator = train_suzuki_benchmark(
-                dataset_name=self.dataset_name,
-                save_path=self.save_path,
-                figure_path=self.figure_path,
-                **kwargs,
-            )
-        elif self.benchmark_type == "cn":
-            emulator = train_cn_benchmark(
-                wandb_dataset_artifact_name=self.wandb_dataset_artifact_name,
-                dataset_name=self.dataset_name,
-                save_path=self.save_path,
-                figure_path=self.figure_path,
-                **kwargs,
-            )
-        else:
-            raise ValueError(f"Invalid benchmark type: {self.benchmark_type}")
+    # def run(self, **kwargs):
+    #     # Download data
+    #     wandb_run = wandb.init(
+    #         job_type="training",
+    #         entity=WANDB_SETTINGS["wandb_entity"],
+    #         project=WANDB_SETTINGS["wandb_project"],
+    #         tags=["benchmark"],
+    #     )
 
-        # Upload to wandb
-        name = emulator.model_name
-        artifact = wandb.Artifact(f"benchmark_{name}", type="model")
-        artifact.add_dir(self.save_path)
-        figure_path = Path(self.figure_path)
-        artifact.add_file(figure_path / f"{name}_parity_plot.png")
-        wandb_run.log_artifact(artifact)
-        wandb_run.finish()
-        self.finished = True
+    #     # Train model using script
+    #     if self.benchmark_type == "suzuki":
+    #         emulator = train_suzuki_benchmark(
+    #             dataset_name=self.dataset_name,
+    #             save_path=self.save_path,
+    #             figure_path=self.figure_path,
+    #             **kwargs,
+    #         )
+    #     elif self.benchmark_type == "cn":
+    #         emulator = train_cn_benchmark(
+    #             wandb_dataset_artifact_name=self.wandb_dataset_artifact_name,
+    #             dataset_name=self.dataset_name,
+    #             save_path=self.save_path,
+    #             figure_path=self.figure_path,
+    #             **kwargs,
+    #         )
+    #     else:
+    #         raise ValueError(f"Invalid benchmark type: {self.benchmark_type}")
+
+    #     # Upload to wandb
+    #     name = emulator.model_name
+    #     artifact = wandb.Artifact(f"benchmark_{name}", type="model")
+    #     artifact.add_dir(self.save_path)
+    #     figure_path = Path(self.figure_path)
+    #     artifact.add_file(figure_path / f"{name}_parity_plot.png")
+    #     wandb_run.log_artifact(artifact)
+    #     wandb_run.finish()
+    #     # Give time to make sure the artifact is uploaded
+    #     time.sleep(20)
+    #     self.finished = True
 
 
-class SuzukiWork(SummitWork):
+class SuzukiWork(L.LightningApp):
     def __init__(
         self,
         strategy: str,
@@ -120,9 +154,9 @@ class SuzukiWork(SummitWork):
         self.repeats = repeats
         self.wandb_artifact_name = wandb_artifact_name
         self.print_warnings = print_warnings
+        self.finished = False
 
     def run(self):
-        # wandb.login(key=os.environ.get("WANDB_API_KEY"))
         cmd = [
             "python",
             "multitask/suzuki_optimization.py",
@@ -409,7 +443,7 @@ if __name__ == "__main__":
             run_benchmark_training=True,
             run_single_task=False,
             run_multi_task=False,
-            compute_type="cpu",
+            compute_type="cpu-medium",
             parallel=True,
             max_workers=10,
         )

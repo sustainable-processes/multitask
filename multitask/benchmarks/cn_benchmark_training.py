@@ -17,13 +17,13 @@ def train_benchmark(
     cv_folds: Optional[int] = 5,
     verbose: Optional[int] = 0,
     wandb_benchmark_artifact_name: str = None,
-    no_wandb: bool = False,
-    wandb_entity: Optional[str] = "ceb-sre",
+    use_wandb: bool = True,
+    wandb_entity: Optional[str] = None,
     wandb_project: Optional[str] = "multitask",
 ) -> ExperimentalEmulator:
     """Train a C-N benchmark"""
     # Setup wandb
-    if not no_wandb:
+    if use_wandb:
         run = wandb.init(
             # job_type="training",
             entity=wandb_entity,
@@ -32,10 +32,10 @@ def train_benchmark(
         )
 
     # Download data from wandb if not provided
-    if data_file is None and not no_wandb:
+    if data_file is None and use_wandb:
         dataset_artifact = run.use_artifact(wandb_dataset_artifact_name)
         data_file = Path(dataset_artifact.download()) / f"{dataset_name}.pb"
-    elif data_file is None and no_wandb:
+    elif data_file is None and not use_wandb:
         raise ValueError("Must provide data path if not using wandb")
 
     # Get data
@@ -60,7 +60,7 @@ def train_benchmark(
     emulator.save(save_dir=save_path)
 
     # Upload results to wandb
-    if not no_wandb:
+    if use_wandb:
         if wandb_benchmark_artifact_name is None:
             wandb_benchmark_artifact_name = f"benchmark_{dataset_name}"
         artifact = wandb.Artifact(wandb_benchmark_artifact_name, type="model")
