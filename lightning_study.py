@@ -69,51 +69,11 @@ class BenchmarkTraining(L.LightningWork):
             str(self.cv_folds),
         ]
         if self.wandb_entity:
-            cmd += ["--wandb_entity", self.wandb_entity]
+            cmd += ["--wandb-entity", self.wandb_entity]
         if self.verbose:
             cmd += ["--verbose 1"]
         print(cmd)
         subprocess.run(cmd, shell=False)
-
-    # def run(self, **kwargs):
-    #     # Download data
-    #     wandb_run = wandb.init(
-    #         job_type="training",
-    #         entity=WANDB_SETTINGS["wandb_entity"],
-    #         project=WANDB_SETTINGS["wandb_project"],
-    #         tags=["benchmark"],
-    #     )
-
-    #     # Train model using script
-    #     if self.benchmark_type == "suzuki":
-    #         emulator = train_suzuki_benchmark(
-    #             dataset_name=self.dataset_name,
-    #             save_path=self.save_path,
-    #             figure_path=self.figure_path,
-    #             **kwargs,
-    #         )
-    #     elif self.benchmark_type == "cn":
-    #         emulator = train_cn_benchmark(
-    #             wandb_dataset_artifact_name=self.wandb_dataset_artifact_name,
-    #             dataset_name=self.dataset_name,
-    #             save_path=self.save_path,
-    #             figure_path=self.figure_path,
-    #             **kwargs,
-    #         )
-    #     else:
-    #         raise ValueError(f"Invalid benchmark type: {self.benchmark_type}")
-
-    #     # Upload to wandb
-    #     name = emulator.model_name
-    #     artifact = wandb.Artifact(f"benchmark_{name}", type="model")
-    #     artifact.add_dir(self.save_path)
-    #     figure_path = Path(self.figure_path)
-    #     artifact.add_file(figure_path / f"{name}_parity_plot.png")
-    #     wandb_run.log_artifact(artifact)
-    #     wandb_run.finish()
-    #     # Give time to make sure the artifact is uploaded
-    #     time.sleep(20)
-    #     self.finished = True
 
 
 class SuzukiWork(L.LightningApp):
@@ -202,6 +162,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         compute_type: str = "cpu-medium",
         parallel: bool = True,
         max_workers: int = 10,
+        wandb_entity: Optional[str] = None,
+        wandb_project: Optional[str] = "multitask",
     ):
         super().__init__()
 
@@ -213,6 +175,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         self.run_multi_task = run_multi_task
         self.compute_type = compute_type
         self.parallel = parallel
+        self.wandb_entity = wandb_entity
+        self.wandb_project = wandb_project
 
         # Workers
         self.max_workers = max_workers
@@ -235,8 +199,11 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     figure_path="figures/",
                     parallel=self.parallel,
                     cloud_compute=L.CloudCompute(name=self.compute_type),
+                    wandb_entity=self.wandb_entity,
+                    wandb_project=self.wandb_project,
                 )
-                for case in range(1, 5)
+                # for case in range(1, 5)
+                for case in [1]
             ]
             for r in baumgartner_cn_runs:
                 r.run(
@@ -312,21 +279,22 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
         self.all_initialized = True
 
-        # Check for finished jobs
-        for i in self.current_workers:
-            if self.workers[str(i)].finished:
-                self.current_workers.remove(i)
-                self.succeded.append(i)
-                self.workers[str(i)].stop()
+        if self.run_single_task or self.run_multi_task:
+            # Check for finished jobs
+            for i in self.current_workers:
+                if self.workers[str(i)].finished:
+                    self.current_workers.remove(i)
+                    self.succeded.append(i)
+                    self.workers[str(i)].stop()
 
-        # Queue new jobs
-        i = 0
-        while len(self.current_workers) < self.max_workers and i < self.total_jobs:
-            if i not in self.succeded and i not in self.current_workers:
-                self.workers[str(i)].run()
-                self.current_workers.append(i)
-                print(f"Job {i+1} of {self.total_jobs} queued")
-            i += 1
+            # Queue new jobs
+            i = 0
+            while len(self.current_workers) < self.max_workers and i < self.total_jobs:
+                if i not in self.succeded and i not in self.current_workers:
+                    self.workers[str(i)].run()
+                    self.current_workers.append(i)
+                    print(f"Job {i+1} of {self.total_jobs} queued")
+                i += 1
 
     @staticmethod
     def generate_suzuki_configs_single_task(
@@ -444,7 +412,8 @@ if __name__ == "__main__":
             run_single_task=False,
             run_multi_task=False,
             compute_type="cpu-medium",
-            parallel=True,
+            parallel=False,
             max_workers=10,
+            wandb_entity="ceb-sre",
         )
     )

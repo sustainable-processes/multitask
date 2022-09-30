@@ -5,6 +5,10 @@ from summit import *
 from pathlib import Path
 from typing import Tuple, Optional
 import logging
+import wandb
+
+
+logger = logging.getLogger(__name__)
 
 
 def train_benchmark(
@@ -18,8 +22,23 @@ def train_benchmark(
     max_epochs: Optional[int] = 1000,
     cv_folds: Optional[int] = 5,
     verbose: Optional[int] = 0,
+    wandb_benchmark_artifact_name: str = None,
+    use_wandb: bool = True,
+    wandb_entity: Optional[str] = None,
+    wandb_project: Optional[str] = "multitask",
 ) -> SuzukiEmulator:
     """Train a Suzuki benchmark"""
+    # Setup wandb
+    config = dict(locals())
+    if use_wandb:
+        run = wandb.init(
+            job_type="training",
+            entity=wandb_entity,
+            project=wandb_project,
+            tags=["benchmark"],
+            config=config,
+        )
+
     # Get data
     ds, domain = prepare_domain_data(
         data_path=data_path,
@@ -27,6 +46,9 @@ def train_benchmark(
         split_catalyst=split_catalyst,
         print_warnings=print_warnings,
     )
+    logger.info(f"Dataset size: {ds.shape[0]}")
+    if use_wandb:
+        wandb.config.update({"dataset_size": ds.shape[0]})
 
     if dataset_name is None:
         dataset_name = Path(data_path).parts[-1].rstrip(".pb")
@@ -50,6 +72,18 @@ def train_benchmark(
 
     # Save emulator
     emulator.save(save_dir=save_path)
+
+    # Upload results to wandb
+    if use_wandb:
+        if wandb_benchmark_artifact_name is None:
+            wandb_benchmark_artifact_name = f"benchmark_{dataset_name}"
+        artifact = wandb.Artifact(wandb_benchmark_artifact_name, type="model")
+        artifact.add_dir(save_path)
+        wandb.log({"parity_plot": wandb.Image(fig)})
+        figure_path = Path(figure_path)
+        artifact.add_file(figure_path / f"{dataset_name}_parity_plot.png")
+        run.log_artifact(artifact)
+        run.finish()
 
     return emulator
 

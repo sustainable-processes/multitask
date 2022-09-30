@@ -5,6 +5,14 @@ from pathlib import Path
 from typing import Tuple, Optional
 import logging
 import wandb
+from skorch.callbacks import WandbLogger
+
+logger = logging.getLogger(__name__)
+
+
+class PatchWandbLogger(WandbLogger):
+    def on_train_begin(self, net, **kwargs):
+        return super().on_train_begin(net, **kwargs)
 
 
 def train_benchmark(
@@ -23,12 +31,14 @@ def train_benchmark(
 ) -> ExperimentalEmulator:
     """Train a C-N benchmark"""
     # Setup wandb
+    config = dict(locals())
     if use_wandb:
         run = wandb.init(
-            # job_type="training",
+            job_type="training",
             entity=wandb_entity,
             project=wandb_project,
             tags=["benchmark"],
+            config=config,
         )
 
     # Download data from wandb if not provided
@@ -40,12 +50,17 @@ def train_benchmark(
 
     # Get data
     ds, domain = prepare_domain_data(data_file=data_file)
+    logger.info(f"Dataset size: {ds.shape[0]}")
+    if use_wandb:
+        wandb.config.update({"dataset_size": ds.shape[0]})
 
     # Create emulator benchmark
     emulator = ExperimentalEmulator(dataset_name, domain, dataset=ds)
 
     # Train emulator
-    emulator.train(max_epochs=max_epochs, cv_folds=cv_folds, verbose=verbose)
+    scores = emulator.train(max_epochs=max_epochs, cv_folds=cv_folds, verbose=verbose)
+    if use_wandb:
+        wandb.run.summary.update(scores)
 
     # Parity plot
     fig, axes = emulator.parity_plot(include_test=True)
@@ -65,6 +80,7 @@ def train_benchmark(
             wandb_benchmark_artifact_name = f"benchmark_{dataset_name}"
         artifact = wandb.Artifact(wandb_benchmark_artifact_name, type="model")
         artifact.add_dir(save_path)
+        wandb.log({"parity_plot": wandb.Image(fig)})
         figure_path = Path(figure_path)
         artifact.add_file(figure_path / f"{dataset_name}_parity_plot.png")
         run.log_artifact(artifact)
@@ -110,7 +126,7 @@ def create_cn_domain() -> Domain:
     domain += ContinuousVariable(
         name="base_equiv",
         description=des_3,
-        bounds=[1.0, 2.0],
+        bounds=[1.0, 2.8],
     )
 
     des_4 = "Residence time in seconds (s)"
@@ -120,7 +136,7 @@ def create_cn_domain() -> Domain:
     domain += ContinuousVariable(
         name="temperature",
         description=des_5,
-        bounds=[30, 110],
+        bounds=[30, 100],
     )
 
     # Objectives
