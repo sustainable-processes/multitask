@@ -12,10 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 def train_benchmark(
-    data_path: str,
+    dataset_name: Optional[str],
     save_path: str,
     figure_path: str,
-    dataset_name: Optional[str] = None,
+    wandb_dataset_artifact_name: Optional[str] = None,
+    data_file: Optional[str] = None,
     include_reactant_concentrations: Optional[bool] = False,
     print_warnings: Optional[bool] = True,
     split_catalyst: Optional[bool] = True,
@@ -39,9 +40,16 @@ def train_benchmark(
             config=config,
         )
 
+    # Download data from wandb if not provided
+    if data_file is None and use_wandb:
+        dataset_artifact = run.use_artifact(wandb_dataset_artifact_name)
+        data_file = Path(dataset_artifact.download()) / f"{dataset_name}.pb"
+    elif data_file is None and not use_wandb:
+        raise ValueError("Must provide data path if not using wandb")
+
     # Get data
     ds, domain = prepare_domain_data(
-        data_path=data_path,
+        data_file=data_file,
         include_reactant_concentrations=include_reactant_concentrations,
         split_catalyst=split_catalyst,
         print_warnings=print_warnings,
@@ -49,9 +57,6 @@ def train_benchmark(
     logger.info(f"Dataset size: {ds.shape[0]}")
     if use_wandb:
         wandb.config.update({"dataset_size": ds.shape[0]})
-
-    if dataset_name is None:
-        dataset_name = Path(data_path).parts[-1].rstrip(".pb")
 
     # Create emulator benchmark
     emulator = SuzukiEmulator(
@@ -163,7 +168,7 @@ def create_suzuki_domain(
 
 
 def prepare_domain_data(
-    data_path: str,
+    data_file: str,
     include_reactant_concentrations: Optional[bool] = False,
     split_catalyst: Optional[bool] = True,
     print_warnings: Optional[bool] = True,
@@ -172,7 +177,7 @@ def prepare_domain_data(
     logger = logging.getLogger(__name__)
     # Get data
     ds = get_suzuki_dataset(
-        data_path,
+        data_file,
         split_catalyst=split_catalyst,
         print_warnings=print_warnings,
     )

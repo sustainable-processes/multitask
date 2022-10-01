@@ -59,7 +59,7 @@ def main(
     output_path.mkdir(exist_ok=True)
 
     # Extract data
-    reactions = []
+
     df_all_rxn_data = pd.read_excel(input_file, sheet_name=rxn_sheet_name)
     df_stock_solutions = pd.read_excel(input_file, sheet_name=stock_sheet_name)
     cat_nucleophile = df_all_rxn_data["Optimization"].str.split(" - ", expand=True)
@@ -73,13 +73,12 @@ def main(
         )
 
     # Transform
-    for i, (nucleophile, df_rxn_data) in enumerate(
-        df_all_rxn_data.groupby("nucleophile")
-    ):
+    for i, (_, df_rxn_data) in enumerate(df_all_rxn_data.groupby("nucleophile")):
         tqdm.pandas(desc="Converting to ORD")
-        reactions.extend(
-            df_rxn_data.progress_apply(inner_loop, axis=1, args=(df_stock_solutions,))
+        reactions = df_rxn_data.progress_apply(
+            inner_loop, axis=1, args=(df_stock_solutions,)
         )
+
         for j, reaction in enumerate(reactions):
             reaction.reaction_id = str(j)
 

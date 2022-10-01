@@ -16,7 +16,7 @@ class PatchWandbLogger(WandbLogger):
 
 
 def train_benchmark(
-    dataset_name: Optional[str],
+    dataset_name: str,
     save_path: str,
     figure_path: str,
     wandb_dataset_artifact_name: Optional[str] = None,

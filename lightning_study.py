@@ -202,8 +202,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                 )
-                # for case in range(1, 5)
-                for case in [1]
+                for case in range(1, 5)
             ]
             for r in baumgartner_cn_runs:
                 r.run(
@@ -212,15 +211,18 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     verbose=1,
                 )
 
-            # # Train Baumgartner Suzuki benchmark
+            # Train Baumgartner Suzuki benchmark
             # baumgartner_suzuki_runs = [
             #     BenchmarkTraining(
             #         benchmark_type="suzuki",
-            #         data_path="data/baumgartner_suzuki/ord/baumgartner_suzuki.pb",
+            #         dataset_name=f"baumgartner_suzuki",
+            #         wandb_dataset_artifact_name="baumgartner_suzuki:latest",
             #         save_path="data/baumgartner_suzuki/emulator",
             #         figure_path="figures/",
             #         parallel=self.parallel,
             #         cloud_compute=L.CloudCompute(self.compute_type),
+            #         wandb_entity=self.wandb_entity,
+            #         wandb_project=self.wandb_project,
             #     )
             # ]
 
@@ -228,17 +230,18 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             # reizman_suzuki_runs = [
             #     BenchmarkTraining(
             #         benchmark_type="suzuki",
-            #         data_path=f"data/reizman_suzuki/ord/reizman_suzuki_case_{case}.pb",
+            #         dataset_name=f"reizman_suzuki_case_{case}",
+            #         wandb_dataset_artifact_name="reizman_suzuki:latest",
             #         save_path=f"data/reizman_suzuki/emulator_case_{case}/",
             #         figure_path="figures/",
             #         parallel=self.parallel,
             #         cloud_compute=L.CloudCompute(name=self.compute_type),
+            #         wandb_entity=self.wandb_entity,
+            #         wandb_project=self.wandb_project,
             #     )
             #     for case in range(1, 5)
             # ]
-            # for r in (
-            #     baumgartner_cn_runs + reizman_suzuki_runs + baumgartner_suzuki_runs
-            # ):
+            # for r in reizman_suzuki_runs + baumgartner_suzuki_runs:
             #     r.run(
             #         split_catalyst=False,
             #         max_epochs=1000,
