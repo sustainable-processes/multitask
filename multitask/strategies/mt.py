@@ -1,4 +1,4 @@
-from .mixed_gp_regression import MixedMultiTaskGP, LCMMultitaskGP
+# from .mixed_gp_regression import MixedMultiTaskGP, LCMMultitaskGP
 from .acquistion import CategoricalEI, CategoricalqNEI, WeightedEI
 from summit import *
 from summit.strategies.base import Strategy, Transform
@@ -221,23 +221,25 @@ class NewMTBO(Strategy):
         prior = LKJCovariancePrior(n_tasks, eta, sd_prior)
 
         if self.brute_force_categorical and self.categorical_method is None:
-            self.model = MixedMultiTaskGP(
-                torch.tensor(inputs_task).double(),
-                torch.tensor(output.data_to_numpy().astype(float)).double(),
-                cat_dims=cat_dimensions,
-                task_feature=-1,
-                output_tasks=output_tasks,
-                task_covar_prior=prior,
-            )
+            raise NotImplementedError("LCM model not implemented yet.")
+            # self.model = MixedMultiTaskGP(
+            #     torch.tensor(inputs_task).double(),
+            #     torch.tensor(output.data_to_numpy().astype(float)).double(),
+            #     cat_dims=cat_dimensions,
+            #     task_feature=-1,
+            #     output_tasks=output_tasks,
+            #     task_covar_prior=prior,
+            # )
         elif self.model_type == self.LCM:
-            self.model = LCMMultitaskGP(
-                torch.tensor(inputs_task).double(),
-                torch.tensor(output.data_to_numpy().astype(float)).double(),
-                task_feature=-1,
-                output_tasks=output_tasks,
-                num_independent_kernels=2,
-                task_covar_prior=prior,
-            )
+            raise NotImplementedError("LCM model not implemented yet.")
+            # self.model = LCMMultitaskGP(
+            #     torch.tensor(inputs_task).double(),
+            #     torch.tensor(output.data_to_numpy().astype(float)).double(),
+            #     task_feature=-1,
+            #     output_tasks=output_tasks,
+            #     num_independent_kernels=2,
+            #     task_covar_prior=prior,
+            # )
         elif self.model_type == self.ICM:
             self.model = MultiTaskGP(
                 torch.tensor(inputs_task).double(),

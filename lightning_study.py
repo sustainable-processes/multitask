@@ -107,21 +107,8 @@ class OptimizationWork(L.LightningWork):
         super().__init__(
             parallel=parallel,
             cloud_compute=cloud_compute,
-            cloud_build_config=L.BuildConfig(
-                [
-                    "pandas>=1.2.4",
-                    "matplotlib>=3.4.1",
-                    "numpy>=1.20.2",
-                    "scikit-learn>=1.0.2",
-                    "summit>=0.8.6",
-                    "pint>=0.17",
-                    "tqdm>=4.61.0",
-                    "rdkit-pypi>=2021.9.4",
-                    "wandb>=0.13.12",
-                    "typer>=0.6.1",
-                    ".",
-                ]
-            ),
+            # Make sure the multitask package is installed
+            # cloud_build_config=L.BuildConfig(requirements=["."]),
             **kwargs,
         )
         self.strategy = strategy
