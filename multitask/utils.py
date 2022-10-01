@@ -1,4 +1,3 @@
-import os
 from summit import *
 from fastprogress.fastprogress import progress_bar
 from ord_schema import message_helpers, validations
@@ -16,6 +15,8 @@ import numpy as np
 import pkg_resources
 import logging
 import uuid
+from enum import Enum
+import os
 
 ureg = UnitRegistry()
 
@@ -27,6 +28,11 @@ __all__ = [
     "ureg",
     "get_reactant_smiles",
 ]
+
+
+class BenchmarkType(Enum):
+    suzuki = "suzuki_coupling"
+    cn = "cn_coupling"
 
 
 def get_pint_amount(amount: Amount):
