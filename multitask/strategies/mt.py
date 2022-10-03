@@ -213,12 +213,12 @@ class NewMTBO(Strategy):
         output_tasks = [
             self.task
         ]  # if self.acquistion_function != "WeightedEI" else list(range(n_tasks))
-        sd_prior = GammaPrior(1.0, 0.15)
-        sd_prior._event_shape = torch.Size([n_tasks])
-        eta = 1.5
-        if not isinstance(eta, float) and not isinstance(eta, int):
-            raise ValueError(f"eta must be a real number, your eta was {eta}.")
-        prior = LKJCovariancePrior(n_tasks, eta, sd_prior)
+        # sd_prior = GammaPrior(1.0, 0.15)
+        # sd_prior._event_shape = torch.Size([n_tasks])
+        # eta = 1.5
+        # if not isinstance(eta, float) and not isinstance(eta, int):
+        #     raise ValueError(f"eta must be a real number, your eta was {eta}.")
+        # prior = LKJCovariancePrior(n_tasks, eta, sd_prior)
 
         if self.brute_force_categorical and self.categorical_method is None:
             raise NotImplementedError("LCM model not implemented yet.")
@@ -246,7 +246,7 @@ class NewMTBO(Strategy):
                 torch.tensor(output.data_to_numpy().astype(float)).double(),
                 task_feature=-1,
                 output_tasks=output_tasks,
-                task_covar_prior=prior,
+                # task_covar_prior=prior,
             )
         else:
             raise ValueError(f"{self.model_type} not available")

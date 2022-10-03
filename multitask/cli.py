@@ -3,6 +3,7 @@ from multitask.etl import app as etl_cli
 from multitask.benchmarks import app as benchmarks_cli
 from multitask.optimization import app as optimization_cli
 from multitask.visualization import app as visualization_cli
+import logging
 
 app = typer.Typer()
 app.add_typer(
@@ -21,4 +22,21 @@ app.add_typer(
 )
 
 if __name__ == "__main__":
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    # create a file handler
+    handler = logging.FileHandler("multitask.log")
+    handler.setLevel(logging.INFO)
+
+    # create a logging format
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    handler.setFormatter(formatter)
+
+    # add the file handler to the logger
+    logger.addHandler(handler)
+
+    # Typer apps
     app()

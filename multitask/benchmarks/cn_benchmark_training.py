@@ -2,7 +2,7 @@ from multitask.utils import *
 from multitask.etl.cn_data_utils import get_cn_dataset
 from summit import *
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import List, Tuple, Optional
 import logging
 import wandb
 from skorch.callbacks import WandbLogger
@@ -53,6 +53,7 @@ def train_benchmark(
     logger.info(f"Dataset size: {ds.shape[0]}")
     if use_wandb:
         wandb.config.update({"dataset_size": ds.shape[0]})
+        wandb.config.update({"domain": domain.to_dict()})
 
     # Create emulator benchmark
     emulator = ExperimentalEmulator(dataset_name, domain, dataset=ds)
@@ -89,7 +90,7 @@ def train_benchmark(
     return emulator
 
 
-def create_cn_domain() -> Domain:
+def create_cn_domain(base_equiv_bounds: List[float]) -> Domain:
     """Create the domain for the optimization"""
     domain = Domain()
 
@@ -126,7 +127,7 @@ def create_cn_domain() -> Domain:
     domain += ContinuousVariable(
         name="base_equiv",
         description=des_3,
-        bounds=[1.0, 2.8],
+        bounds=base_equiv_bounds,
     )
 
     des_4 = "Residence time in seconds (s)"
@@ -160,5 +161,6 @@ def prepare_domain_data(
     ds = get_cn_dataset(data_file)
 
     # Create domain
-    domain = create_cn_domain()
+    bounds = round(ds["base_equiv"].min(), 1), round(ds["base_equiv"].max(), 1)
+    domain = create_cn_domain(base_equiv_bounds=bounds)
     return ds, domain
