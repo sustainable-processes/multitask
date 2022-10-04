@@ -2,7 +2,6 @@ from re import I
 import streamlit as st
 import botorch
 from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikelihood
-from multitask.strategies.mixed_gp_regression import LCMMultitaskGP
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -63,7 +62,7 @@ model_mt = botorch.models.MultiTaskGP(train_X, train_Y_norm, task_feature=-1)
 mll_st = ExactMarginalLogLikelihood(model_st.likelihood, model_st)
 mll_mt = ExactMarginalLogLikelihood(model_mt.likelihood, model_mt)
 botorch.fit.fit_gpytorch_model(mll_st)
-botorch.fit.fit_gpytorch_model(mll_mt)
+botorch.fit.fit_gpytorch_model(mll_mt, retries=20)
 
 ### Plotting
 st.markdown(
@@ -142,3 +141,22 @@ fig.savefig(img, format="png", dpi=300, bbox_inches="tight")
 btn = st.download_button(
     label="Download image", data=img, file_name=fn, mime="image/png"
 )
+
+with st.expander("Single-task kernel parameters"):
+    with torch.no_grad():
+        st.write("Single-task kernel lengthscale")
+        st.write(model_st.covar_module.base_kernel.lengthscale)
+
+with st.expander("Multi-task kernel parameters"):
+    with torch.no_grad():
+        st.write("Multi-task kernel lengthscale")
+        st.write(model_mt.covar_module.base_kernel.lengthscale)
+
+        # st.write("Multi-task kernel variance")
+        # st.write(model_mt.task_covar_module.var)
+
+        # st.write("Covariance factor B")
+        # st.write(model_mt.task_covar_module.covar_factor)
+
+        st.write("Task covariance matrix")
+        st.write(model_mt.task_covar_module._eval_covar_matrix().numpy())

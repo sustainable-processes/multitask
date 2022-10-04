@@ -179,7 +179,8 @@ class NewMTBO(Strategy):
             data,
             categorical_method=self.categorical_method,
             min_max_scale_inputs=True,
-            min_max_scale_outputs=True,
+            # min_max_scale_outputs=True,
+            standarize_outputs=True,
         )
 
         # Categorial transformation

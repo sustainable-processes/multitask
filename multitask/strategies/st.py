@@ -96,8 +96,7 @@ class NewSTBO(Strategy):
             categorical_method=self.categorical_method,
             # standardize_inputs=True,
             min_max_scale_inputs=True,
-            min_max_scale_outputs=True
-            # standardize_outputs=True,
+            standardize_outputs=True,
         )
 
         # Make it always a maximization problem
@@ -232,7 +231,7 @@ class NewSTBO(Strategy):
             result,
             categorical_method=self.categorical_method,
             min_max_scale_inputs=True,
-            min_max_scale_outputs=True,
+            standardized_outputs=True,
         )
 
         # Add metadata
