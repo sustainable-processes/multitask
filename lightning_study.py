@@ -369,7 +369,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"reizman_suzuki_case_{case}",
                 "output_path": f"data/reizman_suzuki/results_stbo_case_{case}/",
                 "wandb_optimization_artifact_name": "stbo_reizman_suzuki",
-                "wandb_main_dataset_artifact_name": f"baumgartner_suzuki:latest",
+                "wandb_main_dataset_artifact_name": f"reizman_suzuki:latest",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
@@ -537,7 +537,7 @@ if __name__ == "__main__":
             run_cn=True,
             compute_type="cpu-medium",
             parallel=True,
-            max_workers=1,
+            max_workers=41,
             wandb_entity="ceb-sre",
         )
     )

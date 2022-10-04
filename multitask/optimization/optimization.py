@@ -79,7 +79,7 @@ def stbo(
         if benchmark_type == BenchmarkType.suzuki:
             main_ds = get_suzuki_dataset(
                 data_path=main_dataset_path / f"{model_name}.pb",
-                split_catalyst=exp.split_catalyst,
+                split_catalyst=True,
                 print_warnings=print_warnings,
             )
         elif benchmark_type == BenchmarkType.cn:
