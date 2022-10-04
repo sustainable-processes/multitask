@@ -1,3 +1,4 @@
+from re import I
 from summit import *
 from fastprogress.fastprogress import progress_bar
 from ord_schema import message_helpers, validations
@@ -274,6 +275,8 @@ class WandbRunner(Runner):
             Default is True.
         save_dir : str, optional
             The directory to save checkpoints locally. Defaults to `~/.summit/runner`.
+        callback : callable
+            A callback to run on each iteration.
         """
         # Set parameters
         prev_res = None
@@ -293,6 +296,9 @@ class WandbRunner(Runner):
         if self.wandb_artifact:
             artifact = wandb.Artifact(self.wandb_artifact)
             artifact.add_dir(save_dir)
+
+        # Callback
+        callback = kwargs.get("callback")
 
         # Create wandb run
         skip_wandb_intialization = kwargs.get("skip_wandb_intialization", False)
@@ -331,7 +337,11 @@ class WandbRunner(Runner):
                 elif not v.maximize:
                     fbest[j] = self.experiment.data[v.name].min()
 
-                wandb.log({f"{v.name}_best": fbest[j]})
+                wandb.log({"iteration": i, f"{v.name}_best": fbest[j]})
+
+            # Callback
+            if callback is not None:
+                callback(self, prev_res, i)
 
             # Send hypervolume for multiobjective experiments
             if n_objs > 1:
@@ -342,7 +352,7 @@ class WandbRunner(Runner):
                         data[(v.name, "DATA")] = -1.0 * data[v.name]
                 y_pareto, _ = pareto_efficient(data.to_numpy(), maximize=False)
                 hv = hypervolume(y_pareto, self.ref)
-                wandb.log("hypervolume", hv)
+                wandb.log({"iteration": i, "hypervolume": hv})
 
             # Save state
             if save_freq is not None:

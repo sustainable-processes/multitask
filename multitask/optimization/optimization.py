@@ -3,13 +3,18 @@ from multitask.etl.suzuki_data_utils import get_suzuki_dataset
 from multitask.etl.cn_data_utils import get_cn_dataset
 from multitask.strategies import NewSTBO, NewMTBO
 from multitask.utils import WandbRunner, BenchmarkType
+from botorch.models import SingleTaskGP, MultiTaskGP
+from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikelihood
 from summit import *
 import gpytorch
 import torch
+import numpy as np
+from scipy.stats import spearmanr
+from scipy.sparse import issparse
 import wandb
 from tqdm.auto import trange
 from pathlib import Path
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 import pandas as pd
 import logging
 import json
@@ -26,6 +31,7 @@ def stbo(
     wandb_benchmark_artifact_name: str,
     benchmark_type: BenchmarkType,
     output_path: str,
+    wandb_main_dataset_artifact_name: Optional[str] = None,
     max_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
     brute_force_categorical: Optional[bool] = False,
@@ -61,6 +67,25 @@ def stbo(
     # Ouptut path
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True, parents=True)
+
+    # Download main dataset
+    if wandb_main_dataset_artifact_name:
+        api = wandb.Api()
+        main_dataset_path = api.artifact(
+            f"{wandb_entity}/{wandb_project}/{wandb_main_dataset_artifact_name}"
+        ).download()
+        main_dataset_path = Path(main_dataset_path)
+        if benchmark_type == BenchmarkType.suzuki:
+            main_ds = get_suzuki_dataset(
+                data_path=main_dataset_path / f"{model_name}.pb",
+                split_catalyst=exp.split_catalyst,
+            )
+        elif benchmark_type == BenchmarkType.cn:
+            main_ds = get_cn_dataset(
+                data_path=main_dataset_path / f"{model_name}.pb",
+            )
+    else:
+        main_ds = None
 
     # Single-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
@@ -106,6 +131,7 @@ def stbo(
                         brute_force_categorical=brute_force_categorical,
                         categorical_method=categorical_method,
                         acquisition_function=acquisition_function,
+                        main_ds=main_ds,
                     )
                     result.save(output_path / f"repeat_{i}.json")
                     torch.save(
@@ -136,17 +162,18 @@ def mtbo(
     model_name: str,
     wandb_benchmark_artifact_name: str,
     benchmark_type: BenchmarkType,
-    wandb_dataset_artifact_name: str,
+    wandb_ct_dataset_artifact_name: str,
     ct_dataset_names: List[str],
     output_path: str,
+    wandb_main_dataset_artifact_name: Optional[str] = None,
     max_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
     repeats: Optional[int] = 20,
     print_warnings: Optional[bool] = True,
     brute_force_categorical: bool = False,
     acquisition_function: Optional[str] = "EI",
-    wandb_project: Optional[str] = "ceb-sre",
-    wandb_entity: Optional[str] = "multitask",
+    wandb_entity: Optional[str] = "ceb-sre",
+    wandb_project: Optional[str] = "multitask",
     wandb_artifact_name: Optional[str] = None,
 ):
     """Optimization of a Suzuki or C-N benchmark with Multitask Bayesian Optimziation"""
@@ -161,6 +188,27 @@ def mtbo(
     # Multi-Task Bayesian Optimization
     max_iterations = max_experiments // batch_size
     max_iterations += 1 if max_experiments % batch_size != 0 else 0
+
+    # Download main dataset
+    if wandb_main_dataset_artifact_name:
+        api = wandb.Api()
+        main_dataset_path = api.artifact(
+            f"{wandb_entity}/{wandb_project}/{wandb_main_dataset_artifact_name}"
+        ).download()
+        main_dataset_path = Path(main_dataset_path)
+        if benchmark_type == BenchmarkType.suzuki:
+            main_ds = get_suzuki_dataset(
+                data_path=main_dataset_path / f"{model_name}.pb",
+                split_catalyst=exp.split_catalyst,
+                print_warnings=print_warnings,
+            )
+        elif benchmark_type == BenchmarkType.cn:
+            main_ds = get_cn_dataset(
+                data_path=main_dataset_path / f"{model_name}.pb",
+                print_warnings=print_warnings,
+            )
+    else:
+        main_ds = None
 
     if brute_force_categorical:
         categorical_method = None
@@ -199,7 +247,7 @@ def mtbo(
                         raise ValueError(f"Unknown benchmark type {benchmark_type}")
 
                     # Load suzuki dataset
-                    dataset_artifact = run.use_artifact(wandb_dataset_artifact_name)
+                    dataset_artifact = run.use_artifact(wandb_ct_dataset_artifact_name)
                     datasets_path = Path(dataset_artifact.download())
                     if benchmark_type == BenchmarkType.suzuki:
                         ds_list = [
@@ -233,6 +281,7 @@ def mtbo(
                         brute_force_categorical=brute_force_categorical,
                         categorical_method=categorical_method,
                         acquisition_function=acquisition_function,
+                        main_ds=main_ds,
                     )
                     result.save(output_path / f"repeat_{i}.json")
                     torch.save(
@@ -258,6 +307,115 @@ def mtbo(
                 done = True
 
 
+class STBOCallback:
+    def __init__(
+        self,
+        max_iterations: int,
+        main_ds: Optional[DataSet] = None,
+    ):
+        self.num_iterations = max_iterations
+        self.main_ds = main_ds
+
+    @staticmethod
+    def get_kernel_lengthscales(model: SingleTaskGP, domain: Domain):
+        wandb_dict = {}
+        # Kernel lengthscales
+        k = 0
+
+        lengthscale = model.covar_module.base_kernel.lengthscale.detach().numpy()[0]
+        for v in domain.input_variables:
+            if isinstance(v, ContinuousVariable):
+                wandb.log({f"kernel/kernel_lengthscale_{v.name}": lengthscale[k]})
+                k += 1
+            elif isinstance(v, CategoricalVariable):
+                for level in v.levels:
+                    wandb_dict.update(
+                        {
+                            f"""kernel/kernel_lengthscale_{v.name}_{level.replace(' ', '_')}""": lengthscale[
+                                k
+                            ]
+                        }
+                    )
+                    k += 1
+        return wandb_dict
+
+    @staticmethod
+    def get_marginal_likelihood(
+        model: SingleTaskGP, mll: ExactMarginalLogLikelihood, inputs, output
+    ):
+        with torch.no_grad():
+            model_output = model(torch.tensor(inputs).double())
+            train_y = torch.tensor(output).double()
+            likelihood = mll(model_output, train_y).numpy()
+            sum_likelihood = np.exp(np.sum(likelihood) / len(likelihood))
+        return {"marginal_likelihood": sum_likelihood}
+
+    @staticmethod
+    def get_spearmans_coefficient(model, inputs, output, include_table: bool = False):
+        wandb_dict = {}
+        with torch.no_grad():
+            model_output = model(torch.tensor(inputs).double())
+        train_y = torch.tensor(output).double()
+        abs_residuals = (model_output.mean - train_y[:, 0]).abs().numpy()
+        uncertainties = model_output.variance.sqrt().numpy()
+        if include_table:
+            wandb_dict.update(
+                {
+                    "uncertainty_residuals": wandb.Table(
+                        columns=["standard_deviation", "absolute_residual"],
+                        data=np.vstack([uncertainties, abs_residuals]).T.tolist(),
+                    )
+                }
+            )
+        coeff = spearmanr(a=uncertainties, b=abs_residuals)
+
+        wandb_dict.update(
+            {"spearmans_rank_coefficient_uncertainty_residual": coeff.correlation}
+        )
+        return wandb_dict
+
+    def __call__(self, cls: WandbRunner, prev_res, iteration):
+        strategy: NewMTBO = cls.strategy
+        domain: Domain = strategy.domain
+        wandb_dict = {"iteration": iteration}
+
+        try:
+            model: SingleTaskGP = strategy.model
+            mll: ExactMarginalLogLikelihood = strategy.mll
+        except AttributeError:
+            model = None
+            mll = None
+
+        if model is not None:
+            wandb_dict.update(self.get_kernel_lengthscales(model, domain))
+
+        if model is not None and mll is not None and self.main_ds is not None:
+            inputs, output = transform(
+                self.main_ds,
+                domain,
+                output_means=strategy.transform.output_means,
+                output_stds=strategy.transform.output_stds,
+                encoders=strategy.transform.encoders,
+            )
+            inputs = inputs.data_to_numpy().astype(float)
+            output = output.data_to_numpy().astype(float)
+            wandb_dict.update(self.get_marginal_likelihood(model, mll, inputs, output))
+
+            # Calculate spearmans' rank coefficient on errors
+            wandb_dict.update(
+                self.get_spearmans_coefficient(
+                    model,
+                    inputs,
+                    output,
+                    include_table=True
+                    if iteration == self.max_iterations - 1
+                    else False,
+                )
+            )
+
+        wandb.log(wandb_dict)
+
+
 def run_stbo(
     exp: Experiment,
     max_iterations: int = 10,
@@ -266,6 +424,7 @@ def run_stbo(
     categorical_method: str = "one-hot",
     acquisition_function: str = "EI",
     wandb_runner_kwargs: Optional[dict] = {},
+    main_ds: Optional[DataSet] = None,
 ):
     """Run Single Task Bayesian Optimization (AKA normal BO)"""
     exp.reset()
@@ -276,15 +435,87 @@ def run_stbo(
         categorical_method=categorical_method,
         acquisition_function=acquisition_function,
     )
+    stbo_callback = STBOCallback(max_iterations=max_iterations, main_ds=main_ds)
     r = WandbRunner(
         strategy=strategy,
         experiment=exp,
         max_iterations=max_iterations,
         batch_size=batch_size,
-        **wandb_runner_kwargs,
+        callback=stbo_callback**wandb_runner_kwargs,
     )
     r.run(skip_wandb_intialization=True)
     return r
+
+
+class MTBOCallback(STBOCallback):
+    def __init__(
+        self,
+        max_iterations: int,
+        opt_task: int,
+        main_ds: Optional[DataSet] = None,
+    ):
+        self.num_iterations = max_iterations
+        self.opt_task = opt_task
+        self.main_ds = main_ds
+
+    @staticmethod
+    def get_kernel_lengthscales(model: SingleTaskGP, domain: Domain):
+        wandb_dict = super().get_kernel_lengthscales(model, domain)
+        task_covar_matrix = model.task_covar_module._eval_covar_matrix().numpy()
+        for i in range(task_covar_matrix.shape[0]):
+            for j in range(task_covar_matrix.shape[1]):
+                wandb_dict.update(
+                    {f"kernel/task_covar_{i}_{j}": task_covar_matrix[i, j]}
+                )
+        return wandb_dict
+
+    def __call__(self, cls: WandbRunner, prev_res, iteration):
+        strategy: NewMTBO = cls.strategy
+        domain: Domain = strategy.domain
+        wandb_dict = {"iteration": iteration}
+
+        try:
+            model: MultiTaskGP = strategy.model
+            mll: ExactMarginalLogLikelihood = strategy.mll
+        except AttributeError:
+            model = None
+            mll = None
+
+        if model is not None:
+            wandb_dict.update(self.get_kernel_lengthscales(model, domain))
+
+        if model is not None and mll is not None and self.main_ds is not None:
+            inputs, output = transform(
+                self.main_ds,
+                domain,
+                output_means=strategy.transform.output_means,
+                output_stds=strategy.transform.output_stds,
+                encoders=strategy.transform.encoders,
+            )
+            inputs = inputs.data_to_numpy().astype(float)
+            inputs_task = np.append(
+                inputs,
+                self.opt_task * np.ones((inputs.shape[0], 1)),
+                axis=1,
+            ).astype(np.float)
+            output = output.data_to_numpy().astype(float)
+            wandb_dict.update(
+                self.get_marginal_likelihood(model, mll, inputs_task, output)
+            )
+
+            # Calculate spearmans' rank coefficient on errors
+            wandb_dict.update(
+                self.get_spearmans_coefficient(
+                    model,
+                    inputs_task,
+                    output,
+                    include_table=True
+                    if iteration == self.max_iterations - 1
+                    else False,
+                )
+            )
+
+        wandb.log(wandb_dict)
 
 
 def run_mtbo(
@@ -297,6 +528,7 @@ def run_mtbo(
     categorical_method: str = "one-hot",
     acquisition_function: str = "EI",
     wandb_runner_kwargs: Optional[dict] = {},
+    main_ds: Optional[DataSet] = None,
 ):
     """Run Multitask Bayesian optimization"""
     exp.reset()
@@ -316,5 +548,44 @@ def run_mtbo(
         batch_size=batch_size,
         **wandb_runner_kwargs,
     )
-    r.run(skip_wandb_intialization=True)
+    mtbo_callback = MTBOCallback(
+        max_iterations=max_iterations, opt_task=task, main_ds=main_ds
+    )
+    r.run(
+        skip_wandb_intialization=True,
+        callback=mtbo_callback,
+    )
     return r
+
+
+def transform(
+    ds: DataSet,
+    domain: Domain,
+    output_means: Dict,
+    output_stds: Dict,
+    encoders: Optional[Dict] = None,
+):
+    ds = ds.copy()
+    input_columns = []
+    for v in domain.input_variables:
+        if isinstance(v, ContinuousVariable):
+            bounds = domain[v.name].bounds
+            ds[v.name, "DATA"] = (ds[v.name] - bounds[0]) / (bounds[1] - bounds[0])
+            input_columns.append(v.name)
+        elif isinstance(v, CategoricalVariable):
+            ohe = encoders[v.name]
+            values = np.atleast_2d(ds[v.name].to_numpy()).T
+            one_hot_values = ohe.transform(values)
+            if issparse(one_hot_values):
+                one_hot_values = one_hot_values.todense()
+            for loc, l in enumerate(v.levels):
+                column_name = f"{v.name}_{l}"
+                ds[column_name, "DATA"] = one_hot_values[:, loc]
+                input_columns.append(column_name)
+            ds = ds.drop(columns=[v.name], axis=1)
+
+    output_columns = []
+    for v in domain.output_variables:
+        ds[v.name] = (ds[v.name] - output_means[v.name]) / output_stds[v.name]
+        output_columns.append(v.name)
+    return ds[input_columns], ds[output_columns]

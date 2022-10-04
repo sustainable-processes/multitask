@@ -432,6 +432,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             }
             for case_main in range(1, 5)
             for case_aux in range(1, 5)
+            if case_main != case_aux
         ]
 
         # MTBO Baumgartner one cotraining with Reizman
@@ -507,6 +508,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             }
             for case_main in range(1, 5)
             for case_aux in range(1, 5)
+            if case_main != case_aux
         ]
         return baumgartner_mtbo_configs_reizman_one
 

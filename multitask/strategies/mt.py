@@ -180,7 +180,7 @@ class NewMTBO(Strategy):
             categorical_method=self.categorical_method,
             min_max_scale_inputs=True,
             # min_max_scale_outputs=True,
-            standarize_outputs=True,
+            standardize_outputs=True,
         )
 
         # Categorial transformation
@@ -252,8 +252,8 @@ class NewMTBO(Strategy):
         else:
             raise ValueError(f"{self.model_type} not available")
 
-        mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
-        fit_gpytorch_model(mll, max_retries=20)
+        self.mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
+        fit_gpytorch_model(self.mll, max_retries=20)
 
         # Train an extra model for the current task
         if self.acquistion_function == "WeightedEI":
@@ -261,10 +261,10 @@ class NewMTBO(Strategy):
                 torch.tensor(inputs.data_to_numpy().astype(float)).double(),
                 torch.tensor(output.data_to_numpy().astype(float)).double(),
             )
-            mll = ExactMarginalLogLikelihood(
+            self.mll = ExactMarginalLogLikelihood(
                 self.task_model.likelihood, self.task_model
             )
-            fit_gpytorch_model(mll)
+            fit_gpytorch_model(self.mll)
 
         # Optimize acquisition function
         if self.brute_force_categorical:
@@ -351,6 +351,7 @@ class NewMTBO(Strategy):
             result,
             categorical_method=self.categorical_method,
             min_max_scale_inputs=True,
+            standardize_outputs=True,
         )
 
         # Add metadata
