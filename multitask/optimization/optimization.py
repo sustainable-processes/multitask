@@ -202,7 +202,7 @@ def mtbo(
         if benchmark_type == BenchmarkType.suzuki:
             main_ds = get_suzuki_dataset(
                 data_path=main_dataset_path / f"{model_name}.pb",
-                split_catalyst=exp.split_catalyst,
+                split_catalyst=True,
                 print_warnings=print_warnings,
             )
         elif benchmark_type == BenchmarkType.cn:
@@ -299,7 +299,7 @@ def mtbo(
                         artifact.add_file(output_path / f"repeat_{i}_model.pth")
                         run.log_artifact(artifact)
                     done = True
-                except (RuntimeError, gpytorch.utils.errors.NotPSDError):
+                except gpytorch.utils.errors.NotPSDError:
                     retries += 1
                 finally:
                     wandb.finish()
@@ -319,8 +319,7 @@ class STBOCallback:
         self.max_iterations = max_iterations
         self.main_ds = main_ds
 
-    @staticmethod
-    def get_kernel_lengthscales(model: SingleTaskGP, domain: Domain):
+    def get_kernel_lengthscales(self, model: SingleTaskGP, domain: Domain):
         wandb_dict = {}
         # Kernel lengthscales
         k = 0
@@ -344,9 +343,8 @@ class STBOCallback:
                     k += 1
         return wandb_dict
 
-    @staticmethod
     def get_marginal_likelihood(
-        model: SingleTaskGP, mll: ExactMarginalLogLikelihood, inputs, output
+        self, model: SingleTaskGP, mll: ExactMarginalLogLikelihood, inputs, output
     ):
         with torch.no_grad():
             model_output = model(torch.tensor(inputs).double())
@@ -355,8 +353,9 @@ class STBOCallback:
             sum_likelihood = np.exp(np.sum(log_likelihoods) / len(log_likelihoods))
         return {"marginal_likelihood": sum_likelihood}
 
-    @staticmethod
-    def get_spearmans_coefficient(model, inputs, output, include_table: bool = False):
+    def get_spearmans_coefficient(
+        self, model, inputs, output, include_table: bool = False
+    ):
         wandb_dict = {}
         with torch.no_grad():
             model_output = model(torch.tensor(inputs).double())
@@ -406,10 +405,6 @@ class STBOCallback:
             wandb_dict.update(self.get_marginal_likelihood(model, mll, inputs, output))
 
             # Calculate spearmans' rank coefficient on errors
-            if iteration == self.max_iterations - 1:
-                import pdb
-
-                pdb.set_trace()
             wandb_dict.update(
                 self.get_spearmans_coefficient(
                     model,
@@ -469,10 +464,10 @@ class MTBOCallback(STBOCallback):
         self.opt_task = opt_task
         self.main_ds = main_ds
 
-    @staticmethod
-    def get_kernel_lengthscales(model: SingleTaskGP, domain: Domain):
+    def get_kernel_lengthscales(self, model: SingleTaskGP, domain: Domain):
         wandb_dict = super().get_kernel_lengthscales(model, domain)
-        task_covar_matrix = model.task_covar_module._eval_covar_matrix().numpy()
+        with torch.no_grad():
+            task_covar_matrix = model.task_covar_module._eval_covar_matrix().numpy()
         for i in range(task_covar_matrix.shape[0]):
             for j in range(task_covar_matrix.shape[1]):
                 wandb_dict.update(

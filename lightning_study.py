@@ -81,6 +81,7 @@ class BenchmarkWork(L.LightningWork):
             cmd += ["--verbose 1"]
         print(cmd)
         subprocess.run(cmd, shell=False)
+        self.finished = True
 
 
 class OptimizationWork(L.LightningWork):
@@ -100,10 +101,11 @@ class OptimizationWork(L.LightningWork):
         brute_force_categorical: Optional[bool] = False,
         acquisition_function: Optional[str] = "EI",
         repeats: Optional[int] = 20,
-        wandb_artifact_name: Optional[str] = None,
         print_warnings: Optional[bool] = True,
         parallel: bool = True,
-        cloud_compute=None,
+        cloud_compute: L.CloudCompute = None,
+        wandb_main_dataset_artifact_name: Optional[str] = None,
+        wandb_optimization_artifact_name: Optional[str] = None,
         wandb_entity: Optional[str] = None,
         wandb_project: Optional[str] = "multitask",
         **kwargs,
@@ -127,7 +129,8 @@ class OptimizationWork(L.LightningWork):
         self.brute_force_categorical = brute_force_categorical
         self.acquisition_function = acquisition_function
         self.repeats = repeats
-        self.wandb_artifact_name = wandb_artifact_name
+        self.wandb_optimization_artifact_name = wandb_optimization_artifact_name
+        self.wandb_main_dataset_artifact_name = wandb_main_dataset_artifact_name
         self.print_warnings = print_warnings
         self.wandb_entity = wandb_entity
         self.wandb_project = wandb_project
@@ -154,7 +157,7 @@ class OptimizationWork(L.LightningWork):
             "--repeats",
             str(self.repeats),
             "--wandb-artifact-name",
-            str(self.wandb_artifact_name),
+            str(self.wandb_optimization_artifact_name),
             "--acquisition-function",
             str(self.acquisition_function),
         ]
@@ -166,6 +169,11 @@ class OptimizationWork(L.LightningWork):
             options += ["--wandb-entity", self.wandb_entity]
         if self.wandb_project:
             options += ["--wandb-project", self.wandb_project]
+        if self.wandb_main_dataset_artifact_name:
+            options += [
+                "--wandb-main-dataset-artifact-name",
+                self.wandb_main_dataset_artifact_name,
+            ]
         # print(cmd + options)
         subprocess.run(cmd + options, shell=False)
         self.finished = True
@@ -360,7 +368,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case}:latest",
                 "model_name": f"reizman_suzuki_case_{case}",
                 "output_path": f"data/reizman_suzuki/results_stbo_case_{case}/",
-                "wandb_artifact_name": "stbo_reizman_suzuki",
+                "wandb_optimization_artifact_name": "stbo_reizman_suzuki",
+                "wandb_main_dataset_artifact_name": f"baumgartner_suzuki:latest",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
@@ -378,7 +387,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"baumgartner_suzuki",
                 "wandb_benchmark_artifact_name": "benchmark_baumgartner_suzuki:latest",
                 "output_path": f"data/baumgarnter_suzuki/results_stbo/",
-                "wandb_artifact_name": "stbo_baumgartner_suzuki",
+                "wandb_optimization_artifact_name": "stbo_baumgartner_suzuki",
+                "wandb_main_dataset_artifact_name": f"baumgartner_suzuki:latest",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
@@ -403,7 +413,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "output_path": f"data/multitask_results/results_reizman_suzuki_{case}_cotrain_baumgartner_suzuki",
                 "wandb_dataset_artifact_name": "baumgartner_suzuki:latest",
                 "ct_dataset_names": [f"baumgartner_suzuki"],
-                "wandb_artifact_name": "mtbo_reizman_suzuki_one_cotraining_baumgartner_suzuki",
+                "wandb_optimization_artifact_name": "mtbo_reizman_suzuki_one_cotraining_baumgartner_suzuki",
+                "wandb_main_dataset_artifact_name": f"reizman_suzuki:latest",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
@@ -423,7 +434,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "output_path": f"data/multitask_results/results_reizman_suzuki_case_{case_main}_cotrain_reizman_suzuki_case_{case_aux}",
                 "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
                 "ct_dataset_names": [f"reizman_suzuki_case_{case_aux}"],
-                "wandb_artifact_name": f"mtbo_reizman_suzuki_{case_main}_one_cotraining_reizman_suzuki_case_{case_aux}",
+                "wandb_optimization_artifact_name": f"mtbo_reizman_suzuki_{case_main}_one_cotraining_reizman_suzuki_case_{case_aux}",
+                "wandb_main_dataset_artifact_name": f"reizman_suzuki:latest",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
@@ -447,7 +459,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "ct_dataset_names": [
                     f"reizman_suzuki_case_{case}",
                 ],
-                "wandb_artifact_name": f"mtbo_baumgartner_suzuki_one_cotraining_reizman_suzuki_case_{case}",
+                "wandb_optimization_artifact_name": f"mtbo_baumgartner_suzuki_one_cotraining_reizman_suzuki_case_{case}",
+                "wandb_main_dataset_artifact_name": "baumgartner_suzuki:latest",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
@@ -473,7 +486,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "wandb_benchmark_artifact_name": f"benchmark_baumgartner_cn_case_{case}:latest",
                 "model_name": f"baumgartner_cn_case_{case}",
                 "output_path": f"data/baumgartner_cn/results_stbo_case_{case}/",
-                "wandb_artifact_name": "stbo_baumgartner_cn",
+                "wandb_optimization_artifact_name": "stbo_baumgartner_cn",
+                "wandb_main_dataset_artifact_name": f"baumgartner_cn:latest",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
@@ -499,7 +513,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "output_path": f"data/multitask_results/results_baumgartner_cn_case_{case_main}_cotrain_baumgartner_cn_case_{case_aux}",
                 "wandb_dataset_artifact_name": f"baumgartner_cn:latest",
                 "ct_dataset_names": [f"baumgartner_cn_case_{case_aux}"],
-                "wandb_artifact_name": f"mtbo_baumgartner_cn_{case_main}_one_cotraining_baumgartner_cn_case_{case_aux}",
+                "wandb_optimization_artifact_name": f"mtbo_baumgartner_cn_{case_main}_one_cotraining_baumgartner_cn_case_{case_aux}",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
@@ -516,10 +530,10 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 if __name__ == "__main__":
     app = L.LightningApp(
         MultitaskBenchmarkStudy(
-            run_benchmark_training=True,
-            run_single_task=False,
-            run_multi_task=False,
-            run_suzuki=False,
+            run_benchmark_training=False,
+            run_single_task=True,
+            run_multi_task=True,
+            run_suzuki=True,
             run_cn=True,
             compute_type="cpu-medium",
             parallel=True,
