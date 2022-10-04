@@ -144,8 +144,8 @@ class NewSTBO(Strategy):
             )
 
         # Train model
-        mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
-        fit_gpytorch_model(mll, max_retries=20)
+        self.mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model)
+        fit_gpytorch_model(self.mll, max_retries=20)
 
         # Optimize acquisition function
         if self.brute_force_categorical:

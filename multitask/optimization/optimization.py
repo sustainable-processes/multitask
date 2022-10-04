@@ -35,6 +35,7 @@ def stbo(
     max_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
     brute_force_categorical: Optional[bool] = False,
+    print_warnings: Optional[bool] = True,
     acquisition_function: Optional[str] = "EI",
     repeats: Optional[int] = 20,
     wandb_artifact_name: Optional[str] = None,
@@ -79,10 +80,12 @@ def stbo(
             main_ds = get_suzuki_dataset(
                 data_path=main_dataset_path / f"{model_name}.pb",
                 split_catalyst=exp.split_catalyst,
+                print_warnings=print_warnings,
             )
         elif benchmark_type == BenchmarkType.cn:
             main_ds = get_cn_dataset(
                 data_path=main_dataset_path / f"{model_name}.pb",
+                print_warnings=print_warnings,
             )
     else:
         main_ds = None
@@ -313,7 +316,7 @@ class STBOCallback:
         max_iterations: int,
         main_ds: Optional[DataSet] = None,
     ):
-        self.num_iterations = max_iterations
+        self.max_iterations = max_iterations
         self.main_ds = main_ds
 
     @staticmethod
@@ -325,7 +328,9 @@ class STBOCallback:
         lengthscale = model.covar_module.base_kernel.lengthscale.detach().numpy()[0]
         for v in domain.input_variables:
             if isinstance(v, ContinuousVariable):
-                wandb.log({f"kernel/kernel_lengthscale_{v.name}": lengthscale[k]})
+                wandb_dict.update(
+                    {f"kernel/kernel_lengthscale_{v.name}": lengthscale[k]}
+                )
                 k += 1
             elif isinstance(v, CategoricalVariable):
                 for level in v.levels:
@@ -346,8 +351,8 @@ class STBOCallback:
         with torch.no_grad():
             model_output = model(torch.tensor(inputs).double())
             train_y = torch.tensor(output).double()
-            likelihood = mll(model_output, train_y).numpy()
-            sum_likelihood = np.exp(np.sum(likelihood) / len(likelihood))
+            log_likelihoods = mll(model_output, train_y).numpy()
+            sum_likelihood = np.exp(np.sum(log_likelihoods) / len(log_likelihoods))
         return {"marginal_likelihood": sum_likelihood}
 
     @staticmethod
@@ -368,14 +373,13 @@ class STBOCallback:
                 }
             )
         coeff = spearmanr(a=uncertainties, b=abs_residuals)
-
         wandb_dict.update(
             {"spearmans_rank_coefficient_uncertainty_residual": coeff.correlation}
         )
         return wandb_dict
 
     def __call__(self, cls: WandbRunner, prev_res, iteration):
-        strategy: NewMTBO = cls.strategy
+        strategy: NewSTBO = cls.strategy
         domain: Domain = strategy.domain
         wandb_dict = {"iteration": iteration}
 
@@ -402,6 +406,10 @@ class STBOCallback:
             wandb_dict.update(self.get_marginal_likelihood(model, mll, inputs, output))
 
             # Calculate spearmans' rank coefficient on errors
+            if iteration == self.max_iterations - 1:
+                import pdb
+
+                pdb.set_trace()
             wandb_dict.update(
                 self.get_spearmans_coefficient(
                     model,
@@ -441,9 +449,12 @@ def run_stbo(
         experiment=exp,
         max_iterations=max_iterations,
         batch_size=batch_size,
-        callback=stbo_callback**wandb_runner_kwargs,
+        **wandb_runner_kwargs,
     )
-    r.run(skip_wandb_intialization=True)
+    r.run(
+        skip_wandb_intialization=True,
+        callback=stbo_callback,
+    )
     return r
 
 
@@ -454,7 +465,7 @@ class MTBOCallback(STBOCallback):
         opt_task: int,
         main_ds: Optional[DataSet] = None,
     ):
-        self.num_iterations = max_iterations
+        self.max_iterations = max_iterations
         self.opt_task = opt_task
         self.main_ds = main_ds
 
@@ -499,6 +510,8 @@ class MTBOCallback(STBOCallback):
                 axis=1,
             ).astype(np.float)
             output = output.data_to_numpy().astype(float)
+
+            # Marginal likelihood
             wandb_dict.update(
                 self.get_marginal_likelihood(model, mll, inputs_task, output)
             )
@@ -565,6 +578,7 @@ def transform(
     output_stds: Dict,
     encoders: Optional[Dict] = None,
 ):
+    """Transform a dataset using existing parameters"""
     ds = ds.copy()
     input_columns = []
     for v in domain.input_variables:
