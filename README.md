@@ -1,6 +1,6 @@
 # Multitask 
 
-Optimizing reactions using multitask bayesian optimization. Case study with alcohol amination via borrowing hydrogen  plus large-scale in-silico comparison.
+Optimizing reactions using multitask Bayesian optimization.
 
 ## Setup
 
@@ -24,55 +24,59 @@ You can run commands from inside the poetry virtual environment in one of two wa
       - Activate the virtual environemnt at that path. So, if the path is `/Users/Kobi/Library/Caches/pypoetry/virtualenvs/multitask-z7ErTcQa-py3.7`, you would run `source /Users/Kobi/Library/Caches/pypoetry/virtualenvs/multitask-z7ErTcQa-py3.7/bin/activate`
   
 
-### Apple M1
+_Apple M1_
 
 You might run into some issues when installing scientific python packages such as Summit on Apple M1. Follow the steps below to install via pip:
 
 ```bash
-    arch -arm64 brew install llvm@11 
-    brew install hdf5
-    HDF5_DIR=/opt/homebrew/opt/hdf5 PIP_NO_BINARY="h5py" LLVM_CONFIG="/opt/homebrew/Cellar/llvm@11/11.1.0_3/bin/llvm-config" arch -arm64 poetry install
+arch -arm64 brew install llvm@11 
+brew install hdf5
+HDF5_DIR=/opt/homebrew/opt/hdf5 PIP_NO_BINARY="h5py" LLVM_CONFIG="/opt/homebrew/Cellar/llvm@11/11.1.0_3/bin/llvm-config" arch -arm64 poetry install
 ```
 Replace the llvm path with the version of llvm installed by brew.
 
+## CLI
 
-## Running Scripts
+There is a `multitask` CLI available. You can see all the commands by running `multitask --help`
+
+![cli](figures/cli.png)
+
+## Regnerating the results
 
 
-To run everything:
-```
-lightning run app lightning_study.py \
- --name multitask \
- --open-ui False \
---without-server \
---env WANDB_API_KEY= \
-```
 
-Add you wandb api key.
-
-For step by step:
-
-1. **ETL**: Transform data from spreadsheets into ORD protobuf files. This assumes `data/` is setup.
+1. **ETL**: Transform data from spreadsheets into ORD protobuf files.
 
     ```bash
     multitask etl all
     ```
-2. **Benchmark training**: 
+2. **Benchmark training and Benchmarking using Lightning**:
 
-## Coding Guidelines
+    ```bash
+    lightning run app  --name multitask --open-ui False --without-server lightning_study.py
+    ```
+    Some extra flags to add:
+    - `--env WANDB_API_KEY=<YOUR_API_KEY>`: Add your weights and biases API key
+    - `--cloud`: Run on lightning cloud instead of locally
+    - `--env lightning_cloud=True`: Tag these runs as running in the cloud
+
+3. **Generate plots**
+
+    ```bash
+    multitask viz all-suzuki --include-tags lightning_cloud --wandb-entity "ceb-sre" 
+    ```
+    
+
+## Development
 
 Please format your code using [black](https://github.com/psf/black). Jupyter notebooks, which are for exploration, don't need to be formatted.
 
 **Directory Structure**
 ```
 ├── data/  # Store all data and results here (tracked mainly by DVC)
-├── dvc.lock # Lock file for DVC
-├── dvc.yaml # DVC pipelines configuration
 ├── figures/  # Store figures in this directory and track using dvc
 ├── multitask # python package with key functionality
 ├── nbs # Exploratory Jupyter notebooks
-├── ord-requirements.txt # Dependencies for ORD schema
-├── params.yaml # Parameters for DVC pipelines
 ├── poetry.lock  # Poetry lock file
 └── pyproject.toml # Poetry configuration file
 ```
