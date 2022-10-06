@@ -469,10 +469,60 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             }
             for case in range(1, 5)
         ]
+
+        # MTBO Baumgartner cotraining with all Reizman
+        baumgartner_mtbo_configs_reizman_all = [
+            {
+                "strategy": "MTBO",
+                "benchmark_type": BenchmarkType.suzuki,
+                "model_name": f"baumgartner_suzuki",
+                "wandb_benchmark_artifact_name": "benchmark_baumgartner_suzuki:latest",
+                "output_path": f"data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_all",
+                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "ct_dataset_names": [
+                    f"reizman_suzuki_case_{case}" for case in range(1, 5)
+                ],
+                "wandb_optimization_artifact_name": f"mtbo_baumgartner_suzuki_one_cotraining_reizman_suzuki_all",
+                "wandb_main_dataset_artifact_name": "baumgartner_suzuki:latest",
+                "max_experiments": max_experiments,
+                "batch_size": batch_size,
+                "repeats": repeats,
+                "acquisition_function": "EI",
+                "parallel": parallel,
+            }
+        ]
+
+        # MTBO Reizman cotraining with all Reizman
+        reizman_mtbo_configs_reizman_all = [
+            {
+                "strategy": "MTBO",
+                "benchmark_type": BenchmarkType.suzuki,
+                "model_name": f"reizman_suzuki_case_{case_main}",
+                "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case_main}:latest",
+                "output_path": f"data/multitask_results/results_reizman_suzuki_case_{case_main}_cotrain_reizman_suzuki_case_all",
+                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "ct_dataset_names": [
+                    f"reizman_suzuki_case_{case_aux}"
+                    for case_aux in range(1, 5)
+                    if case_main != case_aux
+                ],
+                "wandb_optimization_artifact_name": f"mtbo_reizman_suzuki_{case_main}_one_cotraining_reizman_suzuki_all",
+                "wandb_main_dataset_artifact_name": f"reizman_suzuki:latest",
+                "max_experiments": max_experiments,
+                "batch_size": batch_size,
+                "repeats": repeats,
+                "acquisition_function": "EI",
+                "parallel": parallel,
+            }
+            for case_main in range(1, 5)
+        ]
+
         return (
             reizman_mtbo_configs_baugmartner_one
             + reizman_mtbo_configs_reizman_one
             + baumgartner_mtbo_configs_reizman_one
+            + baumgartner_mtbo_configs_reizman_all
+            + reizman_mtbo_configs_reizman_all
         )
 
     @staticmethod
@@ -503,7 +553,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
     def generate_cn_configs_multitask(
         max_experiments: int, batch_size: int, repeats: int, parallel: bool
     ):
-        # MTBO Reizman one cotraining with Baumgartner
+        # MTBO Baumgartner cotraining with one Baumgartner
         baumgartner_mtbo_configs_reizman_one = [
             {
                 "strategy": "MTBO",
@@ -525,7 +575,34 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for case_aux in range(1, 5)
             if case_main != case_aux
         ]
-        return baumgartner_mtbo_configs_reizman_one
+
+        # MTBO Reizman cotraining with all Baumgartner
+        baumgartner_mtbo_configs_reizman_one = [
+            {
+                "strategy": "MTBO",
+                "benchmark_type": BenchmarkType.cn,
+                "model_name": f"baumgartner_cn_case_{case_main}",
+                "wandb_benchmark_artifact_name": f"benchmark_baumgartner_cn_case_{case_main}:latest",
+                "output_path": f"data/multitask_results/results_baumgartner_cn_case_{case_main}_cotrain_baumgartner_cn_case_all",
+                "wandb_dataset_artifact_name": f"baumgartner_cn:latest",
+                "ct_dataset_names": [
+                    f"baumgartner_cn_case_{case_aux}"
+                    for case_aux in range(1, 5)
+                    if case_main != case_aux
+                ],
+                "wandb_optimization_artifact_name": f"mtbo_baumgartner_cn_{case_main}_one_cotraining_baumgartner_cn_case_all",
+                "wandb_main_dataset_artifact_name": "baumgartner_cn:latest",
+                "max_experiments": max_experiments,
+                "batch_size": batch_size,
+                "repeats": repeats,
+                "acquisition_function": "EI",
+                "parallel": parallel,
+            }
+            for case_main in range(1, 5)
+        ]
+        return (
+            baumgartner_mtbo_configs_reizman_one + baumgartner_mtbo_configs_reizman_one
+        )
 
 
 if __name__ == "__main__":
@@ -536,7 +613,7 @@ if __name__ == "__main__":
             run_multi_task=True,
             run_suzuki=True,
             run_cn=True,
-            compute_type="cpu-medium",
+            compute_type="gpu",
             parallel=True,
             max_workers=41,
             wandb_entity="ceb-sre",
