@@ -18,6 +18,9 @@ import string
 logger = logging.getLogger(__name__)
 
 
+reizman_case_to_name = {1: "SR1", 2: "SR2", 3: "SR3", 4: "SR4"}
+
+
 def baumgartner_suzuki_auxiliary_reizman_suzuki(
     num_iterations: int = 20,
     include_tags: Optional[List[str]] = None,
@@ -43,7 +46,7 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
         only_finished_runs=only_finished_runs,
         num_iterations=num_iterations,
     )
-
+    """Make plots for Baumgartner Suzuki optimization with auxiliary of Reizman Suzuki."""
     # Setup figure
     fig = plt.figure(figsize=(15, 5))
     fig.subplots_adjust(wspace=0.2, hspace=0.5)
@@ -83,7 +86,7 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
         )
 
         # Format subplot
-        ax.set_title(f"Reizman Case {i}", fontsize=21)
+        ax.set_title(f"Aux. {reizman_case_to_name[i]}", fontsize=heading_fontsize)
         ax.set_xlim(0, 20)
         ax.tick_params("y", labelsize=axis_fontsize)
         xlabels = np.arange(0, 21, 5)
@@ -95,7 +98,7 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
     # Format and save figure
     # fig.suptitle("Baumgartner Optimization")
     fig.supxlabel("Number of experiments", fontsize=heading_fontsize)
-    fig.supylabel("Yield (%)", fontsize=heading_fontsize)
+    fig.supylabel("Best Yield (%)", fontsize=heading_fontsize)
     fig.tight_layout()
     figure_dir = Path(figure_dir)
     fig.savefig(
@@ -119,62 +122,56 @@ def reizman_suzuki_auxiliary_baumgartner_suzuki(
     wandb_project: str = "multitask",
     figure_dir: str = "figures",
 ):
-    # Get runs
+    """Make plots for Reizman Suzuki optimization with auxiliary of Baumgartner Suzuki"""
+    # Wandb API
     api = wandb.Api()
-    x_axis = "iteration"
-    keys = ["yld_best"]
 
     # Setup figure
     fig = plt.figure(figsize=(15, 5))
     fig.subplots_adjust(wspace=0.2, hspace=0.5)
     k = 1
     axis_fontsize = 14
+    heading_fontsize = 18
 
     # Make subplots for each case
-    letters = ["a", "b", "c", "d"]
+    # letters = ["a", "b", "c", "d"]
     logger.info(
         "Making plots for Reizman Suzuki optimization with auxiliary of Baumgartner Suzuki"
     )
     for i in range(1, 5):
-        # Filter data
+        # STBO data
         logger.info(f"Getting Reizman Suzuki case {i} STBO data")
-        stbo_filters = {
-            "config.model_name": "baumgartner_suzuki",
-            "config.strategy": "STBO",
-        }
-        stbo_runs = download_runs_wandb(
+        stbo_dfs = get_wandb_run_dfs(
             api,
-            wandb_entity,
-            wandb_project,
-            only_finished_runs=only_finished_runs,
+            wandb_entity=wandb_entity,
+            wandb_project=wandb_project,
+            model_name=f"reizman_suzuki_case_{i}",
+            strategy="STBO",
             include_tags=include_tags,
             filter_tags=filter_tags,
-            extra_filters=stbo_filters,
+            only_finished_runs=only_finished_runs,
+            num_iterations=num_iterations,
         )
-        stbo_dfs = [run.history(x_axis=x_axis, keys=keys) for run in tqdm(stbo_runs)]
-        stbo_dfs = [
-            stbo_df for stbo_df in stbo_dfs if stbo_df.shape[0] == num_iterations
-        ]
-        if len(stbo_dfs) == 0:
-            raise ValueError("No Reizman STBO runs found")
-        mtbo_dfs = [
-            run.history()
-            for run in runs
-            if run.config.get("strategy") == "MTBO"
-            and run.config.get("model_name") == f"reizman_suzuki_case_{i}"
-            and run.config.get("ct_dataset_names")[0] == "baumgartner_suzuki"
-            and len(run.config.get("ct_dataset_names")) == 1
-        ]
-        stbo_dfs = [
-            stbo_df for stbo_df in stbo_dfs if stbo_df.shape[0] == num_iterations
-        ]
-        mtbo_dfs = [
-            mtbo_df for mtbo_df in mtbo_dfs if mtbo_df.shape[0] == num_iterations
-        ]
-        if len(stbo_dfs) == 0:
-            raise ValueError("No Reizman STBO runs found")
-        if len(mtbo_dfs) == 0:
-            raise ValueError("No Reizman MTBO runs found")
+
+        # MTBO data
+        logger.info(
+            f"Getting Reizman Suzuki case {i} (auxiliary Baumgartner suzuki) MTBO data"
+        )
+        mtbo_dfs = get_wandb_run_dfs(
+            api,
+            wandb_entity=wandb_entity,
+            wandb_project=wandb_project,
+            model_name=f"reizman_suzuki_case_{i}",
+            strategy="MTBO",
+            include_tags=include_tags,
+            filter_tags=filter_tags,
+            only_finished_runs=only_finished_runs,
+            num_iterations=num_iterations,
+            extra_filters={
+                "config.ct_dataset_names": [f"baumgartner_suzuki"],
+            },
+        )
+
         logger.info(
             f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Baumgarnter Suzuki",
         )
@@ -189,20 +186,19 @@ def reizman_suzuki_auxiliary_baumgartner_suzuki(
         )
 
         # Format subplot
-        ax.set_title(f"({letters[i - 1]})", fontsize=21)
+        ax.set_title(f"{reizman_case_to_name[i]} (Aux. SB1)", fontsize=heading_fontsize)
         ax.set_xlim(0, 20)
         ax.tick_params("y", labelsize=axis_fontsize)
         xlabels = np.arange(0, 21, 5)
         ax.set_xticks(xlabels)
         ax.set_xticklabels(xlabels, fontsize=axis_fontsize)
         ax.set_ylim(0, 100)
-        # remove_frame(ax, sides=["right", "top"])
         k += 1
 
     # Format and save figure
     # fig.suptitle("Reizman Optimization", fontsize=21)
-    fig.supxlabel("Number of experiments", fontsize=21)
-    fig.supylabel("Yield (%)", fontsize=21)
+    fig.supxlabel("Number of experiments", fontsize=heading_fontsize)
+    fig.supylabel("Best Yield (%)", fontsize=heading_fontsize)
     fig.tight_layout()
     figure_dir = Path(figure_dir)
     fig.savefig(
@@ -223,16 +219,8 @@ def reizman_suzuki_auxiliary_reizman_suzuki(
     figure_dir: str = "figures",
 ):
     """Make plots for Reizman Suzuki optimization with auxiliary of Reizman Suzuki."""
-    # Get runs
+    # Wandb API
     api = wandb.Api()
-    runs = download_runs_wandb(
-        api,
-        wandb_entity,
-        wandb_project,
-        only_finished_runs=only_finished_runs,
-        include_tags=include_tags,
-        filter_tags=filter_tags,
-    )
 
     # Setup figure
     fig = plt.figure(figsize=(15, 15))
@@ -246,39 +234,39 @@ def reizman_suzuki_auxiliary_reizman_suzuki(
         "Making plots for Reizman Suzuki optimization with auxiliary of Reizman Suzuki"
     )
     for i in range(1, 5):
-        # Filter STBO data
-        stbo_dfs = [
-            run.history()
-            for run in runs
-            if run.config.get("model_name") == f"reizman_suzuki_case_{i}"
-            and run.config.get("strategy") == "STBO"
-        ]
-        stbo_dfs = [
-            stbo_df for stbo_df in stbo_dfs if stbo_df.shape[0] == num_iterations
-        ]
-        if len(stbo_dfs) == 0:
-            raise ValueError("No Reizman STBO runs found")
+        # Get STBO data
+        logger.info(f"Getting Reizman Suzuki case {i} STBO data")
+        stbo_dfs = get_wandb_run_dfs(
+            api,
+            wandb_entity=wandb_entity,
+            wandb_project=wandb_project,
+            model_name=f"reizman_suzuki_case_{i}",
+            strategy="STBO",
+            include_tags=include_tags,
+            filter_tags=filter_tags,
+            only_finished_runs=only_finished_runs,
+            num_iterations=num_iterations,
+        )
         for j in range(1, 5):
             if i != j:
-                # Filter MTBO data
-                mtbo_dfs = [
-                    run.history()
-                    for run in runs
-                    if run.config.get("strategy") == "MTBO"
-                    and run.config.get("model_name") == f"reizman_suzuki_case_{i}"
-                    and run.config.get("ct_dataset_names")[0]
-                    == "reizman_suzuki_case_{j}"
-                    and len(run.config.get("ct_dataset_names")) == 1
-                ]
-                mtbo_dfs = [
-                    mtbo_df
-                    for mtbo_df in mtbo_dfs
-                    if mtbo_df.shape[0] == num_iterations
-                ]
-                if len(mtbo_dfs) == 0:
-                    raise ValueError(
-                        f"No Reizman MTBO runs found for case {i} (auxiliary reizman {j})"
-                    )
+                # Get MTBO data
+                logger.info(
+                    f"Getting Reizman Suzuki case {i} (auxiliary Reizman suzuki case {j}) MTBO data"
+                )
+                mtbo_dfs = get_wandb_run_dfs(
+                    api,
+                    wandb_entity=wandb_entity,
+                    wandb_project=wandb_project,
+                    model_name=f"reizman_suzuki_case_{i}",
+                    strategy="MTBO",
+                    include_tags=include_tags,
+                    filter_tags=filter_tags,
+                    only_finished_runs=only_finished_runs,
+                    num_iterations=num_iterations,
+                    extra_filters={
+                        "config.ct_dataset_names": [f"reizman_suzuki_case_{j}"],
+                    },
+                )
                 logger.info(
                     f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Reizman Suzuki case {j}"
                 )
@@ -288,16 +276,58 @@ def reizman_suzuki_auxiliary_reizman_suzuki(
                 make_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+                    output_name="yld_best",
                     ax=ax,
                 )
-                ax.set_title(f"({letters[k-1]}) Case {i} - Auxiliary {j}")
+                ax.set_title(
+                    f"{reizman_case_to_name[i]} (Aux. {reizman_case_to_name[j]})"
+                )
                 ax.set_ylim(0, 100)
                 k += 1
 
     # Format plot
     fig.suptitle("Reizman Optimization")
     fig.supxlabel("Number of reactions")
-    fig.supylabel("Yield (%)")
+    fig.supylabel("Best Yield (%)")
     fig.tight_layout()
     figure_dir = Path(figure_dir)
     fig.savefig(figure_dir / "reizman_reizman_one_cotraining_optimization.png", dpi=300)
+
+
+def all_suzuki(
+    num_iterations: int = 20,
+    include_tags: Optional[List[str]] = None,
+    filter_tags: Optional[List[str]] = None,
+    only_finished_runs: bool = True,
+    wandb_entity: str = "ceb-sre",
+    wandb_project: str = "multitask",
+    figure_dir: str = "figures",
+):
+    """Make plots for all Suzuki optimization runs."""
+    baumgartner_suzuki_auxiliary_reizman_suzuki(
+        num_iterations=num_iterations,
+        include_tags=include_tags,
+        filter_tags=filter_tags,
+        only_finished_runs=only_finished_runs,
+        wandb_entity=wandb_entity,
+        wandb_project=wandb_project,
+        figure_dir=figure_dir,
+    )
+    reizman_suzuki_auxiliary_reizman_suzuki(
+        num_iterations=num_iterations,
+        include_tags=include_tags,
+        filter_tags=filter_tags,
+        only_finished_runs=only_finished_runs,
+        wandb_entity=wandb_entity,
+        wandb_project=wandb_project,
+        figure_dir=figure_dir,
+    )
+    reizman_suzuki_auxiliary_baumgartner_suzuki(
+        num_iterations=num_iterations,
+        include_tags=include_tags,
+        filter_tags=filter_tags,
+        only_finished_runs=only_finished_runs,
+        wandb_entity=wandb_entity,
+        wandb_project=wandb_project,
+        figure_dir=figure_dir,
+    )
