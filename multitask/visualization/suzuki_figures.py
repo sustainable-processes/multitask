@@ -51,7 +51,7 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
     fig = plt.figure(figsize=(15, 5))
     fig.subplots_adjust(wspace=0.2, hspace=0.5)
     k = 1
-    axis_fontsize = 14
+    axis_fontsize = 16
     heading_fontsize = 18
     logger.info(
         "Making plots for Baumgartner Suzuki optimization with auxiliary of Reizman Suzuki"
