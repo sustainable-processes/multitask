@@ -106,10 +106,6 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
         dpi=300,
         transparent=True,
     )
-    fig.savefig(
-        figure_dir / "baumgartner_reizman_one_cotraining_optimization.svg",
-        transparent=True,
-    )
     logger.info("Plots saved to %s", figure_dir)
 
 
@@ -203,9 +199,6 @@ def reizman_suzuki_auxiliary_baumgartner_suzuki(
     figure_dir = Path(figure_dir)
     fig.savefig(
         figure_dir / "reizman_baumgartner_one_cotraining_optimization.png", dpi=300
-    )
-    fig.savefig(
-        figure_dir / "reizman_baumgartner_one_cotraining_optimization.svg", dpi=300
     )
 
 
