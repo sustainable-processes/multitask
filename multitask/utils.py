@@ -12,7 +12,7 @@ import wandb
 from wandb.apis.public import Run
 from tqdm import tqdm
 import typer
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 import pandas as pd
 import numpy as np
 import pkg_resources
@@ -184,6 +184,7 @@ def download_runs_wandb(
     include_tags: Optional[List[str]] = None,
     filter_tags: Optional[List[str]] = None,
     only_finished_runs: bool = True,
+    extra_filters: Optional[Dict[str, Any]] = None,
 ) -> List[Run]:
     """
     Parameters
@@ -198,24 +199,35 @@ def download_runs_wandb(
         A list of tags that the run must have, by default None
     filter_tags : Optional[List[str]], optional
         A list of tags that the run must not have, by default None
+    extra_filters : Optional[Dict[str, Any]], optional
+        A dictionary of extra filters to apply to the wandb search, by default None
 
     """
     logger = logging.getLogger(__name__)
     logger.info("Downloading runs from wandb")
-    runs = api.runs(f"{wandb_entity}/{wandb_project}")
-    final_runs = []
-    for run in tqdm(runs):
-        # Filtering
-        if include_tags is not None:
-            if not all([tag in run.tags for tag in include_tags]):
-                continue
-            if any([tag in run.tags for tag in filter_tags]):
-                continue
-        if only_finished_runs and run.state != "finished":
-            continue
-        # Append runs
-        final_runs.append(run)
-    return final_runs
+
+    # Filters
+    filters = {}
+    tag_query = []
+    if len(include_tags) > 0:
+        for include_tag in include_tags:
+            tag_query.append({"tags": {"$in": [include_tag]}})
+        # filters["tags"] = {"$infilt": include_tags}
+    if len(filter_tags) > 0:
+        tag_query += [{"tags": {"$nin": filter_tags}}]
+    if len(tag_query) > 0:
+        filters["$and"] = tag_query
+    if only_finished_runs:
+        filters["state"] = "finished"
+    if extra_filters is not None:
+        filters.update(extra_filters)
+
+    # Get runs
+    runs = api.runs(
+        f"{wandb_entity}/{wandb_project}",
+        filters=filters,
+    )
+    return runs
 
 
 class WandbRunner(Runner):

@@ -1,6 +1,7 @@
 """
 Make figures for publication
 """
+from re import S
 from multitask.utils import download_runs_wandb
 from .plots import make_comparison_plot, remove_frame
 from pathlib import Path
@@ -28,47 +29,63 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
     wandb_project: str = "multitask",
     figure_dir: str = "figures",
 ):
-    # Get runs
+    # Wandb API
     api = wandb.Api()
-    runs = download_runs_wandb(
+
+    # Configuration
+    x_axis = "iteration"
+    keys = ["yld_best"]
+
+    # STBO downloads
+    logger.info("Getting Baumgartner Suzuki STBO data")
+    stbo_filters = {
+        "config.model_name": "baumgartner_suzuki",
+        "config.strategy": "STBO",
+    }
+    stbo_runs = download_runs_wandb(
         api,
         wandb_entity,
         wandb_project,
         only_finished_runs=only_finished_runs,
         include_tags=include_tags,
         filter_tags=filter_tags,
+        extra_filters=stbo_filters,
     )
-
-    # Filter data
-    logger.info("Filtering STBO runs")
-    stbo_dfs = [
-        run.history()
-        for run in tqdm(runs)
-        if run.config.get("model_name") == "baumgartner_suzuki" and "STBO" in run.tags
-    ]
-    logger.info("Filtering MTBO runs")
-    mtbo_dfs = [
-        run.history()
-        for run in tqdm(runs)
-        if run.config.get("model_name") == "baumgartner_suzuki" and "MTBO" in run.tags
-    ]
-
+    stbo_dfs = [run.history(x_axis=x_axis, keys=keys) for run in tqdm(stbo_runs)]
     if len(stbo_dfs) == 0:
-        raise ValueError("No Baumbartner STBO runs found")
-    if len(mtbo_dfs) == 0:
-        raise ValueError("No Baumgarnter MTBO runs found")
+        raise ValueError("No Baumgartner STBO runs found")
 
     # Setup figure
     fig = plt.figure(figsize=(15, 5))
     fig.subplots_adjust(wspace=0.2, hspace=0.5)
     k = 1
     axis_fontsize = 14
-
-    # Make figure
+    heading_fontsize = 18
     logger.info(
         "Making plots for Baumgartner Suzuki optimization with auxiliary of Reizman Suzuki"
     )
     for i in range(1, 5):
+        # Get MTBO data
+        logger.info(
+            f"Getting Baumgartner Suzuki MTBO (cotrain Reizman suzuki {i}) data"
+        )
+        mtbo_filters = {
+            "config.model_name": "baumgartner_suzuki",
+            "config.strategy": "MTBO",
+            "config.ct_dataset_names": [f"reizman_suzuki_case_{i}"],
+        }
+        mtbo_runs = download_runs_wandb(
+            api,
+            wandb_entity,
+            wandb_project,
+            only_finished_runs=only_finished_runs,
+            include_tags=include_tags,
+            filter_tags=filter_tags,
+            extra_filters=mtbo_filters,
+        )
+        mtbo_dfs = [run.history(x_axis=x_axis, keys=keys) for run in tqdm(mtbo_runs)]
+        if len(mtbo_dfs) == 0:
+            raise ValueError("No Baumgartner MTBO runs found")
         ax = fig.add_subplot(1, 4, k)
         make_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
@@ -88,8 +105,8 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
 
     # Format and save figure
     # fig.suptitle("Baumgartner Optimization")
-    fig.supxlabel("Number of experiments", fontsize=21)
-    fig.supylabel("Yield (%)", fontsize=21)
+    fig.supxlabel("Number of experiments", fontsize=heading_fontsize)
+    fig.supylabel("Yield (%)", fontsize=heading_fontsize)
     fig.tight_layout()
     figure_dir = Path(figure_dir)
     fig.savefig(
