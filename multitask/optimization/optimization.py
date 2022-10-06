@@ -24,6 +24,8 @@ import os
 N_RETRIES = 5
 
 logger = logging.getLogger(__name__)
+dtype = torch.double
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def stbo(
@@ -349,22 +351,22 @@ class STBOCallback:
         self, model: SingleTaskGP, mll: ExactMarginalLogLikelihood, inputs, output
     ):
         with torch.no_grad():
-            model_output = model(torch.tensor(inputs).double())
-            train_y = torch.tensor(output).double()
-            log_likelihoods = mll(model_output, train_y).numpy()
+            model_output = model(torch.tensor(inputs, dtype=dtype, device=device))
+            train_y = torch.tensor(output, dtype=dtype, device=device)
+            log_likelihoods = mll(model_output, train_y).cpu().numpy()
             sum_likelihood = np.exp(np.sum(log_likelihoods) / len(log_likelihoods))
-        return {"marginal_likelihood": sum_likelihood.cpu()}
+        return {"marginal_likelihood": sum_likelihood}
 
     def get_spearmans_coefficient(
         self, model, inputs, output, include_table: bool = False
     ):
         wandb_dict = {}
         with torch.no_grad():
-            model_output = model(torch.tensor(inputs).double())
-        train_y = torch.tensor(output).double()
-        abs_residuals = (model_output.mean - train_y[:, 0]).abs()
-        abs_residuals = abs_residuals.cpu().detach().numpy()
-        uncertainties = model_output.variance.sqrt().numpy()
+            model_output = model(torch.tensor(inputs, dtype=dtype, device=device))
+            train_y = torch.tensor(output, dtype=dtype, device=device)
+            abs_residuals = (model_output.mean - train_y[:, 0]).abs()
+            abs_residuals = abs_residuals.cpu().numpy()
+            uncertainties = model_output.variance.sqrt().cpu().numpy()
         if include_table:
             wandb_dict.update(
                 {
