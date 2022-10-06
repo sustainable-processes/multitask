@@ -1,5 +1,7 @@
+from multitask.utils import download_runs_wandb
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 from typing import Dict, List, Optional
 
 
@@ -80,3 +82,39 @@ def remove_frame(ax, sides=["top", "left", "right"]):
     for side in sides:
         ax_side = ax.spines[side]
         ax_side.set_visible(False)
+
+
+def get_wandb_run_dfs(
+    api,
+    wandb_entity: str,
+    wandb_project: str,
+    model_name: str,
+    strategy: str,
+    include_tags: Optional[List[str]] = None,
+    filter_tags: Optional[List[str]] = None,
+    only_finished_runs: bool = True,
+    extra_filters: Optional[Dict] = None,
+    num_iterations: Optional[int] = None,
+) -> List[pd.DataFrame]:
+    """Get data from wandb"""
+    filters = {
+        "config.model_name": model_name,
+        "config.strategy": strategy,
+    }
+    if extra_filters is not None:
+        filters.update(extra_filters)
+    runs = download_runs_wandb(
+        api,
+        wandb_entity,
+        wandb_project,
+        only_finished_runs=only_finished_runs,
+        include_tags=include_tags,
+        filter_tags=filter_tags,
+        extra_filters=filters,
+    )
+    dfs = [run.history(x_axis="iteration", keys=["yld_best"]) for run in tqdm(runs)]
+    if num_iterations is not None:
+        dfs = [df for df in dfs if df.shape[0] == 20]
+    if len(dfs) == 0:
+        raise ValueError(f"No {model_name} {strategy} runs found")
+    return dfs

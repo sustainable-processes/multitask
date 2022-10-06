@@ -1,9 +1,7 @@
 """
 Make figures for publication
 """
-from re import S
-from multitask.utils import download_runs_wandb
-from .plots import make_comparison_plot, remove_frame
+from .plots import make_comparison_plot, get_wandb_run_dfs
 from pathlib import Path
 from summit import *
 from rdkit import Chem
@@ -32,28 +30,19 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
     # Wandb API
     api = wandb.Api()
 
-    # Configuration
-    x_axis = "iteration"
-    keys = ["yld_best"]
-
     # STBO downloads
     logger.info("Getting Baumgartner Suzuki STBO data")
-    stbo_filters = {
-        "config.model_name": "baumgartner_suzuki",
-        "config.strategy": "STBO",
-    }
-    stbo_runs = download_runs_wandb(
+    stbo_dfs = get_wandb_run_dfs(
         api,
-        wandb_entity,
-        wandb_project,
-        only_finished_runs=only_finished_runs,
+        wandb_entity=wandb_entity,
+        wandb_project=wandb_project,
+        model_name="baumgartner_suzuki",
+        strategy="STBO",
         include_tags=include_tags,
         filter_tags=filter_tags,
-        extra_filters=stbo_filters,
+        only_finished_runs=only_finished_runs,
+        num_iterations=num_iterations,
     )
-    stbo_dfs = [run.history(x_axis=x_axis, keys=keys) for run in tqdm(stbo_runs)]
-    if len(stbo_dfs) == 0:
-        raise ValueError("No Baumgartner STBO runs found")
 
     # Setup figure
     fig = plt.figure(figsize=(15, 5))
@@ -69,23 +58,22 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
         logger.info(
             f"Getting Baumgartner Suzuki MTBO (cotrain Reizman suzuki {i}) data"
         )
-        mtbo_filters = {
-            "config.model_name": "baumgartner_suzuki",
-            "config.strategy": "MTBO",
-            "config.ct_dataset_names": [f"reizman_suzuki_case_{i}"],
-        }
-        mtbo_runs = download_runs_wandb(
+        mtbo_dfs = get_wandb_run_dfs(
             api,
-            wandb_entity,
-            wandb_project,
-            only_finished_runs=only_finished_runs,
+            wandb_entity=wandb_entity,
+            wandb_project=wandb_project,
+            model_name="baumgartner_suzuki",
+            strategy="MTBO",
             include_tags=include_tags,
             filter_tags=filter_tags,
-            extra_filters=mtbo_filters,
+            only_finished_runs=only_finished_runs,
+            num_iterations=num_iterations,
+            extra_filters={
+                "config.ct_dataset_names": [f"reizman_suzuki_case_{i}"],
+            },
         )
-        mtbo_dfs = [run.history(x_axis=x_axis, keys=keys) for run in tqdm(mtbo_runs)]
-        if len(mtbo_dfs) == 0:
-            raise ValueError("No Baumgartner MTBO runs found")
+
+        # Make comparison subplot
         ax = fig.add_subplot(1, 4, k)
         make_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
@@ -93,14 +81,15 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
             output_name="yld_best",
             ax=ax,
         )
-        ax.set_title(f"Auxiliary task: Reizman Case {i}", fontsize=21)
+
+        # Format subplot
+        ax.set_title(f"Reizman Case {i}", fontsize=21)
         ax.set_xlim(0, 20)
         ax.tick_params("y", labelsize=axis_fontsize)
         xlabels = np.arange(0, 21, 5)
         ax.set_xticks(xlabels)
         ax.set_xticklabels(xlabels, fontsize=axis_fontsize)
         ax.set_ylim(0, 100)
-        # remove_frame(ax, sides=["right", "top"])
         k += 1
 
     # Format and save figure
@@ -132,14 +121,8 @@ def reizman_suzuki_auxiliary_baumgartner_suzuki(
 ):
     # Get runs
     api = wandb.Api()
-    runs = download_runs_wandb(
-        api,
-        wandb_entity,
-        wandb_project,
-        only_finished_runs=only_finished_runs,
-        include_tags=include_tags,
-        filter_tags=filter_tags,
-    )
+    x_axis = "iteration"
+    keys = ["yld_best"]
 
     # Setup figure
     fig = plt.figure(figsize=(15, 5))
@@ -154,12 +137,26 @@ def reizman_suzuki_auxiliary_baumgartner_suzuki(
     )
     for i in range(1, 5):
         # Filter data
+        logger.info(f"Getting Reizman Suzuki case {i} STBO data")
+        stbo_filters = {
+            "config.model_name": "baumgartner_suzuki",
+            "config.strategy": "STBO",
+        }
+        stbo_runs = download_runs_wandb(
+            api,
+            wandb_entity,
+            wandb_project,
+            only_finished_runs=only_finished_runs,
+            include_tags=include_tags,
+            filter_tags=filter_tags,
+            extra_filters=stbo_filters,
+        )
+        stbo_dfs = [run.history(x_axis=x_axis, keys=keys) for run in tqdm(stbo_runs)]
         stbo_dfs = [
-            run.history()
-            for run in runs
-            if run.config.get("model_name") == f"reizman_suzuki_case_{i}"
-            and run.config.get("strategy") == "STBO"
+            stbo_df for stbo_df in stbo_dfs if stbo_df.shape[0] == num_iterations
         ]
+        if len(stbo_dfs) == 0:
+            raise ValueError("No Reizman STBO runs found")
         mtbo_dfs = [
             run.history()
             for run in runs
