@@ -514,6 +514,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "wandb_dataset_artifact_name": f"baumgartner_cn:latest",
                 "ct_dataset_names": [f"baumgartner_cn_case_{case_aux}"],
                 "wandb_optimization_artifact_name": f"mtbo_baumgartner_cn_{case_main}_one_cotraining_baumgartner_cn_case_{case_aux}",
+                "wandb_main_dataset_artifact_name": "baumgartner_cn:latest",
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
