@@ -1,6 +1,8 @@
 # Specific data
 data/kinetic_models
 wandb/
+artifacts
+.vscode/
 
 .DS_Store
 .idea/
