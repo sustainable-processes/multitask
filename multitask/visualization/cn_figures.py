@@ -1,8 +1,7 @@
 """
 Make figures for publication
 """
-from .plots import make_comparison_plot
-from multitask.utils import download_runs_wandb
+from .plots import get_wandb_run_dfs, make_comparison_plot
 from summit import *
 import wandb
 import matplotlib.pyplot as plt
@@ -26,16 +25,8 @@ def baumgartner_cn_auxiliary_baumgartner_cn(
     figure_dir: Optional[str] = "figures",
 ):
     """Make plots for Baumgartner C-N optimization with auxiliary of Baumgartner C-N."""
-    # Get runs
+    # Setup wandb api
     api = wandb.Api()
-    runs = download_runs_wandb(
-        api,
-        wandb_entity,
-        wandb_project,
-        only_finished_runs=only_finished_runs,
-        include_tags=include_tags,
-        filter_tags=filter_tags,
-    )
 
     # Setup figure
     fig = plt.figure(figsize=(15, 15))
@@ -50,39 +41,34 @@ def baumgartner_cn_auxiliary_baumgartner_cn(
     letters = list(string.ascii_lowercase)
     for i in range(1, 5):
         # Filter STBO data
-        stbo_dfs = [
-            run.history()
-            for run in runs
-            if run.config.get("model_name") == f"baumgartner_cn_case_{i}"
-            and run.config.get("strategy") == "STBO"
-        ]
-        stbo_dfs = [
-            stbo_df for stbo_df in stbo_dfs if stbo_df.shape[0] == num_iterations
-        ]
-        if len(stbo_dfs) == 0:
-            raise ValueError("No Baumgartner STBO runs found")
+        stbo_dfs = get_wandb_run_dfs(
+            api,
+            wandb_entity=wandb_entity,
+            wandb_project=wandb_project,
+            model_name=f"baumgartner_cn_case_{i}",
+            strategy="STBO",
+            include_tags=include_tags,
+            filter_tags=filter_tags,
+            only_finished_runs=only_finished_runs,
+            num_iterations=num_iterations,
+        )
         for j in range(1, 5):
             if i != j:
                 # Filter MTBO data
-                mtbo_dfs = [
-                    run.history()
-                    for run in runs
-                    if run.config.get("strategy") == "MTBO"
-                    and run.config.get("model_name") == f"baumgartner_cn_case_{i}"
-                    and run.config.get("ct_dataset_names")[0]
-                    == f"baumgartner_cn_case_{j}"
-                    and len(run.config.get("ct_dataset_names")) == 1
-                ]
-
-                mtbo_dfs = [
-                    mtbo_df
-                    for mtbo_df in mtbo_dfs
-                    if mtbo_df.shape[0] == num_iterations
-                ]
-                if len(mtbo_dfs) == 0:
-                    raise ValueError(
-                        f"No Baumgartner MTBO runs found for case {i} (auxiliary Baumgartner {j})"
-                    )
+                mtbo_dfs = get_wandb_run_dfs(
+                    api,
+                    wandb_entity=wandb_entity,
+                    wandb_project=wandb_project,
+                    model_name=f"baumgartner_cn_case_{i}",
+                    strategy="MTBO",
+                    include_tags=include_tags,
+                    filter_tags=filter_tags,
+                    only_finished_runs=only_finished_runs,
+                    num_iterations=num_iterations,
+                    extra_filters={
+                        "config.ct_dataset_names": [f"baumgartner_cn_case_{j}"],
+                    },
+                )
                 logger.info(
                     f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Baumgartner C-N case {i} with auxiliary of Baumgartner C-N case {j}"
                 )
