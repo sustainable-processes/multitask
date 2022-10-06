@@ -9,8 +9,7 @@ from rdkit import Chem
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib import font_manager
+from tqdm import tqdm
 from typing import Dict, List, Optional
 import wandb
 import logging
@@ -41,14 +40,16 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
     )
 
     # Filter data
+    logger.info("Filtering STBO runs")
     stbo_dfs = [
         run.history()
-        for run in runs
+        for run in tqdm(runs)
         if run.config.get("model_name") == "baumgartner_suzuki" and "STBO" in run.tags
     ]
+    logger.info("Filtering MTBO runs")
     mtbo_dfs = [
         run.history()
-        for run in runs
+        for run in tqdm(runs)
         if run.config.get("model_name") == "baumgartner_suzuki" and "MTBO" in run.tags
     ]
 
@@ -64,6 +65,9 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
     axis_fontsize = 14
 
     # Make figure
+    logger.info(
+        "Making plots for Baumgartner Suzuki optimization with auxiliary of Reizman Suzuki"
+    )
     for i in range(1, 5):
         ax = fig.add_subplot(1, 4, k)
         make_comparison_plot(
@@ -79,7 +83,7 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
         ax.set_xticks(xlabels)
         ax.set_xticklabels(xlabels, fontsize=axis_fontsize)
         ax.set_ylim(0, 100)
-        remove_frame(ax, sides=["right", "top"])
+        # remove_frame(ax, sides=["right", "top"])
         k += 1
 
     # Format and save figure
@@ -87,15 +91,17 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
     fig.supxlabel("Number of experiments", fontsize=21)
     fig.supylabel("Yield (%)", fontsize=21)
     fig.tight_layout()
+    figure_dir = Path(figure_dir)
     fig.savefig(
-        "../figures/baumgartner_reizman_one_cotraining_optimization.png",
+        figure_dir / "baumgartner_reizman_one_cotraining_optimization.png",
         dpi=300,
         transparent=True,
     )
     fig.savefig(
-        "../figures/baumgartner_reizman_one_cotraining_optimization.svg",
+        figure_dir / "baumgartner_reizman_one_cotraining_optimization.svg",
         transparent=True,
     )
+    logger.info("Plots saved to %s", figure_dir)
 
 
 def reizman_suzuki_auxiliary_baumgartner_suzuki(
@@ -126,6 +132,9 @@ def reizman_suzuki_auxiliary_baumgartner_suzuki(
 
     # Make subplots for each case
     letters = ["a", "b", "c", "d"]
+    logger.info(
+        "Making plots for Reizman Suzuki optimization with auxiliary of Baumgartner Suzuki"
+    )
     for i in range(1, 5):
         # Filter data
         stbo_dfs = [
@@ -173,7 +182,7 @@ def reizman_suzuki_auxiliary_baumgartner_suzuki(
         ax.set_xticks(xlabels)
         ax.set_xticklabels(xlabels, fontsize=axis_fontsize)
         ax.set_ylim(0, 100)
-        remove_frame(ax, sides=["right", "top"])
+        # remove_frame(ax, sides=["right", "top"])
         k += 1
 
     # Format and save figure
@@ -219,6 +228,9 @@ def reizman_suzuki_auxiliary_reizman_suzuki(
 
     # Make subplots for each case
     letters = list(string.ascii_lowercase)
+    logger.info(
+        "Making plots for Reizman Suzuki optimization with auxiliary of Reizman Suzuki"
+    )
     for i in range(1, 5):
         # Filter STBO data
         stbo_dfs = [

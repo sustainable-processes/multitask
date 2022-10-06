@@ -552,17 +552,19 @@ def run_mtbo(
     r = WandbRunner(
         strategy=strategy,
         experiment=exp,
-        max_iterations=max_iterations,
+        max_iterations=max_iterations - 1,
         batch_size=batch_size,
         **wandb_runner_kwargs,
     )
     mtbo_callback = MTBOCallback(
         max_iterations=max_iterations, opt_task=task, main_ds=main_ds
     )
-    r.run(
-        skip_wandb_intialization=True,
-        callback=mtbo_callback,
-    )
+    # Take highest yielding condition from co-training datasets
+    # as initial experiment
+    conditions = ct_data.sort_values(by="yld", ascending=False).iloc[0]
+    conditions = conditions.drop(["yld", "task"]).to_frame().T
+    prev_res = exp.run_experiments(conditions)
+    r.run(skip_wandb_intialization=True, callback=mtbo_callback, prev_res=prev_res)
     return r
 
 

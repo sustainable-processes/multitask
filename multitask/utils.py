@@ -10,6 +10,8 @@ from pint import UnitRegistry
 from pathlib import Path
 import wandb
 from wandb.apis.public import Run
+from tqdm import tqdm
+import typer
 from typing import List, Optional
 import pandas as pd
 import numpy as np
@@ -28,7 +30,36 @@ __all__ = [
     "get_rxn_yield",
     "ureg",
     "get_reactant_smiles",
+    "logger",
 ]
+
+
+class TyperLoggerHandler(logging.Handler):
+    """A custom logger handler that use Typer echo."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        fg = None
+        bg = None
+        if record.levelno == logging.DEBUG:
+            fg = typer.colors.BLACK
+        elif record.levelno == logging.INFO:
+            fg = typer.colors.BRIGHT_BLUE
+        elif record.levelno == logging.WARNING:
+            fg = typer.colors.BRIGHT_MAGENTA
+        elif record.levelno == logging.CRITICAL:
+            fg = typer.colors.BRIGHT_RED
+        elif record.levelno == logging.ERROR:
+            fg = typer.colors.BRIGHT_WHITE
+            bg = typer.colors.RED
+        typer.secho(self.format(record), bg=bg, fg=fg)
+
+
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler = TyperLoggerHandler()
+handler.setFormatter(formatter)
+logger: logging.Logger = logging.getLogger("multitask")
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 
 class BenchmarkType(Enum):
@@ -169,10 +200,11 @@ def download_runs_wandb(
         A list of tags that the run must not have, by default None
 
     """
+    logger = logging.getLogger(__name__)
+    logger.info("Downloading runs from wandb")
     runs = api.runs(f"{wandb_entity}/{wandb_project}")
-
     final_runs = []
-    for run in runs:
+    for run in tqdm(runs):
         # Filtering
         if include_tags is not None:
             if not all([tag in run.tags for tag in include_tags]):
@@ -268,6 +300,8 @@ class WandbRunner(Runner):
 
         Parameters
         ----------
+        prev_res: DataSet, optional
+            Previous results to initialize the optimization
         save_freq : int, optional
             The frequency with which to checkpoint the state of the optimization. Defaults to None.
         save_at_end : bool, optional
@@ -284,6 +318,7 @@ class WandbRunner(Runner):
         n_objs = len(self.experiment.domain.output_variables)
         fbest_old = np.zeros(n_objs)
         fbest = np.zeros(n_objs)
+        prev_res = kwargs.get("prev_res")
 
         # Serialization
         save_freq = kwargs.get("save_freq")

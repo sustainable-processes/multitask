@@ -1,20 +1,16 @@
 """
 Make figures for publication
 """
+from .plots import make_comparison_plot
 from multitask.utils import download_runs_wandb
-from .plots import make_comparison_plot, remove_frame
-from pathlib import Path
 from summit import *
-from rdkit import Chem
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib import font_manager
-from typing import Dict, List, Optional
 import wandb
-import logging
+import matplotlib.pyplot as plt
+from typing import Dict, List, Optional
+from pathlib import Path
 import string
+
+import logging
 
 
 logger = logging.getLogger(__name__)
@@ -48,6 +44,9 @@ def baumgartner_cn_auxiliary_baumgartner_cn(
     axis_fontsize = 14
 
     # Make subplots for each case
+    logger.info(
+        "Making plots for Baumgartner C-N optimization with auxiliary of Baumgartner C-N"
+    )
     letters = list(string.ascii_lowercase)
     for i in range(1, 5):
         # Filter STBO data
@@ -101,7 +100,7 @@ def baumgartner_cn_auxiliary_baumgartner_cn(
                 k += 1
 
     # Format plot
-    fig.suptitle("Reizman Optimization")
+    fig.suptitle("Baumgarnter Optimization")
     fig.supxlabel("Number of reactions")
     fig.supylabel("Yield (%)")
     fig.tight_layout()
