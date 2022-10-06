@@ -243,8 +243,12 @@ class NewMTBO(Strategy):
             # )
         elif self.model_type == self.ICM:
             self.model = MultiTaskGP(
-                torch.tensor(inputs_task).double(),
-                torch.tensor(output.data_to_numpy().astype(float)).double(),
+                torch.tensor(inputs_task, dtype=dtype, device=self.device),
+                torch.tensor(
+                    output.data_to_numpy().astype(float),
+                    dtype=dtype,
+                    device=self.device,
+                ),
                 task_feature=-1,
                 output_tasks=output_tasks,
                 # task_covar_prior=prior,
@@ -258,8 +262,16 @@ class NewMTBO(Strategy):
         # Train an extra model for the current task
         if self.acquistion_function == "WeightedEI":
             self.task_model = SingleTaskGP(
-                torch.tensor(inputs.data_to_numpy().astype(float)).double(),
-                torch.tensor(output.data_to_numpy().astype(float)).double(),
+                torch.tensor(
+                    inputs.data_to_numpy().astype(float),
+                    dtype=dtype,
+                    device=self.device,
+                ),
+                torch.tensor(
+                    output.data_to_numpy().astype(float),
+                    dtype=dtype,
+                    device=self.device,
+                ),
             )
             self.mll = ExactMarginalLogLikelihood(
                 self.task_model.likelihood, self.task_model
@@ -273,7 +285,9 @@ class NewMTBO(Strategy):
             elif self.acquistion_function == "qNEI":
                 self.acq = qNEI(
                     self.model,
-                    X_baseline=torch.tensor(inputs_task[:, :-1]).double(),
+                    X_baseline=torch.tensor(
+                        inputs_task[:, :-1], dtype=dtype, device=self.device
+                    ),
                 )
             elif self.acquistion_function == "WeightedEI":
                 self.acq = WeightedEI(
@@ -320,7 +334,9 @@ class NewMTBO(Strategy):
                 self.acq = CategoricalqNEI(
                     self.domain,
                     self.model,
-                    X_baseline=torch.tensor(inputs_task[:, :-1]).double(),
+                    X_baseline=torch.tensor(
+                        inputs_task[:, :-1], dtype=dtype, device=self.device
+                    ),
                 )
             else:
                 raise ValueError(
@@ -336,7 +352,7 @@ class NewMTBO(Strategy):
 
         # Convert result to datset
         result = DataSet(
-            results.detach().numpy(),
+            results.cpu().detach().numpy(),
             columns=inputs.data_columns,
         )
 
@@ -399,7 +415,7 @@ class NewMTBO(Strategy):
                 bounds += [[0, 1] for _ in v.levels]
             elif isinstance(v, CategoricalVariable) and self.categorical_method is None:
                 bounds.append([0, len(v.levels)])
-        return torch.tensor(bounds).T.double()
+        return torch.tensor(bounds, dtype=dtype, device=self.device).T
 
     def reset(self):
         """Reset MTBO state"""

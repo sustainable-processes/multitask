@@ -577,7 +577,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         ]
 
         # MTBO Reizman cotraining with all Baumgartner
-        baumgartner_mtbo_configs_reizman_one = [
+        baumgartner_mtbo_configs_reizman_all = [
             {
                 "strategy": "MTBO",
                 "benchmark_type": BenchmarkType.cn,
@@ -601,7 +601,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for case_main in range(1, 5)
         ]
         return (
-            baumgartner_mtbo_configs_reizman_one + baumgartner_mtbo_configs_reizman_one
+            baumgartner_mtbo_configs_reizman_one + baumgartner_mtbo_configs_reizman_all
         )
 
 

@@ -70,8 +70,7 @@ class NewSTBO(Strategy):
                 "categorical_method must be one of 'one-hot' or 'descriptors'."
             )
         self.brute_force_categorical = kwargs.get("brute_force_categorical", False)
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = "cpu"
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.acquistion_function = acquisition_function
         self.reset()
 
