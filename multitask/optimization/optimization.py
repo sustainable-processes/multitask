@@ -324,7 +324,9 @@ class STBOCallback:
         # Kernel lengthscales
         k = 0
 
-        lengthscale = model.covar_module.base_kernel.lengthscale.detach().numpy()[0]
+        lengthscale = (
+            model.covar_module.base_kernel.lengthscale.cpu().detach().numpy()[0]
+        )
         for v in domain.input_variables:
             if isinstance(v, ContinuousVariable):
                 wandb_dict.update(
@@ -351,7 +353,7 @@ class STBOCallback:
             train_y = torch.tensor(output).double()
             log_likelihoods = mll(model_output, train_y).numpy()
             sum_likelihood = np.exp(np.sum(log_likelihoods) / len(log_likelihoods))
-        return {"marginal_likelihood": sum_likelihood}
+        return {"marginal_likelihood": sum_likelihood.cpu()}
 
     def get_spearmans_coefficient(
         self, model, inputs, output, include_table: bool = False
@@ -360,7 +362,8 @@ class STBOCallback:
         with torch.no_grad():
             model_output = model(torch.tensor(inputs).double())
         train_y = torch.tensor(output).double()
-        abs_residuals = (model_output.mean - train_y[:, 0]).abs().numpy()
+        abs_residuals = (model_output.mean - train_y[:, 0]).abs()
+        abs_residuals = abs_residuals.cpu().detach().numpy()
         uncertainties = model_output.variance.sqrt().numpy()
         if include_table:
             wandb_dict.update(
@@ -467,7 +470,8 @@ class MTBOCallback(STBOCallback):
     def get_kernel_lengthscales(self, model: SingleTaskGP, domain: Domain):
         wandb_dict = super().get_kernel_lengthscales(model, domain)
         with torch.no_grad():
-            task_covar_matrix = model.task_covar_module._eval_covar_matrix().numpy()
+            task_covar_matrix = model.task_covar_module._eval_covar_matrix()
+            task_covar_matrix = task_covar_matrix.cpu().numpy()
         for i in range(task_covar_matrix.shape[0]):
             for j in range(task_covar_matrix.shape[1]):
                 wandb_dict.update(
