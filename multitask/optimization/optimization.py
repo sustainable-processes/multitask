@@ -558,7 +558,7 @@ def run_mtbo(
     r = WandbRunner(
         strategy=strategy,
         experiment=exp,
-        max_iterations=max_iterations - 1,
+        max_iterations=max_iterations,
         batch_size=batch_size,
         **wandb_runner_kwargs,
     )
