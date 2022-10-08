@@ -570,6 +570,7 @@ def run_mtbo(
     conditions = ct_data.sort_values(by="yld", ascending=False).iloc[0]
     conditions = conditions.drop(["yld", "task"]).to_frame().T
     prev_res = exp.run_experiments(conditions)
+    prev_res["task", "METADATA"] = task
     r.run(skip_wandb_intialization=True, callback=mtbo_callback, prev_res=prev_res)
     return r
 
