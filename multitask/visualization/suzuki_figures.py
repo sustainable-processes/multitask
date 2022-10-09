@@ -97,7 +97,7 @@ def baumgartner_suzuki_auxiliary_reizman_suzuki(
 
     # Format and save figure
     # fig.suptitle("Baumgartner Optimization")
-    fig.supxlabel("Number of experiments", fontsize=heading_fontsize)
+    fig.supxlabel("Experiment number", fontsize=heading_fontsize)
     fig.supylabel("Best Yield (%)", fontsize=heading_fontsize)
     fig.tight_layout()
     figure_dir = Path(figure_dir)
@@ -193,7 +193,7 @@ def reizman_suzuki_auxiliary_baumgartner_suzuki(
 
     # Format and save figure
     # fig.suptitle("Reizman Optimization", fontsize=21)
-    fig.supxlabel("Number of experiments", fontsize=heading_fontsize)
+    fig.supxlabel("Experiment number", fontsize=heading_fontsize)
     fig.supylabel("Best Yield (%)", fontsize=heading_fontsize)
     fig.tight_layout()
     figure_dir = Path(figure_dir)
@@ -220,9 +220,9 @@ def reizman_suzuki_auxiliary_reizman_suzuki(
     fig.subplots_adjust(wspace=0.2, hspace=0.5)
     k = 1
     axis_fontsize = 14
+    heading_fontsize = 18
 
     # Make subplots for each case
-    letters = list(string.ascii_lowercase)
     logger.info(
         "Making plots for Reizman Suzuki optimization with auxiliary of Reizman Suzuki"
     )
@@ -264,7 +264,7 @@ def reizman_suzuki_auxiliary_reizman_suzuki(
                     f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Reizman Suzuki case {j}"
                 )
 
-                # Make subplot
+                # # Make subplot
                 ax = fig.add_subplot(4, 3, k)
                 make_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
@@ -273,15 +273,16 @@ def reizman_suzuki_auxiliary_reizman_suzuki(
                     ax=ax,
                 )
                 ax.set_title(
-                    f"{reizman_case_to_name[i]} (Aux. {reizman_case_to_name[j]})"
+                    f"{reizman_case_to_name[i]} (Aux. {reizman_case_to_name[j]})",
+                    fontsize=heading_fontsize,
                 )
                 ax.set_ylim(0, 100)
                 k += 1
 
     # Format plot
-    fig.suptitle("Reizman Optimization")
-    fig.supxlabel("Number of reactions")
-    fig.supylabel("Best Yield (%)")
+    # fig.suptitle("Reizman Optimization")
+    fig.supxlabel("Experiment number", fontsize=heading_fontsize)
+    fig.supylabel("Best Yield (%)", fontsize=heading_fontsize)
     fig.tight_layout()
     figure_dir = Path(figure_dir)
     fig.savefig(figure_dir / "reizman_reizman_one_cotraining_optimization.png", dpi=300)
