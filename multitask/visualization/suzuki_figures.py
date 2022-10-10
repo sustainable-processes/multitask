@@ -276,6 +276,11 @@ def reizman_suzuki_auxiliary_reizman_suzuki(
                     f"{reizman_case_to_name[i]} (Aux. {reizman_case_to_name[j]})",
                     fontsize=heading_fontsize,
                 )
+                ax.set_xlim(0, 20)
+                ax.tick_params("y", labelsize=axis_fontsize)
+                xlabels = np.arange(0, 21, 5)
+                ax.set_xticks(xlabels)
+                ax.set_xticklabels(xlabels, fontsize=axis_fontsize)
                 ax.set_ylim(0, 100)
                 k += 1
 

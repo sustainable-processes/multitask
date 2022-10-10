@@ -16,12 +16,16 @@ def make_average_plot(
     yields = np.array(yields)
     mean_yield = np.mean(yields, axis=0)
     std_yield = np.std(yields, axis=0)
-    x = np.arange(0, len(mean_yield), 1).astype(int)
+    x = np.arange(1, len(mean_yield) + 1, 1).astype(int)
     ax.plot(x, mean_yield, label=label, linewidth=4, c=color)
+    top = mean_yield + 1.96 * std_yield
+    bottom = mean_yield - 1.96 * std_yield
+    bottom = np.clip(bottom, 0, 100)
+    top = np.clip(top, 0, 100)
     ax.fill_between(
         x,
-        mean_yield - 1.96 * std_yield,
-        mean_yield + 1.96 * std_yield,
+        bottom,
+        top,
         alpha=0.1,
         color=color,
     )
