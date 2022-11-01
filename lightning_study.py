@@ -94,7 +94,7 @@ class OptimizationWork(L.LightningWork):
         wandb_benchmark_artifact_name: str,
         benchmark_type: BenchmarkType,
         output_path: str,
-        wandb_dataset_artifact_name: Optional[str] = None,
+        wandb_ct_dataset_artifact_name: Optional[str] = None,
         ct_dataset_names: Optional[List[str]] = None,
         max_experiments: Optional[int] = 20,
         batch_size: Optional[int] = 1,
@@ -120,7 +120,7 @@ class OptimizationWork(L.LightningWork):
         self.strategy = strategy
         self.model_name = model_name
         self.wandb_benchmark_artifact_name = wandb_benchmark_artifact_name
-        self.wandb_dataset_artifact_name = wandb_dataset_artifact_name
+        self.wandb_ct_dataset_artifact_name = wandb_ct_dataset_artifact_name
         self.benchmark_type = benchmark_type.value
         self.ct_dataset_names = ct_dataset_names
         self.output_path = output_path
@@ -145,9 +145,8 @@ class OptimizationWork(L.LightningWork):
             self.wandb_benchmark_artifact_name,
             self.benchmark_type,
         ]
-        if self.wandb_dataset_artifact_name is not None:
-            cmd += [self.wandb_dataset_artifact_name]
-        if self.ct_dataset_names is not None:
+        if self.strategy.lower() == "mtbo":
+            cmd += [self.wandb_ct_dataset_artifact_name]
             cmd += self.ct_dataset_names
         cmd += [self.output_path]
         options = [
@@ -175,6 +174,17 @@ class OptimizationWork(L.LightningWork):
                 "--wandb-main-dataset-artifact-name",
                 self.wandb_main_dataset_artifact_name,
             ]
+        if (
+            self.strategy.lower() == "stbo"
+            and self.wandb_ct_dataset_artifact_name
+            and self.ct_dataset_names
+        ):
+            options += [
+                "--wandb-ct-dataset-artifact-name",
+                self.wandb_ct_dataset_artifact_name,
+            ]
+            for ct_dataset_name in self.ct_dataset_names:
+                options += [f"--ct-dataset-names", ct_dataset_name]
         # print(cmd + options)
         subprocess.run(cmd + options, shell=False)
         self.finished = True
@@ -444,7 +454,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"reizman_suzuki_case_{case}",
                 "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case}:latest",
                 "output_path": f"data/singletask_head_start/results_reizman_suzuki_{case}_cotrain_baumgartner_suzuki",
-                "wandb_dataset_artifact_name": "baumgartner_suzuki:latest",
+                "wandb_ct_dataset_artifact_name": "baumgartner_suzuki:latest",
                 "ct_dataset_names": [f"baumgartner_suzuki"],
                 "wandb_optimization_artifact_name": "stbo_reizman_suzuki_one_cotraining_baumgartner_suzuki",
                 "wandb_main_dataset_artifact_name": f"reizman_suzuki:latest",
@@ -465,7 +475,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"reizman_suzuki_case_{case_main}",
                 "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case_main}:latest",
                 "output_path": f"data/singletask_head_start/results_reizman_suzuki_case_{case_main}_cotrain_reizman_suzuki_case_{case_aux}",
-                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "wandb_ct_dataset_artifact_name": f"reizman_suzuki:latest",
                 "ct_dataset_names": [f"reizman_suzuki_case_{case_aux}"],
                 "wandb_optimization_artifact_name": f"stbo_reizman_suzuki_{case_main}_one_cotraining_reizman_suzuki_case_{case_aux}",
                 "wandb_main_dataset_artifact_name": f"reizman_suzuki:latest",
@@ -488,7 +498,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"baumgartner_suzuki",
                 "wandb_benchmark_artifact_name": "benchmark_baumgartner_suzuki:latest",
                 "output_path": f"data/singletask_head_start/results_baumgartner_suzuki_cotrain_reizman_suzuki_case_{case}",
-                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "wandb_ct_dataset_artifact_name": f"reizman_suzuki:latest",
                 "ct_dataset_names": [
                     f"reizman_suzuki_case_{case}",
                 ],
@@ -511,7 +521,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"baumgartner_suzuki",
                 "wandb_benchmark_artifact_name": "benchmark_baumgartner_suzuki:latest",
                 "output_path": f"data/singletask_head_start/results_baumgartner_suzuki_cotrain_reizman_suzuki_all",
-                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "wandb_ct_dataset_artifact_name": f"reizman_suzuki:latest",
                 "ct_dataset_names": [
                     f"reizman_suzuki_case_{case}" for case in range(1, 5)
                 ],
@@ -533,7 +543,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"reizman_suzuki_case_{case_main}",
                 "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case_main}:latest",
                 "output_path": f"data/singletask_head_start/results_reizman_suzuki_case_{case_main}_cotrain_reizman_suzuki_case_all",
-                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "wandb_ct_dataset_artifact_name": f"reizman_suzuki:latest",
                 "ct_dataset_names": [
                     f"reizman_suzuki_case_{case_aux}"
                     for case_aux in range(1, 5)
@@ -570,7 +580,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"reizman_suzuki_case_{case}",
                 "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case}:latest",
                 "output_path": f"data/multitask_results/results_reizman_suzuki_{case}_cotrain_baumgartner_suzuki",
-                "wandb_dataset_artifact_name": "baumgartner_suzuki:latest",
+                "wandb_ct_dataset_artifact_name": "baumgartner_suzuki:latest",
                 "ct_dataset_names": [f"baumgartner_suzuki"],
                 "wandb_optimization_artifact_name": "mtbo_reizman_suzuki_one_cotraining_baumgartner_suzuki",
                 "wandb_main_dataset_artifact_name": f"reizman_suzuki:latest",
@@ -591,7 +601,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"reizman_suzuki_case_{case_main}",
                 "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case_main}:latest",
                 "output_path": f"data/multitask_results/results_reizman_suzuki_case_{case_main}_cotrain_reizman_suzuki_case_{case_aux}",
-                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "wandb_ct_dataset_artifact_name": f"reizman_suzuki:latest",
                 "ct_dataset_names": [f"reizman_suzuki_case_{case_aux}"],
                 "wandb_optimization_artifact_name": f"mtbo_reizman_suzuki_{case_main}_one_cotraining_reizman_suzuki_case_{case_aux}",
                 "wandb_main_dataset_artifact_name": f"reizman_suzuki:latest",
@@ -614,7 +624,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"baumgartner_suzuki",
                 "wandb_benchmark_artifact_name": "benchmark_baumgartner_suzuki:latest",
                 "output_path": f"data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_case_{case}",
-                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "wandb_ct_dataset_artifact_name": f"reizman_suzuki:latest",
                 "ct_dataset_names": [
                     f"reizman_suzuki_case_{case}",
                 ],
@@ -637,7 +647,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"baumgartner_suzuki",
                 "wandb_benchmark_artifact_name": "benchmark_baumgartner_suzuki:latest",
                 "output_path": f"data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_all",
-                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "wandb_ct_dataset_artifact_name": f"reizman_suzuki:latest",
                 "ct_dataset_names": [
                     f"reizman_suzuki_case_{case}" for case in range(1, 5)
                 ],
@@ -659,7 +669,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"reizman_suzuki_case_{case_main}",
                 "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case_main}:latest",
                 "output_path": f"data/multitask_results/results_reizman_suzuki_case_{case_main}_cotrain_reizman_suzuki_case_all",
-                "wandb_dataset_artifact_name": f"reizman_suzuki:latest",
+                "wandb_ct_dataset_artifact_name": f"reizman_suzuki:latest",
                 "ct_dataset_names": [
                     f"reizman_suzuki_case_{case_aux}"
                     for case_aux in range(1, 5)
@@ -720,7 +730,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"baumgartner_cn_case_{case_main}",
                 "wandb_benchmark_artifact_name": f"benchmark_baumgartner_cn_case_{case_main}:latest",
                 "output_path": f"data/multitask_results/results_baumgartner_cn_case_{case_main}_cotrain_baumgartner_cn_case_{case_aux}",
-                "wandb_dataset_artifact_name": f"baumgartner_cn:latest",
+                "wandb_ct_dataset_artifact_name": f"baumgartner_cn:latest",
                 "ct_dataset_names": [f"baumgartner_cn_case_{case_aux}"],
                 "wandb_optimization_artifact_name": f"stbo_baumgartner_cn_{case_main}_one_cotraining_baumgartner_cn_case_{case_aux}",
                 "wandb_main_dataset_artifact_name": "baumgartner_cn:latest",
@@ -743,7 +753,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"baumgartner_cn_case_{case_main}",
                 "wandb_benchmark_artifact_name": f"benchmark_baumgartner_cn_case_{case_main}:latest",
                 "output_path": f"data/singletask_head_start/results_baumgartner_cn_case_{case_main}_cotrain_baumgartner_cn_case_all",
-                "wandb_dataset_artifact_name": f"baumgartner_cn:latest",
+                "wandb_ct_dataset_artifact_name": f"baumgartner_cn:latest",
                 "ct_dataset_names": [
                     f"baumgartner_cn_case_{case_aux}"
                     for case_aux in range(1, 5)
@@ -775,7 +785,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"baumgartner_cn_case_{case_main}",
                 "wandb_benchmark_artifact_name": f"benchmark_baumgartner_cn_case_{case_main}:latest",
                 "output_path": f"data/multitask_results/results_baumgartner_cn_case_{case_main}_cotrain_baumgartner_cn_case_{case_aux}",
-                "wandb_dataset_artifact_name": f"baumgartner_cn:latest",
+                "wandb_ct_dataset_artifact_name": f"baumgartner_cn:latest",
                 "ct_dataset_names": [f"baumgartner_cn_case_{case_aux}"],
                 "wandb_optimization_artifact_name": f"mtbo_baumgartner_cn_{case_main}_one_cotraining_baumgartner_cn_case_{case_aux}",
                 "wandb_main_dataset_artifact_name": "baumgartner_cn:latest",
@@ -798,7 +808,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "model_name": f"baumgartner_cn_case_{case_main}",
                 "wandb_benchmark_artifact_name": f"benchmark_baumgartner_cn_case_{case_main}:latest",
                 "output_path": f"data/multitask_results/results_baumgartner_cn_case_{case_main}_cotrain_baumgartner_cn_case_all",
-                "wandb_dataset_artifact_name": f"baumgartner_cn:latest",
+                "wandb_ct_dataset_artifact_name": f"baumgartner_cn:latest",
                 "ct_dataset_names": [
                     f"baumgartner_cn_case_{case_aux}"
                     for case_aux in range(1, 5)
@@ -830,7 +840,7 @@ if __name__ == "__main__":
             run_cn=True,
             compute_type="gpu",
             parallel=True,
-            max_workers=50,
+            max_workers=1,
             wandb_entity="ceb-sre",
         )
     )
