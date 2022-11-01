@@ -840,7 +840,7 @@ if __name__ == "__main__":
             run_cn=True,
             compute_type="gpu",
             parallel=True,
-            max_workers=1,
+            max_workers=41,
             wandb_entity="ceb-sre",
         )
     )
