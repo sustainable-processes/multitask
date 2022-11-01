@@ -96,7 +96,6 @@ class OptimizationWork(L.LightningWork):
         output_path: str,
         wandb_dataset_artifact_name: Optional[str] = None,
         ct_dataset_names: Optional[List[str]] = None,
-        start_from_best_auxiliary: Optional[bool] = False,
         max_experiments: Optional[int] = 20,
         batch_size: Optional[int] = 1,
         brute_force_categorical: Optional[bool] = False,
@@ -125,7 +124,6 @@ class OptimizationWork(L.LightningWork):
         self.benchmark_type = benchmark_type.value
         self.ct_dataset_names = ct_dataset_names
         self.output_path = output_path
-        self.start_from_best_auxiliary = start_from_best_auxiliary
         self.max_experiments = max_experiments
         self.batch_size = batch_size
         self.brute_force_categorical = brute_force_categorical
