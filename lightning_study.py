@@ -145,8 +145,9 @@ class OptimizationWork(L.LightningWork):
             self.wandb_benchmark_artifact_name,
             self.benchmark_type,
         ]
-        if self.strategy.lower() == "mtbo":
+        if self.wandb_dataset_artifact_name is not None:
             cmd += [self.wandb_dataset_artifact_name]
+        if self.ct_dataset_names is not None:
             cmd += self.ct_dataset_names
         cmd += [self.output_path]
         options = [
