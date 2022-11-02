@@ -833,8 +833,8 @@ if __name__ == "__main__":
     app = L.LightningApp(
         MultitaskBenchmarkStudy(
             run_benchmark_training=False,
-            run_single_task=False,
-            run_single_task_head_start=True,
+            run_single_task=True,
+            run_single_task_head_start=False,
             run_multi_task=False,
             run_suzuki=True,
             run_cn=True,
