@@ -99,6 +99,7 @@ def get_wandb_run_dfs(
     only_finished_runs: bool = True,
     extra_filters: Optional[Dict] = None,
     num_iterations: Optional[int] = None,
+    columns: Optional[List[str]] = None,
 ) -> List[pd.DataFrame]:
     """Get data from wandb"""
     filters = {
@@ -116,7 +117,9 @@ def get_wandb_run_dfs(
         filter_tags=filter_tags,
         extra_filters=filters,
     )
-    dfs = [run.history(x_axis="iteration", keys=["yld_best"]) for run in tqdm(runs)]
+    if columns is None:
+        columns = ["yld_best"]
+    dfs = [run.history(x_axis="iteration", keys=columns) for run in tqdm(runs)]
     if num_iterations is not None:
         dfs = [df for df in dfs if df.shape[0] == 20]
     if len(dfs) == 0:

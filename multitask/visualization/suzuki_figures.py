@@ -25,6 +25,7 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
     wandb_entity: str = "ceb-sre",
     wandb_project: str = "multitask",
     figure_dir: str = "figures",
+    include_head_start: bool = False,
 ):
     # Wandb API
     api = wandb.Api()
@@ -41,7 +42,9 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
         filter_tags=filter_tags,
         only_finished_runs=only_finished_runs,
         num_iterations=num_iterations,
+        extra_filters={"config.ct_dataset_names": []},
     )
+
     """Make plots for Baumgartner Suzuki optimization with auxiliary of Reizman Suzuki."""
     # Setup figure
     fig = plt.figure(figsize=(15, 5))
@@ -71,11 +74,26 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
                 "config.ct_dataset_names": [f"reizman_suzuki_case_{i}"],
             },
         )
+        stbo_head_start_dfs = get_wandb_run_dfs(
+            api,
+            wandb_entity=wandb_entity,
+            wandb_project=wandb_project,
+            model_name="baumgartner_suzuki",
+            strategy="STBO",
+            include_tags=include_tags,
+            filter_tags=filter_tags,
+            only_finished_runs=only_finished_runs,
+            num_iterations=num_iterations,
+            extra_filters={
+                "config.ct_dataset_names": [f"reizman_suzuki_case_{i}"],
+            },
+        )
 
         # Make comparison subplot
         ax = fig.add_subplot(1, 4, k)
         make_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
+            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",
             ax=ax,
@@ -130,6 +148,7 @@ def baumgartner_suzuki_auxiliary_all_reizman_suzuki(
         filter_tags=filter_tags,
         only_finished_runs=only_finished_runs,
         num_iterations=num_iterations,
+        extra_filters={"config.ct_dataset_names": []},
     )
     """Make plots for Baumgartner Suzuki optimization with auxiliary of Reizman Suzuki."""
     # Setup figure
@@ -157,10 +176,27 @@ def baumgartner_suzuki_auxiliary_all_reizman_suzuki(
             ],
         },
     )
+    stbo_head_start_dfs = get_wandb_run_dfs(
+        api,
+        wandb_entity=wandb_entity,
+        wandb_project=wandb_project,
+        model_name="baumgartner_suzuki",
+        strategy="STBO",
+        include_tags=include_tags,
+        filter_tags=filter_tags,
+        only_finished_runs=only_finished_runs,
+        num_iterations=num_iterations,
+        extra_filters={
+            "config.ct_dataset_names": [
+                f"reizman_suzuki_case_{j}" for j in range(1, 5)
+            ],
+        },
+    )
 
     # Make comparison subplot
     make_comparison_plot(
         dict(results=stbo_dfs, label="STBO", color="#a50026"),
+        dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
         dict(results=mtbo_dfs, label="MTBO", color="#313695"),
         output_name="yld_best",
         ax=ax,
@@ -228,6 +264,7 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
             filter_tags=filter_tags,
             only_finished_runs=only_finished_runs,
             num_iterations=num_iterations,
+            extra_filters={"config.ct_dataset_names": []},
         )
 
         # MTBO data
@@ -248,6 +285,20 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
                 "config.ct_dataset_names": [f"baumgartner_suzuki"],
             },
         )
+        stbo_head_start_dfs = get_wandb_run_dfs(
+            api,
+            wandb_entity=wandb_entity,
+            wandb_project=wandb_project,
+            model_name=f"reizman_suzuki_case_{i}",
+            strategy="STBO",
+            include_tags=include_tags,
+            filter_tags=filter_tags,
+            only_finished_runs=only_finished_runs,
+            num_iterations=num_iterations,
+            extra_filters={
+                "config.ct_dataset_names": [f"baumgartner_suzuki"],
+            },
+        )
 
         logger.info(
             f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Baumgarnter Suzuki",
@@ -257,6 +308,7 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
         ax = fig.add_subplot(1, 4, k)
         make_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
+            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",
             ax=ax,
@@ -323,6 +375,7 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
             filter_tags=filter_tags,
             only_finished_runs=only_finished_runs,
             num_iterations=num_iterations,
+            extra_filters={"config.ct_dataset_names": []},
         )
         for j in range(1, 5):
             if i != j:
@@ -344,6 +397,20 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
                         "config.ct_dataset_names": [f"reizman_suzuki_case_{j}"],
                     },
                 )
+                stbo_head_start_dfs = get_wandb_run_dfs(
+                    api,
+                    wandb_entity=wandb_entity,
+                    wandb_project=wandb_project,
+                    model_name=f"reizman_suzuki_case_{i}",
+                    strategy="STBO",
+                    include_tags=include_tags,
+                    filter_tags=filter_tags,
+                    only_finished_runs=only_finished_runs,
+                    num_iterations=num_iterations,
+                    extra_filters={
+                        "config.ct_dataset_names": [f"reizman_suzuki_case_{j}"],
+                    },
+                )
                 logger.info(
                     f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Reizman Suzuki case {j}"
                 )
@@ -352,6 +419,7 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
                 ax = fig.add_subplot(4, 3, k)
                 make_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
+                    dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
                     output_name="yld_best",
                     ax=ax,
@@ -419,6 +487,7 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
             filter_tags=filter_tags,
             only_finished_runs=only_finished_runs,
             num_iterations=num_iterations,
+            extra_filters={"config.ct_dataset_names": []},
         )
 
         # MTBO data
@@ -441,6 +510,22 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
                 ],
             },
         )
+        stbo_head_start_dfs = get_wandb_run_dfs(
+            api,
+            wandb_entity=wandb_entity,
+            wandb_project=wandb_project,
+            model_name=f"reizman_suzuki_case_{i}",
+            strategy="STBO",
+            include_tags=include_tags,
+            filter_tags=filter_tags,
+            only_finished_runs=only_finished_runs,
+            num_iterations=num_iterations,
+            extra_filters={
+                "config.ct_dataset_names": [
+                    f"reizman_suzuki_case_{j}" for j in range(1, 5) if j != i
+                ],
+            },
+        )
 
         logger.info(
             f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Baumgarnter Suzuki",
@@ -450,6 +535,7 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
         ax = fig.add_subplot(1, 4, k)
         make_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
+            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",
             ax=ax,
@@ -502,15 +588,15 @@ def all_suzuki(
         wandb_project=wandb_project,
         figure_dir=figure_dir,
     )
-    baumgartner_suzuki_auxiliary_all_reizman_suzuki(
-        num_iterations=num_iterations,
-        include_tags=include_tags,
-        filter_tags=filter_tags,
-        only_finished_runs=only_finished_runs,
-        wandb_entity=wandb_entity,
-        wandb_project=wandb_project,
-        figure_dir=figure_dir,
-    )
+    # baumgartner_suzuki_auxiliary_all_reizman_suzuki(
+    #     num_iterations=num_iterations,
+    #     include_tags=include_tags,
+    #     filter_tags=filter_tags,
+    #     only_finished_runs=only_finished_runs,
+    #     wandb_entity=wandb_entity,
+    #     wandb_project=wandb_project,
+    #     figure_dir=figure_dir,
+    # )
     reizman_suzuki_auxiliary_one_reizman_suzuki(
         num_iterations=num_iterations,
         include_tags=include_tags,

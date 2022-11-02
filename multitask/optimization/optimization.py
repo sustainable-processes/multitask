@@ -33,6 +33,8 @@ def stbo(
     wandb_benchmark_artifact_name: str,
     benchmark_type: BenchmarkType,
     output_path: str,
+    wandb_ct_dataset_artifact_name: Optional[str] = None,
+    ct_dataset_names: Optional[List[str]] = None,
     wandb_main_dataset_artifact_name: Optional[str] = None,
     max_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
@@ -128,6 +130,36 @@ def stbo(
                         )
                     else:
                         raise ValueError(f"Unknown benchmark type {benchmark_type}")
+
+                    # Load suzuki dataset
+                    if wandb_ct_dataset_artifact_name:
+                        dataset_artifact = run.use_artifact(
+                            wandb_ct_dataset_artifact_name
+                        )
+                        datasets_path = Path(dataset_artifact.download())
+                        if benchmark_type == BenchmarkType.suzuki:
+                            ds_list = [
+                                get_suzuki_dataset(
+                                    data_path=datasets_path / f"{ct_dataset_name}.pb",
+                                    split_catalyst=exp.split_catalyst,
+                                    print_warnings=print_warnings,
+                                )
+                                for ct_dataset_name in ct_dataset_names
+                            ]
+                        elif benchmark_type == BenchmarkType.cn:
+                            ds_list = [
+                                get_cn_dataset(
+                                    data_path=datasets_path / f"{ct_dataset_name}.pb",
+                                    print_warnings=print_warnings,
+                                )
+                                for ct_dataset_name in ct_dataset_names
+                            ]
+                        for i, ds in enumerate(ds_list):
+                            ds["task", "METADATA"] = i
+                        big_ds = pd.concat(ds_list)
+                    else:
+                        big_ds = None
+
                     # Run optimization
                     result = run_stbo(
                         exp,
@@ -137,6 +169,7 @@ def stbo(
                         categorical_method=categorical_method,
                         acquisition_function=acquisition_function,
                         main_ds=main_ds,
+                        ct_data=big_ds,
                     )
                     result.save(output_path / f"repeat_{i}.json")
                     torch.save(
@@ -433,6 +466,7 @@ def run_stbo(
     acquisition_function: str = "EI",
     wandb_runner_kwargs: Optional[dict] = {},
     main_ds: Optional[DataSet] = None,
+    ct_data: Optional[DataSet] = None,
 ):
     """Run Single Task Bayesian Optimization (AKA normal BO)"""
     exp.reset()
@@ -451,10 +485,13 @@ def run_stbo(
         batch_size=batch_size,
         **wandb_runner_kwargs,
     )
-    r.run(
-        skip_wandb_intialization=True,
-        callback=stbo_callback,
-    )
+    if ct_data is not None:
+        conditions = ct_data.sort_values(by="yld", ascending=False).iloc[0]
+        conditions = conditions.drop(["yld", "task"]).to_frame().T
+        prev_res = exp.run_experiments(conditions)
+    else:
+        prev_res = None
+    r.run(skip_wandb_intialization=True, callback=stbo_callback, prev_res=prev_res)
     return r
 
 

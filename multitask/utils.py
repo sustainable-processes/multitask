@@ -186,7 +186,9 @@ def download_runs_wandb(
     only_finished_runs: bool = True,
     extra_filters: Optional[Dict[str, Any]] = None,
 ) -> List[Run]:
-    """
+    """Download runs from wandb
+
+
     Parameters
     ----------
     api : wandb.Api
@@ -209,11 +211,11 @@ def download_runs_wandb(
     # Filters
     filters = {}
     tag_query = []
-    if len(include_tags) > 0:
+    if include_tags is not None and len(include_tags) > 0:
         for include_tag in include_tags:
             tag_query.append({"tags": {"$in": [include_tag]}})
         # filters["tags"] = {"$infilt": include_tags}
-    if len(filter_tags) > 0:
+    if filter_tags is not None and len(filter_tags) > 0:
         tag_query += [{"tags": {"$nin": filter_tags}}]
     if len(tag_query) > 0:
         filters["$and"] = tag_query
