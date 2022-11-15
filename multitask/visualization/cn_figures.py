@@ -1,7 +1,7 @@
 """
 Make figures for publication
 """
-from .plots import get_wandb_run_dfs, make_comparison_plot
+from .plots import get_wandb_run_dfs, make_yld_comparison_plot
 from summit import *
 import wandb
 import numpy as np
@@ -74,7 +74,7 @@ def baumgartner_cn_auxiliary_one_baumgartner_cn(
 
                 # Make subplot
                 ax = fig.add_subplot(4, 3, k)
-                make_comparison_plot(
+                make_yld_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
                     output_name="yld_best",
@@ -164,7 +164,7 @@ def baumgartner_cn_auxiliary_all_baumgartner_cn(
 
         # # Make subplot
         ax = fig.add_subplot(1, 4, i)
-        make_comparison_plot(
+        make_yld_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",

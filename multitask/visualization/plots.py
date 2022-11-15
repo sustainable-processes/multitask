@@ -1,7 +1,10 @@
 from multitask.utils import download_runs_wandb
+from summit.utils.dataset import DataSet
 import pandas as pd
 import numpy as np
+import json
 from tqdm import tqdm
+from pathlib import Path
 from typing import Dict, List, Optional
 
 
@@ -51,7 +54,44 @@ def make_repeats_plot(
         )
 
 
-def make_comparison_plot(*args, output_name: str, ax, plot_type: str = "average"):
+def make_yld_comparison_plot(*args, output_name: str, ax, plot_type: str = "average"):
+    for arg in args:
+        if plot_type == "average":
+            make_average_plot(
+                arg["results"],
+                output_name,
+                ax,
+                label=arg["label"],
+                color=arg.get("color"),
+            )
+        elif plot_type == "repeats":
+            make_repeats_plot(
+                arg["results"],
+                output_name,
+                ax,
+                label=arg["label"],
+                color=arg.get("color"),
+            )
+        else:
+            raise ValueError(f"{plot_type} must be average or repeats")
+    fontdict = fontdict = {"size": 12}
+    if plot_type == "average":
+        ax.legend(prop=fontdict, framealpha=0.0)
+    else:
+        ax.legend(prop=fontdict)
+    ax.set_xlim(0, 20)
+    ax.set_xticks(np.arange(0, 20, 2).astype(int))
+    ax.tick_params(direction="in")
+    return ax
+
+
+def make_bar_chart(results: List[pd.DataFrame], categorical_names: List[str], ax):
+    pass
+
+
+def make_categorical_comparison_plot(
+    *args, output_name: str, ax, plot_type: str = "average"
+):
     for arg in args:
         if plot_type == "average":
             make_average_plot(
@@ -88,6 +128,14 @@ def remove_frame(ax, sides=["top", "left", "right"]):
         ax_side.set_visible(False)
 
 
+def get_ds_from_json(filepath: str) -> DataSet:
+    path = Path(filepath)
+    with open(path, "r") as f:
+        data = json.load(f)
+    data = data["experiment"]["data"]
+    return DataSet.from_dict(data)
+
+
 def get_wandb_run_dfs(
     api,
     wandb_entity: str,
@@ -100,7 +148,7 @@ def get_wandb_run_dfs(
     extra_filters: Optional[Dict] = None,
     num_iterations: Optional[int] = None,
     columns: Optional[List[str]] = None,
-) -> List[pd.DataFrame]:
+) -> List[DataSet]:
     """Get data from wandb"""
     filters = {
         "config.model_name": model_name,
@@ -117,11 +165,26 @@ def get_wandb_run_dfs(
         filter_tags=filter_tags,
         extra_filters=filters,
     )
-    if columns is None:
-        columns = ["yld_best"]
-    dfs = [run.history(x_axis="iteration", keys=columns) for run in tqdm(runs)]
+
+    dfs = []
+    for run in tqdm(runs):
+        artifacts = run.logged_artifacts()
+        path = None
+        for artifact in artifacts:
+            if artifact.type == "optimization_result":
+                path = artifact.download()
+                break
+        if path is not None:
+            path = list(Path(path).glob("repeat_*.json"))[0]
+            ds = get_ds_from_json(path)
+            ds["yld_best", "DATA"] = ds["yld"].astype(float).cummax()
+            dfs.append(ds)
+
+    # if columns is None:
+    #     columns = ["yld_best"]
+    # dfs = [run.history(x_axis="iteration", keys=columns) for run in tqdm(runs)]
     if num_iterations is not None:
-        dfs = [df for df in dfs if df.shape[0] == 20]
+        dfs = [df for df in dfs if df.shape[0] == num_iterations]
     if len(dfs) == 0:
         raise ValueError(f"No {model_name} {strategy} runs found")
     return dfs
