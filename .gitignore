@@ -3,6 +3,8 @@ data/kinetic_models
 wandb/
 artifacts
 .vscode/
+data/*/emulator*
+data/*/results_*
 
 .DS_Store
 .idea/

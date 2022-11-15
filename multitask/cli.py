@@ -4,7 +4,7 @@ from multitask.benchmarks import app as benchmarks_cli
 from multitask.optimization import app as optimization_cli
 from multitask.visualization import app as visualization_cli
 
-app = typer.Typer()
+app = typer.Typer(rich_markup_mode="markdown")
 app.add_typer(
     etl_cli, name="etl", help="Extract, transform, and load data from spreadsheets"
 )

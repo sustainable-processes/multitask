@@ -1,9 +1,15 @@
 """
 Make Suzuki cross coupling figures for publication
 """
-from .plots import make_yld_comparison_plot, get_wandb_run_dfs
+from multitask.etl.etl_baumgartner_suzuki import ligands, pre_catalysts
+from .plots import (
+    make_yld_comparison_plot,
+    make_categorical_comparison_plot,
+    get_wandb_run_dfs,
+)
 from pathlib import Path
 from summit import *
+from rdkit import Chem
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Optional
@@ -15,10 +21,23 @@ logger = logging.getLogger(__name__)
 
 
 reizman_case_to_name = {1: "SR1", 2: "SR2", 3: "SR3", 4: "SR4"}
+catalyst_map = {
+    "{}.{}".format(
+        Chem.CanonSmiles(pre_cat["SMILES"]), Chem.CanonSmiles(ligand["SMILES"])
+    ): f"{pre_cat_ref}-{ligand_ref}"
+    for ligand_ref, ligand in ligands.items()
+    for pre_cat_ref, pre_cat in pre_catalysts.items()
+}
+
+
+def combine_pre_catalyst_ligand(ds: DataSet):
+    ds["catalyst_smiles"] = ds["pre_catalyst_smiles"] + "." + ds["ligand_smiles"]
+    return ds
 
 
 def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
     num_iterations: int = 20,
+    num_repeats: int = 20,
     include_tags: Optional[List[str]] = None,
     filter_tags: Optional[List[str]] = None,
     only_finished_runs: bool = True,
@@ -27,6 +46,7 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
     figure_dir: str = "figures",
     include_head_start: bool = False,
 ):
+    """Make plots for Baumgartner Suzuki optimization with auxiliary of Reizman Suzuki."""
     # Wandb API
     api = wandb.Api()
 
@@ -44,12 +64,17 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
         # num_iterations=num_iterations,
         extra_filters={"config.ct_dataset_names": []},
     )
-    stbo_dfs = [stbo_df.iloc[:20, :] for stbo_df in stbo_dfs]
+    stbo_dfs = [combine_pre_catalyst_ligand(stbo_df) for stbo_df in stbo_dfs][
+        :num_repeats
+    ]
 
-    """Make plots for Baumgartner Suzuki optimization with auxiliary of Reizman Suzuki."""
     # Setup figure
-    fig = plt.figure(figsize=(15, 5))
-    fig.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_yld = plt.figure(figsize=(15, 5))
+    fig_yld.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_cat_best = plt.figure(figsize=(15, 5))
+    fig_cat_best.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_cat_counts = plt.figure(figsize=(15, 5))
+    fig_cat_counts.subplots_adjust(wspace=0.2, hspace=0.5)
     k = 1
     axis_fontsize = 16
     heading_fontsize = 18
@@ -70,12 +95,14 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
             include_tags=include_tags,
             filter_tags=filter_tags,
             only_finished_runs=only_finished_runs,
-            # num_iterations=num_iterations,
+            num_iterations=num_iterations,
             extra_filters={
                 "config.ct_dataset_names": [f"reizman_suzuki_case_{i}"],
             },
         )
-        mtbo_dfs = [mtbo_df.iloc[:20, :] for mtbo_df in mtbo_dfs]
+        mtbo_dfs = [combine_pre_catalyst_ligand(mtbo_df) for mtbo_df in mtbo_dfs][
+            :num_repeats
+        ]
         stbo_head_start_dfs = get_wandb_run_dfs(
             api,
             wandb_entity=wandb_entity,
@@ -85,57 +112,124 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
             include_tags=include_tags,
             filter_tags=filter_tags,
             only_finished_runs=only_finished_runs,
-            # num_iterations=num_iterations,
+            num_iterations=num_iterations,
             extra_filters={
                 "config.ct_dataset_names": [f"reizman_suzuki_case_{i}"],
             },
         )
-        stbo_head_start_dfs = [stbo_df.iloc[:20, :] for stbo_df in stbo_head_start_dfs]
+        stbo_head_start_dfs = [
+            combine_pre_catalyst_ligand(stbo_df) for stbo_df in stbo_head_start_dfs
+        ][:num_repeats]
 
-        # Make comparison subplot
-        ax = fig.add_subplot(1, 4, k)
+        # Make yield comparison subplot
+        ax_yld = fig_yld.add_subplot(1, 4, k)
         make_yld_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
             dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",
-            ax=ax,
+            ax=ax_yld,
         )
 
         # Format subplot
-        ax.set_title(f"SB1 (Aux. {reizman_case_to_name[i]})", fontsize=heading_fontsize)
-        ax.set_xlim(0, 20)
-        ax.tick_params("y", labelsize=axis_fontsize)
+        ax_yld.set_title(
+            f"SB1 (Aux. {reizman_case_to_name[i]})", fontsize=heading_fontsize
+        )
+        ax_yld.set_xlim(0, 20)
+        ax_yld.tick_params("y", labelsize=axis_fontsize)
         xlabels = np.arange(0, 21, 5)
-        ax.set_xticks(xlabels)
-        ax.set_xticklabels(xlabels, fontsize=axis_fontsize)
-        ax.set_ylim(0, 100)
+        ax_yld.set_xticks(xlabels)
+        ax_yld.set_xticklabels(xlabels, fontsize=axis_fontsize)
+        ax_yld.set_ylim(0, 100)
+
+        # Make catalyst comparison plot
+        ax_cat_best = fig_cat_best.add_subplot(1, 4, k)
+        make_categorical_comparison_plot(
+            dict(results=stbo_dfs, label="STBO", color="#a50026"),
+            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+            categorical_variable="catalyst_smiles",
+            output_name="yld",
+            categorical_map=catalyst_map,
+            ax=ax_cat_best,
+            plot_type="best",
+        )
+        ax_cat_counts = fig_cat_counts.add_subplot(1, 4, k)
+        make_categorical_comparison_plot(
+            dict(results=stbo_dfs, label="STBO", color="#a50026"),
+            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+            categorical_variable="catalyst_smiles",
+            output_name="yld",
+            categorical_map=catalyst_map,
+            ax=ax_cat_counts,
+            plot_type="counts",
+        )
+
+        # Format subplot
+        ax_cat_best.set_title(
+            f"SB1 (Aux. {reizman_case_to_name[i]})", fontsize=heading_fontsize
+        )
+        ax_cat_best.set_ylim(0.0, 1.0)
+        ax_cat_best.tick_params("y", labelsize=12, direction="in")
+        ax_cat_counts.set_title(
+            f"SB1 (Aux. {reizman_case_to_name[i]})", fontsize=heading_fontsize
+        )
+        ax_cat_counts.set_ylim(0.0, 1.0)
+        ax_cat_counts.tick_params("y", labelsize=12, direction="in")
         k += 1
 
     # Format and save figure
-    # fig.suptitle("Baumgartner Optimization")
-    fig.supxlabel("Experiment number", fontsize=heading_fontsize)
-    fig.supylabel("Best Yield (%)", fontsize=heading_fontsize)
-    fig.tight_layout()
     figure_dir = Path(figure_dir)
-    fig.savefig(
+    fig_yld.supxlabel("Experiment number", fontsize=heading_fontsize)
+    fig_yld.supylabel("Best Yield (%)", fontsize=heading_fontsize)
+    fig_yld.tight_layout()
+    fig_yld.savefig(
         figure_dir
         / "baumgartner_suzuki_reizman_suzuki_one_cotraining_optimization.png",
         dpi=300,
         transparent=True,
     )
+
+    # Catalyst best
+    fig_cat_best.supxlabel("Catalyst", y=-0.01, fontsize=heading_fontsize)
+    fig_cat_best.supylabel(
+        "Frequency was best catalyst", x=-0.01, fontsize=heading_fontsize
+    )
+    fig_cat_best.tight_layout()
+    fig_cat_best.savefig(
+        figure_dir
+        / "baumgartner_suzuki_reizman_suzuki_one_cotraining_optimization_catalyst_best.png",
+        dpi=300,
+        transparent=True,
+        bbox_inches="tight",
+    )
+
+    # Catalyst counts
+    fig_cat_counts.supxlabel("Catalyst", y=-0.01, fontsize=heading_fontsize)
+    fig_cat_counts.supylabel("Frequency selected", x=-0.01, fontsize=heading_fontsize)
+    fig_cat_counts.tight_layout()
+    fig_cat_counts.savefig(
+        figure_dir
+        / "baumgartner_suzuki_reizman_suzuki_one_cotraining_optimization_catalyst_counts.png",
+        dpi=300,
+        transparent=True,
+        bbox_inches="tight",
+    )
     logger.info("Plots saved to %s", figure_dir)
 
 
 def baumgartner_suzuki_auxiliary_all_reizman_suzuki(
-    num_iterations: int = 20,
+    num_iterations: Optional[int] = 20,
+    num_repeats: Optional[int] = 20,
     include_tags: Optional[List[str]] = None,
     filter_tags: Optional[List[str]] = None,
-    only_finished_runs: bool = True,
-    wandb_entity: str = "ceb-sre",
-    wandb_project: str = "multitask",
-    figure_dir: str = "figures",
+    only_finished_runs: Optional[bool] = True,
+    wandb_entity: Optional[str] = "ceb-sre",
+    wandb_project: Optional[str] = "multitask",
+    figure_dir: Optional[str] = "figures",
 ):
+    """Make plots for Baumgartner Suzuki optimization with auxiliary of Reizman Suzuki."""
     # Wandb API
     api = wandb.Api()
 
@@ -153,9 +247,14 @@ def baumgartner_suzuki_auxiliary_all_reizman_suzuki(
         num_iterations=num_iterations,
         extra_filters={"config.ct_dataset_names": []},
     )
-    """Make plots for Baumgartner Suzuki optimization with auxiliary of Reizman Suzuki."""
+    stbo_dfs = [combine_pre_catalyst_ligand(stbo_df) for stbo_df in stbo_dfs][
+        :num_repeats
+    ]
+
     # Setup figure
-    fig, ax = plt.subplots(1, figsize=(5, 5))
+    fig_yld, ax_yld = plt.subplots(1, figsize=(5, 5))
+    fig_cat_best, ax_cat_best = plt.subplots(1, figsize=(5, 5))
+    fig_cat_counts, ax_cat_counts = plt.subplots(1, figsize=(5, 5))
     axis_fontsize = 16
     heading_fontsize = 18
     logger.info(
@@ -179,6 +278,9 @@ def baumgartner_suzuki_auxiliary_all_reizman_suzuki(
             ],
         },
     )
+    mtbo_dfs = [combine_pre_catalyst_ligand(mtbo_df) for mtbo_df in mtbo_dfs][
+        :num_repeats
+    ]
     stbo_head_start_dfs = get_wandb_run_dfs(
         api,
         wandb_entity=wandb_entity,
@@ -188,13 +290,16 @@ def baumgartner_suzuki_auxiliary_all_reizman_suzuki(
         include_tags=include_tags,
         filter_tags=filter_tags,
         only_finished_runs=only_finished_runs,
-        num_iterations=num_iterations,
+        # num_iterations=num_iterations,
         extra_filters={
             "config.ct_dataset_names": [
                 f"reizman_suzuki_case_{j}" for j in range(1, 5)
             ],
         },
     )
+    stbo_head_start_dfs = [
+        combine_pre_catalyst_ligand(stbo_df) for stbo_df in stbo_head_start_dfs
+    ][:num_repeats]
 
     # Make comparison subplot
     make_yld_comparison_plot(
@@ -202,35 +307,94 @@ def baumgartner_suzuki_auxiliary_all_reizman_suzuki(
         dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
         dict(results=mtbo_dfs, label="MTBO", color="#313695"),
         output_name="yld_best",
-        ax=ax,
+        ax=ax_yld,
     )
 
     # Format subplot
-    ax.set_xlim(0, 20)
-    ax.tick_params("y", labelsize=axis_fontsize)
+    ax_yld.set_xlim(0, 20)
+    ax_yld.tick_params("y", labelsize=axis_fontsize)
     xlabels = np.arange(0, 21, 5)
-    ax.set_xticks(xlabels)
-    ax.set_xticklabels(xlabels, fontsize=axis_fontsize)
-    ax.set_ylim(0, 100)
-    k += 1
+    ax_yld.set_xticks(xlabels)
+    ax_yld.set_xticklabels(xlabels, fontsize=axis_fontsize)
+    ax_yld.set_ylim(0, 100)
+
+    # Categorical plots
+    make_categorical_comparison_plot(
+        dict(results=stbo_dfs, label="STBO", color="#a50026"),
+        dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+        dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+        categorical_variable="catalyst_smiles",
+        output_name="yld",
+        categorical_map=catalyst_map,
+        ax=ax_cat_best,
+        plot_type="best",
+    )
+    make_categorical_comparison_plot(
+        dict(results=stbo_dfs, label="STBO", color="#a50026"),
+        dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+        dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+        categorical_variable="catalyst_smiles",
+        output_name="yld",
+        categorical_map=catalyst_map,
+        ax=ax_cat_counts,
+        plot_type="counts",
+    )
+
+    # Format subplot
+    ax_cat_best.set_title(
+        f"SB1 (Aux. {reizman_case_to_name[i]})", fontsize=heading_fontsize
+    )
+    ax_cat_best.set_ylim(0.0, 1.0)
+    ax_cat_best.tick_params("y", labelsize=12, direction="in")
+    ax_cat_counts.set_title(
+        f"SB1 (Aux. {reizman_case_to_name[i]})", fontsize=heading_fontsize
+    )
+    ax_cat_counts.set_ylim(0.0, 1.0)
+    ax_cat_counts.tick_params("y", labelsize=12, direction="in")
 
     # Format and save figure
-    # fig.suptitle("Baumgartner Optimization")
-    ax.set_xlabel("Experiment number", fontsize=heading_fontsize)
-    ax.set_ylabel("Best Yield (%)", fontsize=heading_fontsize)
-    fig.tight_layout()
+    ax_yld.set_xlabel("Experiment number", fontsize=heading_fontsize)
+    ax_yld.set_ylabel("Best Yield (%)", fontsize=heading_fontsize)
+    fig_yld.tight_layout()
     figure_dir = Path(figure_dir)
-    fig.savefig(
+    fig_yld.savefig(
         figure_dir
         / "baumgartner_suzuki_reizman_suzuki_all_cotraining_optimization.png",
         dpi=300,
         transparent=True,
+    )
+
+    # Catalyst best
+    fig_cat_best.supxlabel("Catalyst", y=-0.01, fontsize=heading_fontsize)
+    fig_cat_best.supylabel(
+        "Frequency was best catalyst", x=-0.01, fontsize=heading_fontsize
+    )
+    fig_cat_best.tight_layout()
+    fig_cat_best.savefig(
+        figure_dir
+        / "baumgartner_suzuki_reizman_suzuki_all_cotraining_optimization_catalyst_best.png",
+        dpi=300,
+        transparent=True,
+        bbox_inches="tight",
+    )
+
+    # Catalyst counts
+    fig_cat_counts.supxlabel("Catalyst", y=-0.01, fontsize=heading_fontsize)
+    fig_cat_counts.supylabel("Frequency selected", x=-0.01, fontsize=heading_fontsize)
+    fig_cat_counts.tight_layout()
+    fig_cat_counts.savefig(
+        figure_dir
+        / "baumgartner_suzuki_reizman_suzuki_all_cotraining_optimization_catalyst_counts.png",
+        dpi=300,
+        transparent=True,
+        bbox_inches="tight",
     )
     logger.info("Plots saved to %s", figure_dir)
 
 
 def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
     num_iterations: int = 20,
+    num_repeats: int = 20,
     include_tags: Optional[List[str]] = None,
     filter_tags: Optional[List[str]] = None,
     only_finished_runs: bool = True,
@@ -243,14 +407,17 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
     api = wandb.Api()
 
     # Setup figure
-    fig = plt.figure(figsize=(15, 5))
-    fig.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_yld = plt.figure(figsize=(15, 5))
+    fig_yld.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_cat_best = plt.figure(figsize=(15, 5))
+    fig_cat_best.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_cat_counts = plt.figure(figsize=(15, 5))
+    fig_cat_counts.subplots_adjust(wspace=0.2, hspace=0.5)
     k = 1
     axis_fontsize = 14
     heading_fontsize = 18
 
     # Make subplots for each case
-    # letters = ["a", "b", "c", "d"]
     logger.info(
         "Making plots for Reizman Suzuki optimization with auxiliary of Baumgartner Suzuki"
     )
@@ -269,6 +436,9 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
             num_iterations=num_iterations,
             extra_filters={"config.ct_dataset_names": []},
         )
+        stbo_dfs = [combine_pre_catalyst_ligand(stbo_df) for stbo_df in stbo_dfs][
+            :num_repeats
+        ]
 
         # MTBO data
         logger.info(
@@ -288,6 +458,9 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
                 "config.ct_dataset_names": [f"baumgartner_suzuki"],
             },
         )
+        mtbo_dfs = [combine_pre_catalyst_ligand(mtbo_df) for mtbo_df in mtbo_dfs][
+            :num_repeats
+        ]
         stbo_head_start_dfs = get_wandb_run_dfs(
             api,
             wandb_entity=wandb_entity,
@@ -302,47 +475,115 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
                 "config.ct_dataset_names": [f"baumgartner_suzuki"],
             },
         )
+        stbo_head_start_dfs = [
+            combine_pre_catalyst_ligand(stbo_df) for stbo_df in stbo_head_start_dfs
+        ][:num_repeats]
 
         logger.info(
             f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Baumgarnter Suzuki",
         )
 
         # Make subplot
-        ax = fig.add_subplot(1, 4, k)
+        ax_yld = fig_yld.add_subplot(1, 4, k)
         make_yld_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
             dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",
-            ax=ax,
+            ax=ax_yld,
         )
 
         # Format subplot
-        ax.set_title(f"{reizman_case_to_name[i]} (Aux. SB1)", fontsize=heading_fontsize)
-        ax.set_xlim(0, 20)
-        ax.tick_params("y", labelsize=axis_fontsize)
+        ax_yld.set_title(
+            f"{reizman_case_to_name[i]} (Aux. SB1)", fontsize=heading_fontsize
+        )
+        ax_yld.set_xlim(0, 20)
+        ax_yld.tick_params("y", labelsize=axis_fontsize)
         xlabels = np.arange(0, 21, 5)
-        ax.set_xticks(xlabels)
-        ax.set_xticklabels(xlabels, fontsize=axis_fontsize)
-        ax.set_ylim(0, 100)
+        ax_yld.set_xticks(xlabels)
+        ax_yld.set_xticklabels(xlabels, fontsize=axis_fontsize)
+        ax_yld.set_ylim(0, 100)
+
+        # Make catalyst comparison plot
+        ax_cat_best = fig_cat_best.add_subplot(1, 4, k)
+        make_categorical_comparison_plot(
+            dict(results=stbo_dfs, label="STBO", color="#a50026"),
+            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+            categorical_variable="catalyst_smiles",
+            output_name="yld",
+            categorical_map=catalyst_map,
+            ax=ax_cat_best,
+            plot_type="best",
+        )
+        ax_cat_counts = fig_cat_counts.add_subplot(1, 4, k)
+        make_categorical_comparison_plot(
+            dict(results=stbo_dfs, label="STBO", color="#a50026"),
+            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+            categorical_variable="catalyst_smiles",
+            output_name="yld",
+            categorical_map=catalyst_map,
+            ax=ax_cat_counts,
+            plot_type="counts",
+        )
+
+        # Format subplot
+        ax_cat_best.set_title(
+            f"{reizman_case_to_name[i]} (Aux. SB1)", fontsize=heading_fontsize
+        )
+        ax_cat_best.set_ylim(0.0, 1.0)
+        ax_cat_best.tick_params("y", labelsize=12, direction="in")
+        ax_cat_counts.set_title(
+            f"{reizman_case_to_name[i]} (Aux. SB1)", fontsize=heading_fontsize
+        )
+        ax_cat_counts.set_ylim(0.0, 1.0)
+        ax_cat_counts.tick_params("y", labelsize=12, direction="in")
         k += 1
 
     # Format and save figure
     # fig.suptitle("Reizman Optimization", fontsize=21)
-    fig.supxlabel("Experiment number", fontsize=heading_fontsize)
-    fig.supylabel("Best Yield (%)", fontsize=heading_fontsize)
-    fig.tight_layout()
+    fig_yld.supxlabel("Experiment number", fontsize=heading_fontsize)
+    fig_yld.supylabel("Best Yield (%)", fontsize=heading_fontsize)
+    fig_yld.tight_layout()
     figure_dir = Path(figure_dir)
-    fig.savefig(
+    fig_yld.savefig(
         figure_dir
         / "reizman_suzuki_baumgartner_suzuki_one_cotraining_optimization.png",
         dpi=300,
+    )
+
+    # Catalyst best
+    fig_cat_best.supxlabel("Catalyst", y=-0.01, fontsize=heading_fontsize)
+    fig_cat_best.supylabel(
+        "Frequency was best catalyst", x=-0.01, fontsize=heading_fontsize
+    )
+    fig_cat_best.tight_layout()
+    fig_cat_best.savefig(
+        figure_dir
+        / "reizman_suzuki_baumgartner_suzuki_one_cotraining_optimization_catalyst_best.png",
+        dpi=300,
+        transparent=True,
+        bbox_inches="tight",
+    )
+
+    # Catalyst counts
+    fig_cat_counts.supxlabel("Catalyst", y=-0.01, fontsize=heading_fontsize)
+    fig_cat_counts.supylabel("Frequency selected", x=-0.01, fontsize=heading_fontsize)
+    fig_cat_counts.tight_layout()
+    fig_cat_counts.savefig(
+        figure_dir
+        / "reizman_suzuki_baumgartner_suzuki_one_cotraining_optimization_catalyst_counts.png",
+        dpi=300,
+        transparent=True,
+        bbox_inches="tight",
     )
     logger.info("Plots saved to %s", figure_dir)
 
 
 def reizman_suzuki_auxiliary_one_reizman_suzuki(
     num_iterations: int = 20,
+    num_repeats: int = 20,
     include_tags: Optional[List[str]] = None,
     filter_tags: Optional[List[str]] = None,
     only_finished_runs: bool = True,
@@ -355,8 +596,12 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
     api = wandb.Api()
 
     # Setup figure
-    fig = plt.figure(figsize=(15, 15))
-    fig.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_yld = plt.figure(figsize=(15, 15))
+    fig_yld.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_cat_best = plt.figure(figsize=(15, 15))
+    fig_cat_best.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_cat_counts = plt.figure(figsize=(15, 15))
+    fig_cat_counts.subplots_adjust(wspace=0.2, hspace=0.5)
     k = 1
     axis_fontsize = 14
     heading_fontsize = 18
@@ -380,6 +625,9 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
             num_iterations=num_iterations,
             extra_filters={"config.ct_dataset_names": []},
         )
+        stbo_dfs = [combine_pre_catalyst_ligand(stbo_df) for stbo_df in stbo_dfs][
+            :num_repeats
+        ]
         for j in range(1, 5):
             if i != j:
                 # Get MTBO data
@@ -400,6 +648,9 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
                         "config.ct_dataset_names": [f"reizman_suzuki_case_{j}"],
                     },
                 )
+                mtbo_dfs = [
+                    combine_pre_catalyst_ligand(mtbo_df) for mtbo_df in mtbo_dfs
+                ][:num_repeats]
                 stbo_head_start_dfs = get_wandb_run_dfs(
                     api,
                     wandb_entity=wandb_entity,
@@ -414,46 +665,117 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
                         "config.ct_dataset_names": [f"reizman_suzuki_case_{j}"],
                     },
                 )
+                stbo_head_start_dfs = [
+                    combine_pre_catalyst_ligand(stbo_df)
+                    for stbo_df in stbo_head_start_dfs
+                ][:num_repeats]
                 logger.info(
                     f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Reizman Suzuki case {j}"
                 )
 
-                # # Make subplot
-                ax = fig.add_subplot(4, 3, k)
+                # Make subplot
+                ax_yld = fig_yld.add_subplot(4, 3, k)
                 make_yld_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
                     dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
                     output_name="yld_best",
-                    ax=ax,
+                    ax=ax_yld,
                 )
-                ax.set_title(
+
+                # Format plot
+                ax_yld.set_title(
                     f"{reizman_case_to_name[i]} (Aux. {reizman_case_to_name[j]})",
                     fontsize=heading_fontsize,
                 )
-                ax.set_xlim(0, 20)
-                ax.tick_params("y", labelsize=axis_fontsize)
+                ax_yld.set_xlim(0, 20)
+                ax_yld.tick_params("y", labelsize=axis_fontsize)
                 xlabels = np.arange(0, 21, 5)
-                ax.set_xticks(xlabels)
-                ax.set_xticklabels(xlabels, fontsize=axis_fontsize)
-                ax.set_ylim(0, 100)
+                ax_yld.set_xticks(xlabels)
+                ax_yld.set_xticklabels(xlabels, fontsize=axis_fontsize)
+                ax_yld.set_ylim(0, 100)
+
+                # Make catalyst comparison plot
+                ax_cat_best = fig_cat_best.add_subplot(4, 3, k)
+                make_categorical_comparison_plot(
+                    dict(results=stbo_dfs, label="STBO", color="#a50026"),
+                    dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+                    dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+                    categorical_variable="catalyst_smiles",
+                    output_name="yld",
+                    categorical_map=catalyst_map,
+                    ax=ax_cat_best,
+                    plot_type="best",
+                )
+                ax_cat_counts = fig_cat_counts.add_subplot(4, 3, k)
+                make_categorical_comparison_plot(
+                    dict(results=stbo_dfs, label="STBO", color="#a50026"),
+                    dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+                    dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+                    categorical_variable="catalyst_smiles",
+                    output_name="yld",
+                    categorical_map=catalyst_map,
+                    ax=ax_cat_counts,
+                    plot_type="counts",
+                )
+
+                # Format subplot
+                ax_cat_best.set_title(
+                    f"{reizman_case_to_name[i]} (Aux. {reizman_case_to_name[j]})",
+                    fontsize=heading_fontsize,
+                )
+                ax_cat_best.set_ylim(0.0, 1.0)
+                ax_cat_best.tick_params("y", labelsize=12, direction="in")
+                ax_cat_counts.set_title(
+                    f"{reizman_case_to_name[i]} (Aux. {reizman_case_to_name[j]})",
+                    fontsize=heading_fontsize,
+                )
+                ax_cat_counts.set_ylim(0.0, 1.0)
+                ax_cat_counts.tick_params("y", labelsize=12, direction="in")
                 k += 1
 
     # Format plot
     # fig.suptitle("Reizman Optimization")
-    fig.supxlabel("Experiment number", fontsize=heading_fontsize)
-    fig.supylabel("Best Yield (%)", fontsize=heading_fontsize)
-    fig.tight_layout()
+    fig_yld.supxlabel("Experiment number", fontsize=heading_fontsize)
+    fig_yld.supylabel("Best Yield (%)", fontsize=heading_fontsize)
+    fig_yld.tight_layout()
     figure_dir = Path(figure_dir)
-    fig.savefig(
+    fig_yld.savefig(
         figure_dir / "reizman_suzuki_reizman_suzuki_one_cotraining_optimization.png",
         dpi=300,
+    )
+
+    # Catalyst best
+    fig_cat_best.supxlabel("Catalyst", y=-0.01, fontsize=heading_fontsize)
+    fig_cat_best.supylabel(
+        "Frequency was best catalyst", x=-0.01, fontsize=heading_fontsize
+    )
+    fig_cat_best.tight_layout()
+    fig_cat_best.savefig(
+        figure_dir
+        / "reizman_suzuki_reizman_suzuki_one_cotraining_optimization_catalyst_best.png",
+        dpi=300,
+        transparent=True,
+        bbox_inches="tight",
+    )
+
+    # Catalyst counts
+    fig_cat_counts.supxlabel("Catalyst", y=-0.01, fontsize=heading_fontsize)
+    fig_cat_counts.supylabel("Frequency selected", x=-0.01, fontsize=heading_fontsize)
+    fig_cat_counts.tight_layout()
+    fig_cat_counts.savefig(
+        figure_dir
+        / "reizman_suzuki_reizman_suzuki_one_cotraining_optimization_catalyst_counts.png",
+        dpi=300,
+        transparent=True,
+        bbox_inches="tight",
     )
     logger.info("Plots saved to %s", figure_dir)
 
 
 def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
     num_iterations: int = 20,
+    num_repeats: int = 20,
     include_tags: Optional[List[str]] = None,
     filter_tags: Optional[List[str]] = None,
     only_finished_runs: bool = True,
@@ -466,8 +788,12 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
     api = wandb.Api()
 
     # Setup figure
-    fig = plt.figure(figsize=(15, 5))
-    fig.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_yld = plt.figure(figsize=(15, 5))
+    fig_yld.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_cat_best = plt.figure(figsize=(15, 5))
+    fig_cat_best.subplots_adjust(wspace=0.2, hspace=0.5)
+    fig_cat_counts = plt.figure(figsize=(15, 5))
+    fig_cat_counts.subplots_adjust(wspace=0.2, hspace=0.5)
     k = 1
     axis_fontsize = 14
     heading_fontsize = 18
@@ -475,7 +801,7 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
     # Make subplots for each case
     # letters = ["a", "b", "c", "d"]
     logger.info(
-        "Making plots for Reizman Suzuki optimization with auxiliary of all REizman Suzuki"
+        "Making plots for Reizman Suzuki optimization with auxiliary of all Reizman Suzuki"
     )
     for i in range(1, 5):
         # STBO data
@@ -492,6 +818,9 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
             num_iterations=num_iterations,
             extra_filters={"config.ct_dataset_names": []},
         )
+        stbo_dfs = [combine_pre_catalyst_ligand(stbo_df) for stbo_df in stbo_dfs][
+            :num_repeats
+        ]
 
         # MTBO data
         logger.info(
@@ -513,6 +842,9 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
                 ],
             },
         )
+        mtbo_dfs = [combine_pre_catalyst_ligand(mtbo_df) for mtbo_df in mtbo_dfs][
+            :num_repeats
+        ]
         stbo_head_start_dfs = get_wandb_run_dfs(
             api,
             wandb_entity=wandb_entity,
@@ -529,45 +861,110 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
                 ],
             },
         )
+        stbo_head_start_dfs = [
+            combine_pre_catalyst_ligand(stbo_df) for stbo_df in stbo_head_start_dfs
+        ][:num_repeats]
 
         logger.info(
             f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Baumgarnter Suzuki",
         )
 
         # Make subplot
-        ax = fig.add_subplot(1, 4, k)
+        ax_yld = fig_yld.add_subplot(1, 4, k)
         make_yld_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
             dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",
-            ax=ax,
+            ax=ax_yld,
         )
 
         # Format subplot
         aux_names = ",".join(
             [f"{reizman_case_to_name[j]}" for j in range(1, 5) if j != i]
         )
-        ax.set_title(
+        ax_yld.set_title(
             f"{reizman_case_to_name[i]} (Aux. {aux_names})", fontsize=heading_fontsize
         )
         xlabels = np.arange(0, 21, 5)
-        ax.set_xticks(xlabels)
-        ax.set_xticklabels(xlabels, fontsize=axis_fontsize)
-        ax.set_yticks([0, 20, 40, 60, 80, 100, 120])
-        ax.set_yticklabels([0, 20, 40, 60, 80, 100, ""], fontsize=axis_fontsize)
-        ax.tick_params(direction="in")
+        ax_yld.set_xticks(xlabels)
+        ax_yld.set_xticklabels(xlabels, fontsize=axis_fontsize)
+        ax_yld.set_yticks([0, 20, 40, 60, 80, 100, 120])
+        ax_yld.set_yticklabels([0, 20, 40, 60, 80, 100, ""], fontsize=axis_fontsize)
+        ax_yld.tick_params(direction="in")
+
+        # Make catalyst comparison plot
+        ax_cat_best = fig_cat_best.add_subplot(1, 4, k)
+        make_categorical_comparison_plot(
+            dict(results=stbo_dfs, label="STBO", color="#a50026"),
+            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+            categorical_variable="catalyst_smiles",
+            output_name="yld",
+            categorical_map=catalyst_map,
+            ax=ax_cat_best,
+            plot_type="best",
+        )
+        ax_cat_counts = fig_cat_counts.add_subplot(1, 4, k)
+        make_categorical_comparison_plot(
+            dict(results=stbo_dfs, label="STBO", color="#a50026"),
+            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            dict(results=mtbo_dfs, label="MTBO", color="#313695"),
+            categorical_variable="catalyst_smiles",
+            output_name="yld",
+            categorical_map=catalyst_map,
+            ax=ax_cat_counts,
+            plot_type="counts",
+        )
+
+        # Format subplot
+        ax_cat_best.set_title(
+            f"{reizman_case_to_name[i]} (Aux. {aux_names})", fontsize=heading_fontsize
+        )
+        ax_cat_best.set_ylim(0.0, 1.0)
+        ax_cat_best.tick_params("y", labelsize=12, direction="in")
+        ax_cat_counts.set_title(
+            f"{reizman_case_to_name[i]} (Aux. {aux_names})", fontsize=heading_fontsize
+        )
+        ax_cat_counts.set_ylim(0.0, 1.0)
+        ax_cat_counts.tick_params("y", labelsize=12, direction="in")
         k += 1
 
     # Format and save figure
     # fig.suptitle("Reizman Optimization", fontsize=21)
-    fig.supxlabel("Experiment number", fontsize=heading_fontsize)
-    fig.supylabel("Best Yield (%)", fontsize=heading_fontsize)
-    fig.tight_layout()
+    fig_yld.supxlabel("Experiment number", fontsize=heading_fontsize)
+    fig_yld.supylabel("Best Yield (%)", fontsize=heading_fontsize)
+    fig_yld.tight_layout()
     figure_dir = Path(figure_dir)
-    fig.savefig(
+    fig_yld.savefig(
         figure_dir / "reizman_suzuki_reizman_suzuki_all_cotraining_optimization.png",
         dpi=300,
+    )
+
+    # Catalyst best
+    fig_cat_best.supxlabel("Catalyst", y=-0.01, fontsize=heading_fontsize)
+    fig_cat_best.supylabel(
+        "Frequency was best catalyst", x=-0.01, fontsize=heading_fontsize
+    )
+    fig_cat_best.tight_layout()
+    fig_cat_best.savefig(
+        figure_dir
+        / "reizman_suzuki_reizman_suzuki_all_cotraining_optimization_catalyst_best.png",
+        dpi=300,
+        transparent=True,
+        bbox_inches="tight",
+    )
+
+    # Catalyst counts
+    fig_cat_counts.supxlabel("Catalyst", y=-0.01, fontsize=heading_fontsize)
+    fig_cat_counts.supylabel("Frequency selected", x=-0.01, fontsize=heading_fontsize)
+    fig_cat_counts.tight_layout()
+    fig_cat_counts.savefig(
+        figure_dir
+        / "reizman_suzuki_reizman_suzuki_all_cotraining_optimization_catalyst_counts.png",
+        dpi=300,
+        transparent=True,
+        bbox_inches="tight",
     )
     logger.info("Plots saved to %s", figure_dir)
 

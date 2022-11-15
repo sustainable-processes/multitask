@@ -6,12 +6,13 @@ import json
 from tqdm import tqdm
 from pathlib import Path
 from typing import Dict, List, Optional
+from matplotlib.axes import Axes
 
 
 def make_average_plot(
     results: List[pd.DataFrame],
     output_name: str,
-    ax,
+    ax: Axes,
     label: Optional[str] = None,
     color: Optional[str] = None,
 ):
@@ -35,7 +36,7 @@ def make_average_plot(
 
 
 def make_repeats_plot(
-    results: List[pd.DataFrame], output_name: str, ax, label=None, color=None
+    results: List[pd.DataFrame], output_name: str, ax: Axes, label=None, color=None
 ):
     yields = [df[output_name] for df in results]
     x = np.arange(0, len(yields[0]), 1).astype(int)
@@ -54,7 +55,9 @@ def make_repeats_plot(
         )
 
 
-def make_yld_comparison_plot(*args, output_name: str, ax, plot_type: str = "average"):
+def make_yld_comparison_plot(
+    *args, output_name: str, ax: Axes, plot_type: str = "average"
+):
     for arg in args:
         if plot_type == "average":
             make_average_plot(
@@ -85,39 +88,117 @@ def make_yld_comparison_plot(*args, output_name: str, ax, plot_type: str = "aver
     return ax
 
 
-def make_bar_chart(results: List[pd.DataFrame], categorical_names: List[str], ax):
-    pass
+def make_best_plot(
+    *args,
+    output_name: str,
+    categorical_variable: str,
+    ax: Axes,
+    categorical_map: Optional[Dict[str, str]] = None,
+    normalize: bool = True,
+):
+    best_dict = {}
+    for arg in args:
+        dfs = arg["results"]
+        best_values = []
+        for df in dfs:
+            ind = df[output_name].argmax()
+            best_values.append(df.loc[ind, categorical_variable].values[0])
+        best_dict[arg["label"]] = best_values
+    display_df = pd.DataFrame(best_dict)
+    if categorical_map is not None:
+        display_df = display_df.replace(categorical_map)
+    ser = [
+        display_df[col].value_counts(normalize=normalize) for col in display_df.columns
+    ]
+    count_df = pd.DataFrame(ser).T
+    color = {arg["label"]: arg["color"] for arg in args}
+    count_df.plot.bar(ax=ax, rot=45, color=color)
+    return ax
+
+
+def make_counts_plot(
+    *args,
+    output_name: str,
+    categorical_variable: str,
+    ax: Axes,
+    categorical_map: Optional[Dict[str, str]] = None,
+    normalize: bool = True,
+):
+    count_dfs = []
+    for arg in args:
+        big_df = pd.concat(arg["results"])
+        if categorical_map is not None:
+            big_df = big_df.replace(categorical_map)
+        count_series = big_df.groupby(categorical_variable).size()
+        count_dfs.append(count_series)
+    count_df = pd.concat(count_dfs, axis=1, join="outer").fillna(0)
+    count_df = count_df.rename(columns={i: arg["label"] for i, arg in enumerate(args)})
+
+    if normalize:
+        count_df = count_df / count_df.sum()
+    color = {arg["label"]: arg["color"] for arg in args}
+    count_df.plot.bar(ax=ax, rot=45, color=color)
+    return ax
 
 
 def make_categorical_comparison_plot(
-    *args, output_name: str, ax, plot_type: str = "average"
+    *args,
+    output_name: str,
+    categorical_variable: str,
+    ax: Axes,
+    categorical_map: Optional[Dict[str, str]] = None,
+    normalize: bool = True,
+    plot_type: str = "best",
 ):
-    for arg in args:
-        if plot_type == "average":
-            make_average_plot(
-                arg["results"],
-                output_name,
-                ax,
-                label=arg["label"],
-                color=arg.get("color"),
-            )
-        elif plot_type == "repeats":
-            make_repeats_plot(
-                arg["results"],
-                output_name,
-                ax,
-                label=arg["label"],
-                color=arg.get("color"),
-            )
-        else:
-            raise ValueError(f"{plot_type} must be average or repeats")
+    """Make a comparison of how often each categorical variable is the best
+
+    Parameters
+    ----------
+    args : List[Dict]
+        A list of dictionaries with the following keys:
+            - results: List[pd.DataFrame]
+                A list of dataframes with the results of the experiment
+            - label: str
+                The label for the plot
+            - color: str
+                The color for the plot
+    output_name : str
+        The name of the output variable
+    categorical_variable : str
+        The name of the categorical variable
+    ax : Axes
+        The matplotlib axes to plot on
+    categorical_map : Dict[str, str], optional
+        A dictionary mapping the categorical variable to a string, by default None
+    normalize : bool, optional
+        Whether to normalize the results, by default True
+
+
+    """
+    # Plot frequency of each categorical value selection
+    # each categorical value was the best
+    if plot_type == "best":
+        make_best_plot(
+            *args,
+            output_name=output_name,
+            categorical_variable=categorical_variable,
+            ax=ax,
+            categorical_map=categorical_map,
+            normalize=normalize,
+        )
+    elif plot_type == "counts":
+        make_counts_plot(
+            *args,
+            output_name=output_name,
+            categorical_variable=categorical_variable,
+            ax=ax,
+            categorical_map=categorical_map,
+            normalize=normalize,
+        )
+
+    # Format plot
     fontdict = fontdict = {"size": 12}
-    if plot_type == "average":
-        ax.legend(prop=fontdict, framealpha=0.0)
-    else:
-        ax.legend(prop=fontdict)
-    ax.set_xlim(0, 20)
-    ax.set_xticks(np.arange(0, 20, 2).astype(int))
+    ax.legend(prop=fontdict, framealpha=0.0)
     ax.tick_params(direction="in")
     return ax
 
@@ -147,7 +228,6 @@ def get_wandb_run_dfs(
     only_finished_runs: bool = True,
     extra_filters: Optional[Dict] = None,
     num_iterations: Optional[int] = None,
-    columns: Optional[List[str]] = None,
 ) -> List[DataSet]:
     """Get data from wandb"""
     filters = {
@@ -184,7 +264,9 @@ def get_wandb_run_dfs(
     #     columns = ["yld_best"]
     # dfs = [run.history(x_axis="iteration", keys=columns) for run in tqdm(runs)]
     if num_iterations is not None:
-        dfs = [df for df in dfs if df.shape[0] == num_iterations]
+        dfs = [
+            df.iloc[:num_iterations, :] for df in dfs if df.shape[0] >= num_iterations
+        ]
     if len(dfs) == 0:
         raise ValueError(f"No {model_name} {strategy} runs found")
     return dfs
