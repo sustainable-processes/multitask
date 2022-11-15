@@ -837,9 +837,7 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
             only_finished_runs=only_finished_runs,
             num_iterations=num_iterations,
             extra_filters={
-                "config.ct_dataset_names": [
-                    f"reizman_suzuki_case_{j}" for j in range(1, 5) if j != i
-                ],
+                "config.ct_dataset_names": [f"baumgartner_suzuki"],
             },
         )
         mtbo_dfs = [combine_pre_catalyst_ligand(mtbo_df) for mtbo_df in mtbo_dfs][
@@ -855,11 +853,7 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
             filter_tags=filter_tags,
             only_finished_runs=only_finished_runs,
             num_iterations=num_iterations,
-            extra_filters={
-                "config.ct_dataset_names": [
-                    f"reizman_suzuki_case_{j}" for j in range(1, 5) if j != i
-                ],
-            },
+            extra_filters={"config.ct_dataset_names": [f"baumgartner_suzuki"]},
         )
         stbo_head_start_dfs = [
             combine_pre_catalyst_ligand(stbo_df) for stbo_df in stbo_head_start_dfs
@@ -937,7 +931,8 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
     fig_yld.tight_layout()
     figure_dir = Path(figure_dir)
     fig_yld.savefig(
-        figure_dir / "reizman_suzuki_reizman_suzuki_all_cotraining_optimization.png",
+        figure_dir
+        / "reizman_suzuki_baumgartner_suzuki_all_cotraining_optimization.png",
         dpi=300,
     )
 
@@ -949,7 +944,7 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
     fig_cat_best.tight_layout()
     fig_cat_best.savefig(
         figure_dir
-        / "reizman_suzuki_reizman_suzuki_all_cotraining_optimization_catalyst_best.png",
+        / "reizman_suzuki_baumgartner_suzuki_all_cotraining_optimization_catalyst_best.png",
         dpi=300,
         transparent=True,
         bbox_inches="tight",
@@ -961,7 +956,7 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
     fig_cat_counts.tight_layout()
     fig_cat_counts.savefig(
         figure_dir
-        / "reizman_suzuki_reizman_suzuki_all_cotraining_optimization_catalyst_counts.png",
+        / "reizman_suzuki_baumgartner_suzuki_all_cotraining_optimization_catalyst_counts.png",
         dpi=300,
         transparent=True,
         bbox_inches="tight",
