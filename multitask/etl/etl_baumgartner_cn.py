@@ -59,7 +59,6 @@ def main(
     output_path.mkdir(exist_ok=True)
 
     # Extract data
-
     df_all_rxn_data = pd.read_excel(input_file, sheet_name=rxn_sheet_name)
     df_stock_solutions = pd.read_excel(input_file, sheet_name=stock_sheet_name)
     cat_nucleophile = df_all_rxn_data["Optimization"].str.split(" - ", expand=True)
@@ -146,10 +145,10 @@ nucleophiles = {
 
 
 ligands = {
-    "EPhos": {
-        "smiles": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=C(C(=CC=C2)OC(C)C)P(C3CCCCC3)C4CCCCC4)C(C)C",
-        "name": "EPhos",
-    },
+    # "EPhos": {
+    #     "smiles": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=C(C(=CC=C2)OC(C)C)P(C3CCCCC3)C4CCCCC4)C(C)C",
+    #     "name": "EPhos",
+    # },
     "tBuXPhos": {
         "smiles": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=CC=CC=C2P(C(C)(C)C)C(C)(C)C)C(C)C",
         "name": "tBuXPhos",
@@ -171,7 +170,6 @@ solvents = {
 
 bases = {
     "TEA": {"smiles": "CCN(CC)CC", "name": "TEA"},
-    "Triethylamine": {"smiles": "CCN(CC)CC", "name": "TEA"},
     "TMG": {"smiles": "CN(C)C(=N)N(C)C", "name": "TMG"},
     "BTMG": {"smiles": "CC(C)(C)N=C(N(C)C)N(C)C", "name": "BTMG"},
     "DBU": {"smiles": "C1CCC2=NCCCN2CC1", "name": "DBU"},

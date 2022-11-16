@@ -147,6 +147,7 @@ def stbo(
                                 )
                                 for ct_dataset_name in ct_dataset_names
                             ]
+
                         elif benchmark_type == BenchmarkType.cn:
                             ds_list = [
                                 get_cn_dataset(
@@ -155,6 +156,22 @@ def stbo(
                                 )
                                 for ct_dataset_name in ct_dataset_names
                             ]
+                            bases = exp.domain["base"].levels
+                            catalysts = exp.domain["catalyst"].levels
+                            ds_list = [
+                                filter_cn_dataset(
+                                    catalysts=catalysts, bases=bases, dataset=ds
+                                )
+                                for ds in ds_list
+                            ]
+                            wandb.config.update(
+                                {
+                                    "ct_dataset_sizes": {
+                                        name: ds.shape[0]
+                                        for name, ds in zip(ct_dataset_names, ds_list)
+                                    }
+                                }
+                            )
                         for i, ds in enumerate(ds_list):
                             ds["task", "METADATA"] = i
                         big_ds = pd.concat(ds_list)
@@ -306,6 +323,22 @@ def mtbo(
                             )
                             for ct_dataset_name in ct_dataset_names
                         ]
+                        bases = exp.domain["base"].levels
+                        catalysts = exp.domain["catalyst"].levels
+                        ds_list = [
+                            filter_cn_dataset(
+                                catalysts=catalysts, bases=bases, dataset=ds
+                            )
+                            for ds in ds_list
+                        ]
+                        wandb.config.update(
+                            {
+                                "ct_dataset_sizes": {
+                                    name: ds.shape[0]
+                                    for name, ds in zip(ct_dataset_names, ds_list)
+                                }
+                            }
+                        )
                     for i, ds in enumerate(ds_list):
                         ds["task", "METADATA"] = i
                     big_ds = pd.concat(ds_list)
@@ -345,6 +378,13 @@ def mtbo(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
                 )
                 done = True
+
+
+def filter_cn_dataset(catalysts: List[str], bases: List[str], dataset: pd.DataFrame):
+    """Filter a C-N dataset to only include the specified catalysts and bases"""
+    return dataset[
+        (dataset["catalyst"].isin(catalysts)) & (dataset["base"].isin(bases))
+    ]
 
 
 class STBOCallback:

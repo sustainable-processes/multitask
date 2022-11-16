@@ -77,6 +77,8 @@ def train_benchmark(
     fig.savefig(figure_path / f"{dataset_name}_parity_plot.png", dpi=300)
 
     # Save emulator
+    save_path = Path(save_path)
+    save_path.mkdir(parents=True, exist_ok=True)
     emulator.save(save_dir=save_path)
 
     # Upload results to wandb

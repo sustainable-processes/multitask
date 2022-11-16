@@ -44,7 +44,6 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
     wandb_entity: str = "ceb-sre",
     wandb_project: str = "multitask",
     figure_dir: str = "figures",
-    include_head_start: bool = False,
 ):
     """Make plots for Baumgartner Suzuki optimization with auxiliary of Reizman Suzuki."""
     # Wandb API

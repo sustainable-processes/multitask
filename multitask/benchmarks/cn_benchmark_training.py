@@ -93,37 +93,21 @@ def train_benchmark(
     return emulator
 
 
-def create_cn_domain(base_equiv_bounds: List[float]) -> Domain:
+def create_cn_domain(
+    catalysts: List[str], bases: List[str], base_equiv_bounds: List[float]
+) -> Domain:
     """Create the domain for the optimization"""
     domain = Domain()
 
     # Decision variables
     des_1 = "Catalyst"
-    domain += CategoricalVariable(
-        name="catalyst",
-        description=des_1,
-        levels=[
-            "cycloPd tBuXPhos 4-Chlorotoluene",
-            "cycloPd EPhos 4-Chlorotoluene",
-            "cycloPd AlPhos 4-Chlorotoluene",
-            "cycloPd tBuBrettPhos 4-Chlorotoluene",
-        ],
-    )
+    domain += CategoricalVariable(name="catalyst", description=des_1, levels=catalysts)
 
     des_2 = "Base"
     domain += CategoricalVariable(
         name="base",
         description=des_2,
-        levels=[
-            "TEA",
-            "Triethylamine",
-            "TMG",
-            "BTMG",
-            "DBU",
-            "MTBD",
-            "BTTP",
-            "P2Et",
-        ],
+        levels=bases,
     )
 
     des_3 = "Base equivalents with respect to p-tolyl triflate (electrophile)"
@@ -164,6 +148,11 @@ def prepare_domain_data(
     ds = get_cn_dataset(data_file)
 
     # Create domain
+    # Base equivalents bounds vary between cases
     bounds = round(ds["base_equiv"].min(), 1), round(ds["base_equiv"].max(), 1)
-    domain = create_cn_domain(base_equiv_bounds=bounds)
+    catalysts = ds["catalyst"].unique().tolist()
+    bases = ds["base"].unique().tolist()
+    domain = create_cn_domain(
+        catalysts=catalysts, bases=bases, base_equiv_bounds=bounds
+    )
     return ds, domain
