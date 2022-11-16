@@ -73,6 +73,7 @@ def train_benchmark(
     ax.set_xlabel("Measured Yield (%)")
     ax.set_ylabel("Predicted Yield (%)")
     figure_path = Path(figure_path)
+    figure_path.mkdir(parents=True, exist_ok=True)
     fig.savefig(figure_path / f"{dataset_name}_parity_plot.png", dpi=300)
 
     # Save emulator

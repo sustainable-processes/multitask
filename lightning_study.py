@@ -92,7 +92,7 @@ class BenchmarkWork(L.LightningWork):
         if self.verbose:
             cmd += ["--verbose", "1"]
         print(cmd)
-        subprocess.run(cmd, shell=False)
+        subprocess.run(cmd, shell=False, check=True)
         self.finished = True
 
 
@@ -198,7 +198,7 @@ class OptimizationWork(L.LightningWork):
             for ct_dataset_name in self.ct_dataset_names:
                 options += [f"--ct-dataset-names", ct_dataset_name]
         print(cmd + options)
-        subprocess.run(cmd + options, shell=False)
+        subprocess.run(cmd + options, shell=False, check=True)
         self.finished = True
 
 
