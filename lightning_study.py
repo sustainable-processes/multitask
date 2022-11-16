@@ -876,15 +876,15 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 app = L.LightningApp(
     MultitaskBenchmarkStudy(
         run_benchmark_training=True,
-        run_single_task=False,
-        run_single_task_head_start=False,
-        run_multi_task=False,
-        run_suzuki=False,
-        split_catalyst_suzuki=False,
+        run_single_task=True,
+        run_single_task_head_start=True,
+        run_multi_task=True,
+        run_suzuki=True,
+        split_catalyst_suzuki=True,
         run_cn=True,
-        # compute_type="gpu",
+        compute_type="gpu",
         parallel=True,
-        max_workers=1,
+        max_workers=100,
         wandb_entity="ceb-sre",
     ),
 )
