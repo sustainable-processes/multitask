@@ -8,7 +8,7 @@ from multitask.benchmarks.cn_benchmark_training import (
 )
 from multitask.utils import BenchmarkType
 import lightning as L
-from lightning_app.structures.dict import Dict
+from lightning.app.structures import Dict
 from pathlib import Path
 import subprocess
 from typing import List, Optional, Literal
@@ -873,19 +873,18 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         )
 
 
-if __name__ == "__main__":
-    app = L.LightningApp(
-        MultitaskBenchmarkStudy(
-            run_benchmark_training=True,
-            run_single_task=True,
-            run_single_task_head_start=True,
-            run_multi_task=True,
-            run_suzuki=True,
-            split_catalyst_suzuki=False,
-            run_cn=False,
-            compute_type="gpu",
-            parallel=True,
-            max_workers=40,
-            wandb_entity="ceb-sre",
-        )
-    )
+app = L.LightningApp(
+    MultitaskBenchmarkStudy(
+        run_benchmark_training=True,
+        run_single_task=True,
+        run_single_task_head_start=True,
+        run_multi_task=True,
+        run_suzuki=True,
+        split_catalyst_suzuki=False,
+        run_cn=False,
+        # compute_type="gpu",
+        parallel=True,
+        max_workers=40,
+        wandb_entity="ceb-sre",
+    ),
+)
