@@ -266,7 +266,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     wandb_project=self.wandb_project,
                     max_epochs=1000,
                     cv_folds=5,
-                    verbose=0,
+                    verbose=1,
                 )
                 self.total_training_jobs += 1
 
@@ -285,7 +285,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 split_catalyst=self.split_catalyst_suzuki,
                 max_epochs=1000,
                 cv_folds=5,
-                verbose=0,
+                verbose=1,
             )
             self.total_training_jobs += 1
 
@@ -880,7 +880,7 @@ app = L.LightningApp(
         run_single_task_head_start=True,
         run_multi_task=True,
         run_suzuki=True,
-        split_catalyst_suzuki=True,
+        split_catalyst_suzuki=False,
         run_cn=True,
         compute_type="gpu",
         parallel=True,

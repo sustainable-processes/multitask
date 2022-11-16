@@ -188,7 +188,7 @@ def prepare_domain_data(
     # Create domains
     if split_catalyst:
         pre_catalysts = ds["pre_catalyst_smiles"].unique().tolist()
-        logger.info("Number of pre-catalysts:", len(pre_catalysts))
+        logger.info(f"Number of pre-catalysts: {len(pre_catalysts)}")
         ligands = ds["ligand_smiles"].unique().tolist()
         logger.info("Number of ligands:", len(ligands))
         domain = create_suzuki_domain(
