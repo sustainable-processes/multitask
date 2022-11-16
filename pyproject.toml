@@ -20,7 +20,7 @@ hiplot = { version = "^0.1.32", optional = true }
 streamlit = { version = "^1.9.2", optional = true }
 wandb = "^0.13.2"
 typer = "^0.6.1"
-lightning = { version = "^2022.8.17", optional = true }
+lightning = { version = "^2022.9.22", optional = true }
 fastapi = { version = "^0.79.0", optional = true }
 
 [tool.poetry.extras]
