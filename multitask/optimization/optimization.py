@@ -38,6 +38,7 @@ def stbo(
     wandb_main_dataset_artifact_name: Optional[str] = None,
     max_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
+    split_catalyst: Optional[bool] = True,
     brute_force_categorical: Optional[bool] = False,
     print_warnings: Optional[bool] = True,
     acquisition_function: Optional[str] = "EI",
@@ -83,7 +84,7 @@ def stbo(
         if benchmark_type == BenchmarkType.suzuki:
             main_ds = get_suzuki_dataset(
                 data_path=main_dataset_path / f"{model_name}.pb",
-                split_catalyst=True,
+                split_catalyst=split_catalyst,
                 print_warnings=print_warnings,
             )
         elif benchmark_type == BenchmarkType.cn:
@@ -208,6 +209,7 @@ def mtbo(
     batch_size: Optional[int] = 1,
     repeats: Optional[int] = 20,
     print_warnings: Optional[bool] = True,
+    split_catalyst: Optional[bool] = True,
     brute_force_categorical: bool = False,
     acquisition_function: Optional[str] = "EI",
     wandb_entity: Optional[str] = "ceb-sre",
@@ -237,7 +239,7 @@ def mtbo(
         if benchmark_type == BenchmarkType.suzuki:
             main_ds = get_suzuki_dataset(
                 data_path=main_dataset_path / f"{model_name}.pb",
-                split_catalyst=True,
+                split_catalyst=split_catalyst,
                 print_warnings=print_warnings,
             )
         elif benchmark_type == BenchmarkType.cn:

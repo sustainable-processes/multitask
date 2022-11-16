@@ -138,7 +138,7 @@ def get_suzuki_row(reaction: Reaction, split_catalyst: bool = True) -> dict:
                     row["ligand_concentration"] = conc.to(
                         ureg.moles / ureg.liters
                     ).magnitude
-                row["catalyst_smiles"] += "." + smiles
+                row["catalyst_smiles"] = smiles
             if component.reaction_role == ReactionRole.REACTANT:
                 if reactants > 2:
                     raise ValueError(

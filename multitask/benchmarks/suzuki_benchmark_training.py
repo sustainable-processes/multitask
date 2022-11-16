@@ -196,6 +196,6 @@ def prepare_domain_data(
         )
     else:
         catalysts = ds["catalyst_smiles"].unique().tolist()
-        logger.info("Number of catalysts:", len(catalysts))
+        logger.info(f"Number of catalysts: {len(catalysts)}")
         domain = create_suzuki_domain(split_catalyst=False, catalyst_list=catalysts)
     return ds, domain

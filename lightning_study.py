@@ -13,7 +13,8 @@ from pathlib import Path
 import subprocess
 from typing import List, Optional, Literal
 import logging
-import wandb
+from time import sleep
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class BenchmarkWork(L.LightningWork):
         dataset_name: str,
         save_path: str,
         figure_path: str,
+        split_catalyst: Optional[bool] = False,
         max_epochs: Optional[int] = 1000,
         cv_folds: Optional[int] = 5,
         verbose: Optional[int] = 0,
@@ -45,6 +47,9 @@ class BenchmarkWork(L.LightningWork):
         self.dataset_name = dataset_name
         self.save_path = save_path
         self.figure_path = figure_path
+        self.split_catalyst = split_catalyst
+        if self.benchmark_type == BenchmarkType.cn.value and self.split_catalyst:
+            warnings.warn("Split catalyst not supported for CN benchmark")
         self.verbose = verbose
         self.wandb_entity = wandb_entity
         self.wandb_project = wandb_project
@@ -75,10 +80,17 @@ class BenchmarkWork(L.LightningWork):
             "--cv-folds",
             str(self.cv_folds),
         ]
+        if self.split_catalyst and self.benchmark_type == BenchmarkType.suzuki.value:
+            cmd += ["--split-catalyst"]
+        elif (
+            not self.split_catalyst
+            and self.benchmark_type == BenchmarkType.suzuki.value
+        ):
+            cmd += ["--no-split-catalyst"]
         if self.wandb_entity:
             cmd += ["--wandb-entity", self.wandb_entity]
         if self.verbose:
-            cmd += ["--verbose 1"]
+            cmd += ["--verbose", "1"]
         print(cmd)
         subprocess.run(cmd, shell=False)
         self.finished = True
@@ -185,7 +197,7 @@ class OptimizationWork(L.LightningWork):
             ]
             for ct_dataset_name in self.ct_dataset_names:
                 options += [f"--ct-dataset-names", ct_dataset_name]
-        # print(cmd + options)
+        print(cmd + options)
         subprocess.run(cmd + options, shell=False)
         self.finished = True
 
@@ -203,6 +215,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         run_multi_task: bool,
         run_suzuki: bool = True,
         run_cn: bool = True,
+        split_catalyst_suzuki: bool = True,
         compute_type: str = "cpu-medium",
         parallel: bool = True,
         max_workers: int = 10,
@@ -219,6 +232,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         self.run_single_task_head_start = run_single_task_head_start
         self.run_multi_task = run_multi_task
         self.run_suzuki = run_suzuki
+        self.split_catalyst_suzuki = split_catalyst_suzuki
         self.run_cn = run_cn
         self.compute_type = compute_type
         self.parallel = parallel
@@ -227,80 +241,75 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
         # Workers
         self.max_workers = max_workers
-        self.workers = Dict()
-        self.total_jobs = 0
+        self.train_workers = Dict()
+        self.opt_workers = Dict()
+        self.total_training_jobs = 0
+        self.total_opt_jobs = 0
         self.current_workers: List[int] = []
         self.succeded: List[int] = []
-        self.all_initialized = False
+        # self.all_benchmarks_initialized = False
+        self.all_benchmarks_finished = False
+        # self.all_optimization_initialized = False
 
-    def run(self):
-        # Benchmark training
-        if self.run_benchmark_training and not self.all_initialized:
-            # Train Baumgartner CN benchmark
-            if self.run_cn:
-                baumgartner_cn_runs = [
-                    BenchmarkWork(
-                        benchmark_type=BenchmarkType.cn,
-                        dataset_name=f"baumgartner_cn_case_{case}",
-                        wandb_dataset_artifact_name="baumgartner_cn:latest",
-                        save_path=f"data/baumgartner_cn/emulator_case_{case}/",
-                        figure_path="figures/",
-                        parallel=self.parallel,
-                        cloud_compute=L.CloudCompute(name=self.compute_type),
-                        wandb_entity=self.wandb_entity,
-                        wandb_project=self.wandb_project,
-                    )
-                    for case in range(1, 5)
-                ]
-                for r in baumgartner_cn_runs:
-                    r.run(
-                        max_epochs=1000,
-                        cv_folds=5,
-                        verbose=1,
-                    )
+        # C-N benhcmark
+        if self.run_cn and self.run_benchmark_training:
+            for case in range(1, 5):
+                self.train_workers[str(self.total_training_jobs)] = BenchmarkWork(
+                    benchmark_type=BenchmarkType.cn,
+                    dataset_name=f"baumgartner_cn_case_{case}",
+                    wandb_dataset_artifact_name="baumgartner_cn:latest",
+                    save_path=f"data/baumgartner_cn/emulator_case_{case}/",
+                    figure_path="figures/",
+                    parallel=self.parallel,
+                    cloud_compute=L.CloudCompute(name=self.compute_type),
+                    wandb_entity=self.wandb_entity,
+                    wandb_project=self.wandb_project,
+                    max_epochs=1000,
+                    cv_folds=5,
+                    verbose=0,
+                )
+                self.total_training_jobs += 1
 
-            if self.run_suzuki:
-                # Train Baumgartner Suzuki benchmark
-                baumgartner_suzuki_runs = [
-                    BenchmarkWork(
-                        benchmark_type=BenchmarkType.suzuki,
-                        dataset_name=f"baumgartner_suzuki",
-                        wandb_dataset_artifact_name="baumgartner_suzuki:latest",
-                        save_path="data/baumgartner_suzuki/emulator",
-                        figure_path="figures/",
-                        parallel=self.parallel,
-                        cloud_compute=L.CloudCompute(self.compute_type),
-                        wandb_entity=self.wandb_entity,
-                        wandb_project=self.wandb_project,
-                    )
-                ]
+        if self.run_suzuki and self.run_benchmark_training:
+            # Train Baumgartner Suzuki benchmark
+            self.train_workers[str(self.total_training_jobs)] = BenchmarkWork(
+                benchmark_type=BenchmarkType.suzuki,
+                dataset_name=f"baumgartner_suzuki",
+                wandb_dataset_artifact_name="baumgartner_suzuki:latest",
+                save_path="data/baumgartner_suzuki/emulator",
+                figure_path="figures/",
+                parallel=self.parallel,
+                cloud_compute=L.CloudCompute(self.compute_type),
+                wandb_entity=self.wandb_entity,
+                wandb_project=self.wandb_project,
+                split_catalyst=self.split_catalyst_suzuki,
+                max_epochs=1000,
+                cv_folds=5,
+                verbose=0,
+            )
+            self.total_training_jobs += 1
 
-                # Train Reizman Suzuki benchmarks
-                reizman_suzuki_runs = [
-                    BenchmarkWork(
-                        benchmark_type=BenchmarkType.suzuki,
-                        dataset_name=f"reizman_suzuki_case_{case}",
-                        wandb_dataset_artifact_name="reizman_suzuki:latest",
-                        save_path=f"data/reizman_suzuki/emulator_case_{case}/",
-                        figure_path="figures/",
-                        parallel=self.parallel,
-                        cloud_compute=L.CloudCompute(name=self.compute_type),
-                        wandb_entity=self.wandb_entity,
-                        wandb_project=self.wandb_project,
-                    )
-                    for case in range(1, 5)
-                ]
-                for r in reizman_suzuki_runs + baumgartner_suzuki_runs:
-                    r.run(
-                        split_catalyst=False,
-                        max_epochs=1000,
-                        cv_folds=5,
-                        verbose=1,
-                        print_warnings=False,
-                    )
+            # Train Reizman Suzuki benchmarks
+            for case in range(1, 5):
+                self.train_workers[str(self.total_training_jobs)] = BenchmarkWork(
+                    benchmark_type=BenchmarkType.suzuki,
+                    dataset_name=f"reizman_suzuki_case_{case}",
+                    wandb_dataset_artifact_name="reizman_suzuki:latest",
+                    save_path=f"data/reizman_suzuki/emulator_case_{case}/",
+                    figure_path="figures/",
+                    parallel=self.parallel,
+                    cloud_compute=L.CloudCompute(name=self.compute_type),
+                    wandb_entity=self.wandb_entity,
+                    wandb_project=self.wandb_project,
+                    split_catalyst=self.split_catalyst_suzuki,
+                    max_epochs=1000,
+                    cv_folds=5,
+                    verbose=1,
+                )
+                self.total_training_jobs += 1
 
         # Multi task benchmarking
-        if self.run_multi_task and not self.all_initialized:
+        if self.run_multi_task:
             configs = []
             if self.run_suzuki:
                 configs += self.generate_suzuki_configs_multitask(
@@ -317,16 +326,16 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     parallel=self.parallel,
                 )
             for i, config in enumerate(configs):
-                self.workers[str(self.total_jobs + i)] = OptimizationWork(
+                self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
                     cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                 )
-            self.total_jobs += len(configs)
+            self.total_opt_jobs += len(configs)
 
         # Single task benchmarking
-        if self.run_single_task and not self.all_initialized:
+        if self.run_single_task:
             configs = []
             if self.run_suzuki:
                 configs += self.generate_suzuki_configs_single_task(
@@ -343,15 +352,15 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     parallel=self.parallel,
                 )
             for i, config in enumerate(configs):
-                self.workers[str(self.total_jobs + i)] = OptimizationWork(
+                self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
                     cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
                     wandb_entity=self.wandb_entity,
                 )
-            self.total_jobs += len(configs)
+            self.total_opt_jobs += len(configs)
 
         # Single task head start benchmarking
-        if self.run_single_task_head_start and not self.all_initialized:
+        if self.run_single_task_head_start:
             configs = []
             if self.run_suzuki:
                 configs += self.generate_suzuki_configs_single_task_headstart(
@@ -368,35 +377,70 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     parallel=self.parallel,
                 )
             for i, config in enumerate(configs):
-                self.workers[str(self.total_jobs + i)] = OptimizationWork(
+                self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
                     cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                 )
-            self.total_jobs += len(configs)
+            self.total_opt_jobs += len(configs)
 
-        self.all_initialized = True
+    def run(self):
+        # Benchmark training
+        if self.run_benchmark_training and not self.all_benchmarks_finished:
+            # Check for finished jobs
+            for i in self.current_workers:
+                if self.train_workers[str(i)].finished:
+                    self.current_workers.remove(i)
+                    self.succeded.append(i)
+                    self.train_workers[str(i)].stop()
+
+            # Queue new jobs
+            i = 0
+            while (
+                len(self.current_workers) < self.max_workers
+                and i < self.total_training_jobs
+            ):
+                if i not in self.succeded and i not in self.current_workers:
+                    self.train_workers[str(i)].run()
+                    self.current_workers.append(i)
+                    print(
+                        f"Job {i+1} of {self.total_training_jobs} training jobs queued"
+                    )
+                i += 1
+
+            if all([w.finished for w in self.train_workers.values()]):
+                self.current_workers = []
+                self.succeded = []
+                self.all_benchmarks_finished = True
+                for w in self.train_workers.values():
+                    w.stop()
+        elif not self.run_benchmark_training:
+            self.all_benchmarks_finished = True
 
         if (
             self.run_single_task
             or self.run_single_task_head_start
             or self.run_multi_task
-        ):
+        ) and self.all_benchmarks_finished:
             # Check for finished jobs
             for i in self.current_workers:
-                if self.workers[str(i)].finished:
+                if self.opt_workers[str(i)].finished:
                     self.current_workers.remove(i)
                     self.succeded.append(i)
-                    self.workers[str(i)].stop()
+                    self.opt_workers[str(i)].stop()
 
             # Queue new jobs
             i = 0
-            while len(self.current_workers) < self.max_workers and i < self.total_jobs:
+            while (
+                len(self.current_workers) < self.max_workers and i < self.total_opt_jobs
+            ):
                 if i not in self.succeded and i not in self.current_workers:
-                    self.workers[str(i)].run()
+                    self.opt_workers[str(i)].run()
                     self.current_workers.append(i)
-                    print(f"Job {i+1} of {self.total_jobs} queued")
+                    print(
+                        f"Job {i+1} of {self.total_opt_jobs} optimization jobs queued"
+                    )
                 i += 1
 
     @staticmethod
@@ -832,15 +876,16 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 if __name__ == "__main__":
     app = L.LightningApp(
         MultitaskBenchmarkStudy(
-            run_benchmark_training=False,
+            run_benchmark_training=True,
             run_single_task=True,
-            run_single_task_head_start=False,
-            run_multi_task=False,
+            run_single_task_head_start=True,
+            run_multi_task=True,
             run_suzuki=True,
-            run_cn=True,
+            split_catalyst_suzuki=False,
+            run_cn=False,
             compute_type="gpu",
             parallel=True,
-            max_workers=41,
+            max_workers=55,
             wandb_entity="ceb-sre",
         )
     )
