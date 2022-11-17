@@ -328,7 +328,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
+                    cloud_compute=L.CloudCompute(self.compute_type),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                 )
@@ -354,7 +354,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
+                    cloud_compute=L.CloudCompute(self.compute_type),
                     wandb_entity=self.wandb_entity,
                 )
             self.total_opt_jobs += len(configs)
@@ -379,7 +379,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
+                    cloud_compute=L.CloudCompute(self.compute_type),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                 )
@@ -875,7 +875,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
 app = L.LightningApp(
     MultitaskBenchmarkStudy(
-        run_benchmark_training=True,
+        run_benchmark_training=False,
         run_single_task=True,
         run_single_task_head_start=True,
         run_multi_task=True,
@@ -884,7 +884,7 @@ app = L.LightningApp(
         run_cn=True,
         compute_type="gpu",
         parallel=True,
-        max_workers=100,
+        max_workers=10,
         wandb_entity="ceb-sre",
     ),
 )
