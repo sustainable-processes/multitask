@@ -1,3 +1,4 @@
+from datetime import datetime
 import subprocess
 import time
 from typing import Dict, List, Optional
@@ -198,8 +199,8 @@ class OptimizationWork(L.LightningWork):
             ]
             for ct_dataset_name in self.ct_dataset_names:
                 options += [f"--ct-dataset-names", ct_dataset_name]
-        print(cmd + options)
-        subprocess.run(cmd + options, shell=False, check=True)
+        print(" ".join(cmd + options))
+        # subprocess.run(cmd + options, shell=False, check=True)
         self.finished = True
 
 
@@ -248,9 +249,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         self.total_opt_jobs = 0
         self.current_workers: List[int] = []
         self.succeded: List[int] = []
-        # self.all_benchmarks_initialized = False
         self.all_benchmarks_finished = False
-        self.all_optimization_started = False
+        self.num_optimization_started = 0
 
         # C-N benhcmark
         if self.run_cn and self.run_benchmark_training:
@@ -387,6 +387,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             self.total_opt_jobs += len(configs)
 
     def run(self):
+        start = datetime.now()
         # Benchmark training
         if self.run_benchmark_training and not self.all_benchmarks_finished:
             # Check for finished jobs
@@ -426,31 +427,34 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 or self.run_multi_task
             )
             and self.all_benchmarks_finished
-            and not self.all_optimization_started
+            # and not self.all_optimization_started
         ):
-            for w in self.opt_workers.values():
-                print(f"Job {i+1} of {self.total_opt_jobs} optimization jobs queued")
-                w.run()
-            self.all_optimization_started = True
+            #     print(f"Job {i+1} of {self.total_opt_jobs} optimization jobs started")
+            #     w.run()
+            # self.all_optimization_started = True
             # Check for finished jobs
-        # for i in self.current_workers:
-        #     if self.opt_workers[str(i)].finished:
-        #         self.current_workers.remove(i)
-        #         self.succeded.append(i)
-        #         self.opt_workers[str(i)].stop()
+            for i in self.current_workers:
+                if self.opt_workers[str(i)].finished:
+                    self.current_workers.remove(i)
+                    self.succeded.append(i)
+                    self.opt_workers[str(i)].stop()
 
-        # # Queue new jobs
-        # i = 0
-        # while (
-        #     len(self.current_workers) < self.max_workers and i < self.total_opt_jobs
-        # ):
-        #     if i not in self.succeded and i not in self.current_workers:
-        #         self.opt_workers[str(i)].run()
-        #         self.current_workers.append(i)
-        #         print(
-        #             f"Job {i+1} of {self.total_opt_jobs} optimization jobs queued"
-        #         )
-        #     i += 1
+            # # Queue new jobs
+            i = 0
+            while (
+                len(self.current_workers) < self.max_workers
+                and i < self.total_opt_jobs
+                and ((datetime.now() - start).total_seconds() < 0.5)
+            ):
+                if i not in self.succeded and i not in self.current_workers:
+                    self.opt_workers[str(i)].run()
+                    self.current_workers.append(i)
+                    print(
+                        f"Job {i+1} of {self.total_opt_jobs} optimization jobs queued"
+                    )
+                i += 1
+        end = datetime.now()
+        print(f"Run took {(end-start).total_seconds()} seconds")
 
     @staticmethod
     def generate_suzuki_configs_single_task(
@@ -884,7 +888,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
 app = L.LightningApp(
     MultitaskBenchmarkStudy(
-        run_benchmark_training=True,
+        run_benchmark_training=False,
         run_single_task=True,
         run_single_task_head_start=True,
         run_multi_task=True,
@@ -893,7 +897,7 @@ app = L.LightningApp(
         run_cn=True,
         compute_type="gpu",
         parallel=True,
-        max_workers=40,
+        max_workers=91,
         wandb_entity="ceb-sre",
         wandb_project="multitask_2",
     ),
