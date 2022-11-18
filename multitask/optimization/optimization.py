@@ -210,6 +210,15 @@ def stbo(
                     done = True
                 except gpytorch.utils.errors.NotPSDError:
                     retries += 1
+                except RuntimeError as e:
+                    # logger.error("Rutime error: %s", e)
+                    wandb.alert(
+                        title="Runtime error during optimization",
+                        text="CUDA error!",
+                        level=AlertLevel.ERROR,
+                        wait_duration=timedelta(minutes=1),
+                    )
+                    retries += 1
                 finally:
                     wandb.finish()
             if retries >= N_RETRIES:
@@ -378,11 +387,11 @@ def mtbo(
                 except gpytorch.utils.errors.NotPSDError:
                     retries += 1
                 except RuntimeError as e:
-                    logger.error("Rutime error: %s", e)
+                    # logger.error("Rutime error: %s", e)
                     wandb.alert(
                         title="Runtime error during optimization",
-                        text=e,
-                        level=AlertLevel.WARN,
+                        text="CUDA error!",
+                        level=AlertLevel.ERROR,
                         wait_duration=timedelta(minutes=1),
                     )
                 finally:
@@ -645,6 +654,7 @@ def run_mtbo(
     # Clear torch cache: https://github.com/pytorch/botorch/issues/798#issuecomment-1256533622
     torch.cuda.empty_cache()
     gc.collect()
+
     # Reset experiment
     exp.reset()
     assert exp.data.shape[0] == 0

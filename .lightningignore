@@ -10,3 +10,5 @@ wandb/
 .eggs/
 .pytest_cahce
 .venv/
+*.pyc
+*.log
