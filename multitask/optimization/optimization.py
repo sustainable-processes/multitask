@@ -14,12 +14,16 @@ from scipy.sparse import issparse
 import wandb
 from tqdm.auto import trange
 from pathlib import Path
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Optional
 import pandas as pd
 import logging
 import json
 import warnings
 import os
+from datetime import timedelta
+import wandb
+from wandb import AlertLevel
+import gc
 
 N_RETRIES = 5
 
@@ -112,6 +116,7 @@ def stbo(
                     tags = ["STBO", benchmark_type.value]
                     if os.environ.get("lightning_cloud"):
                         tags.append("lightning_cloud")
+                    args.update({"repeat": i})
                     run = wandb.init(
                         entity=wandb_entity,
                         project=wandb_project,
@@ -278,10 +283,11 @@ def mtbo(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
+                    # Initialize wandb
                     tags = ["MTBO", benchmark_type.value]
                     if os.environ.get("lightning_cloud"):
                         tags.append("lightning_cloud")
-                    # Initialize wandb
+                    args.update({"repeat": i})
                     run = wandb.init(
                         entity=wandb_entity,
                         project=wandb_project,
@@ -371,6 +377,14 @@ def mtbo(
                     done = True
                 except gpytorch.utils.errors.NotPSDError:
                     retries += 1
+                except RuntimeError as e:
+                    logger.error("Rutime error: %s", e)
+                    wandb.alert(
+                        title="Runtime error during optimization",
+                        text=e,
+                        level=AlertLevel.WARN,
+                        wait_duration=timedelta(minutes=1),
+                    )
                 finally:
                     wandb.finish()
             if retries >= N_RETRIES:
@@ -511,6 +525,10 @@ def run_stbo(
     ct_data: Optional[DataSet] = None,
 ):
     """Run Single Task Bayesian Optimization (AKA normal BO)"""
+    # Clear torch cache: https://github.com/pytorch/botorch/issues/798#issuecomment-1256533622
+    torch.cuda.empty_cache()
+    gc.collect()
+    # Reset experiment
     exp.reset()
     assert exp.data.shape[0] == 0
     strategy = NewSTBO(
@@ -624,8 +642,13 @@ def run_mtbo(
     main_ds: Optional[DataSet] = None,
 ):
     """Run Multitask Bayesian optimization"""
+    # Clear torch cache: https://github.com/pytorch/botorch/issues/798#issuecomment-1256533622
+    torch.cuda.empty_cache()
+    gc.collect()
+    # Reset experiment
     exp.reset()
     assert exp.data.shape[0] == 0
+    # Set up optimization
     strategy = NewMTBO(
         exp.domain,
         pretraining_data=ct_data,

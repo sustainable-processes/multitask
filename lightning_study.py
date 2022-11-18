@@ -218,7 +218,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         run_suzuki: bool = True,
         run_cn: bool = True,
         split_catalyst_suzuki: bool = True,
-        compute_type: str = "cpu-medium",
+        # compute_type: str = "cpu-medium",
         parallel: bool = True,
         max_workers: int = 10,
         wandb_entity: Optional[str] = None,
@@ -236,7 +236,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         self.run_suzuki = run_suzuki
         self.split_catalyst_suzuki = split_catalyst_suzuki
         self.run_cn = run_cn
-        self.compute_type = compute_type
+        # self.compute_type = compute_type
         self.parallel = parallel
         self.wandb_entity = wandb_entity
         self.wandb_project = wandb_project
@@ -262,7 +262,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     save_path=f"data/baumgartner_cn/emulator_case_{case}/",
                     figure_path="figures/",
                     parallel=self.parallel,
-                    cloud_compute=L.CloudCompute(name=self.compute_type),
+                    cloud_compute=L.CloudCompute(name="cpu-medium"),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                     max_epochs=1000,
@@ -280,7 +280,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 save_path="data/baumgartner_suzuki/emulator",
                 figure_path="figures/",
                 parallel=self.parallel,
-                cloud_compute=L.CloudCompute(self.compute_type),
+                cloud_compute=L.CloudCompute(name="cpu-medium"),
                 wandb_entity=self.wandb_entity,
                 wandb_project=self.wandb_project,
                 split_catalyst=self.split_catalyst_suzuki,
@@ -299,7 +299,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     save_path=f"data/reizman_suzuki/emulator_case_{case}/",
                     figure_path="figures/",
                     parallel=self.parallel,
-                    cloud_compute=L.CloudCompute(name=self.compute_type),
+                    cloud_compute=L.CloudCompute(name="cpu-medium"),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                     split_catalyst=self.split_catalyst_suzuki,
@@ -327,9 +327,10 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     parallel=self.parallel,
                 )
             for i, config in enumerate(configs):
+                compute_type = config.pop("compute_type")
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type),
+                    cloud_compute=L.CloudCompute(name=compute_type),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                 )
@@ -353,10 +354,12 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     parallel=self.parallel,
                 )
             for i, config in enumerate(configs):
+                compute_type = config.pop("compute_type")
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type),
+                    cloud_compute=L.CloudCompute(name=compute_type),
                     wandb_entity=self.wandb_entity,
+                    wandb_project=self.wandb_project,
                 )
             self.total_opt_jobs += len(configs)
 
@@ -378,9 +381,10 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     parallel=self.parallel,
                 )
             for i, config in enumerate(configs):
+                compute_type = config.pop("compute_type")
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type),
+                    cloud_compute=L.CloudCompute(name=compute_type),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                 )
@@ -477,6 +481,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case in range(1, 5)
         ]
@@ -496,6 +501,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
         ]
 
@@ -522,6 +528,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case in range(1, 5)
         ]
@@ -543,6 +550,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case_main in range(1, 5)
             for case_aux in range(1, 5)
@@ -568,6 +576,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case in range(1, 5)
         ]
@@ -591,6 +600,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
         ]
 
@@ -615,6 +625,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case_main in range(1, 5)
         ]
@@ -648,6 +659,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case in range(1, 5)
         ]
@@ -669,6 +681,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case_main in range(1, 5)
             for case_aux in range(1, 5)
@@ -694,6 +707,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case in range(1, 5)
         ]
@@ -717,6 +731,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
         ]
 
@@ -741,6 +756,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case_main in range(1, 5)
         ]
@@ -771,6 +787,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case in range(1, 5)
         ]
@@ -798,6 +815,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case_main in range(1, 5)
             for case_aux in range(1, 5)
@@ -825,6 +843,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case_main in range(1, 5)
         ]
@@ -853,6 +872,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case_main in range(1, 5)
             for case_aux in range(1, 5)
@@ -880,6 +900,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "repeats": repeats,
                 "acquisition_function": "EI",
                 "parallel": parallel,
+                "compute_type": "gpu",
             }
             for case_main in range(1, 5)
         ]
@@ -897,9 +918,9 @@ app = L.LightningApp(
         run_suzuki=True,
         split_catalyst_suzuki=False,
         run_cn=True,
-        compute_type="gpu",
+        # compute_type="gpu",
         parallel=True,
-        max_workers=15,
+        max_workers=30,
         wandb_entity="ceb-sre",
         wandb_project="multitask_2",
     ),
