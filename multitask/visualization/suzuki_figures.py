@@ -982,15 +982,15 @@ def all_suzuki(
         wandb_project=wandb_project,
         figure_dir=figure_dir,
     )
-    # baumgartner_suzuki_auxiliary_all_reizman_suzuki(
-    #     num_iterations=num_iterations,
-    #     include_tags=include_tags,
-    #     filter_tags=filter_tags,
-    #     only_finished_runs=only_finished_runs,
-    #     wandb_entity=wandb_entity,
-    #     wandb_project=wandb_project,
-    #     figure_dir=figure_dir,
-    # )
+    baumgartner_suzuki_auxiliary_all_reizman_suzuki(
+        num_iterations=num_iterations,
+        include_tags=include_tags,
+        filter_tags=filter_tags,
+        only_finished_runs=only_finished_runs,
+        wandb_entity=wandb_entity,
+        wandb_project=wandb_project,
+        figure_dir=figure_dir,
+    )
     reizman_suzuki_auxiliary_one_reizman_suzuki(
         num_iterations=num_iterations,
         include_tags=include_tags,

@@ -1,4 +1,5 @@
 import subprocess
+import time
 from typing import Dict, List, Optional
 from multitask.benchmarks.suzuki_benchmark_training import (
     train_benchmark as train_suzuki_benchmark,
@@ -249,7 +250,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         self.succeded: List[int] = []
         # self.all_benchmarks_initialized = False
         self.all_benchmarks_finished = False
-        # self.all_optimization_initialized = False
+        self.all_optimization_started = False
 
         # C-N benhcmark
         if self.run_cn and self.run_benchmark_training:
@@ -328,7 +329,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type),
+                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                 )
@@ -354,7 +355,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type),
+                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
                     wandb_entity=self.wandb_entity,
                 )
             self.total_opt_jobs += len(configs)
@@ -379,7 +380,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type),
+                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                 )
@@ -419,29 +420,37 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             self.all_benchmarks_finished = True
 
         if (
-            self.run_single_task
-            or self.run_single_task_head_start
-            or self.run_multi_task
-        ) and self.all_benchmarks_finished:
+            (
+                self.run_single_task
+                or self.run_single_task_head_start
+                or self.run_multi_task
+            )
+            and self.all_benchmarks_finished
+            and not self.all_optimization_started
+        ):
+            for w in self.opt_workers.values():
+                print(f"Job {i+1} of {self.total_opt_jobs} optimization jobs queued")
+                w.run()
+            self.all_optimization_started = True
             # Check for finished jobs
-            for i in self.current_workers:
-                if self.opt_workers[str(i)].finished:
-                    self.current_workers.remove(i)
-                    self.succeded.append(i)
-                    self.opt_workers[str(i)].stop()
+        # for i in self.current_workers:
+        #     if self.opt_workers[str(i)].finished:
+        #         self.current_workers.remove(i)
+        #         self.succeded.append(i)
+        #         self.opt_workers[str(i)].stop()
 
-            # Queue new jobs
-            i = 0
-            while (
-                len(self.current_workers) < self.max_workers and i < self.total_opt_jobs
-            ):
-                if i not in self.succeded and i not in self.current_workers:
-                    self.opt_workers[str(i)].run()
-                    self.current_workers.append(i)
-                    print(
-                        f"Job {i+1} of {self.total_opt_jobs} optimization jobs queued"
-                    )
-                i += 1
+        # # Queue new jobs
+        # i = 0
+        # while (
+        #     len(self.current_workers) < self.max_workers and i < self.total_opt_jobs
+        # ):
+        #     if i not in self.succeded and i not in self.current_workers:
+        #         self.opt_workers[str(i)].run()
+        #         self.current_workers.append(i)
+        #         print(
+        #             f"Job {i+1} of {self.total_opt_jobs} optimization jobs queued"
+        #         )
+        #     i += 1
 
     @staticmethod
     def generate_suzuki_configs_single_task(
@@ -875,7 +884,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
 app = L.LightningApp(
     MultitaskBenchmarkStudy(
-        run_benchmark_training=False,
+        run_benchmark_training=True,
         run_single_task=True,
         run_single_task_head_start=True,
         run_multi_task=True,
@@ -884,7 +893,8 @@ app = L.LightningApp(
         run_cn=True,
         compute_type="gpu",
         parallel=True,
-        max_workers=10,
+        max_workers=40,
         wandb_entity="ceb-sre",
+        wandb_project="multitask_2",
     ),
 )
