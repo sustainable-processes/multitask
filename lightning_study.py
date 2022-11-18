@@ -329,7 +329,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
+                    cloud_compute=L.CloudCompute(self.compute_type),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                 )
@@ -355,7 +355,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
+                    cloud_compute=L.CloudCompute(self.compute_type),
                     wandb_entity=self.wandb_entity,
                 )
             self.total_opt_jobs += len(configs)
@@ -380,7 +380,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             for i, config in enumerate(configs):
                 self.opt_workers[str(self.total_opt_jobs + i)] = OptimizationWork(
                     **config,
-                    cloud_compute=L.CloudCompute(self.compute_type, idle_timeout=60),
+                    cloud_compute=L.CloudCompute(self.compute_type),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                 )
@@ -434,7 +434,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             # self.all_optimization_started = True
             # Check for finished jobs
             for i in self.current_workers:
-                if self.opt_workers[str(i)].finished:
+                if self.opt_workers[str(i)].finished and (
+                    (datetime.now() - start).total_seconds() < 0.5
+                ):
                     self.current_workers.remove(i)
                     self.succeded.append(i)
                     self.opt_workers[str(i)].stop()
@@ -897,7 +899,7 @@ app = L.LightningApp(
         run_cn=True,
         compute_type="gpu",
         parallel=True,
-        max_workers=91,
+        max_workers=15,
         wandb_entity="ceb-sre",
         wandb_project="multitask_2",
     ),
