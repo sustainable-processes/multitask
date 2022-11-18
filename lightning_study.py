@@ -200,7 +200,7 @@ class OptimizationWork(L.LightningWork):
             for ct_dataset_name in self.ct_dataset_names:
                 options += [f"--ct-dataset-names", ct_dataset_name]
         print(" ".join(cmd + options))
-        # subprocess.run(cmd + options, shell=False, check=True)
+        subprocess.run(cmd + options, shell=False, check=True)
         self.finished = True
 
 
