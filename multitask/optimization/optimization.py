@@ -109,6 +109,7 @@ def stbo(
     for i in trange(repeats):
         done = False
         retries = 0
+        exit_code = 1
         while not done:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -208,6 +209,7 @@ def stbo(
                         run.log_artifact(artifact)
 
                     done = True
+                    exit_code = 0
                 except gpytorch.utils.errors.NotPSDError:
                     retries += 1
                 except RuntimeError as e:
@@ -218,9 +220,10 @@ def stbo(
                         level=AlertLevel.ERROR,
                         wait_duration=timedelta(minutes=1),
                     )
+                    raise e
                     retries += 1
                 finally:
-                    wandb.finish()
+                    wandb.finish(exit_code=exit_code)
             if retries >= N_RETRIES:
                 logger.info(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
