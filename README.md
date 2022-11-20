@@ -1,4 +1,6 @@
 # Multitask 
+[![](https://img.shields.io/badge/Weights_&_Biases-FFCC33?style=for-the-badge&logo=WeightsAndBiases&logoColor=black)](https://wandb.ai/ceb-sre/multitask/)
+
 
 Optimizing reactions using multitask Bayesian optimization.
 

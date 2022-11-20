@@ -1,8 +1,12 @@
+import logging
+import time
 from multitask.utils import download_runs_wandb
 from summit.utils.dataset import DataSet
 import pandas as pd
 import numpy as np
 import json
+from requests import ConnectionError
+from wandb import Artifact
 from tqdm import tqdm
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -200,6 +204,7 @@ def make_categorical_comparison_plot(
     fontdict = fontdict = {"size": 12}
     ax.legend(prop=fontdict, framealpha=0.0)
     ax.tick_params(direction="in")
+    ax.set_xlabel("")
     return ax
 
 
@@ -217,6 +222,17 @@ def get_ds_from_json(filepath: str) -> DataSet:
     return DataSet.from_dict(data)
 
 
+def download_with_retries(artifact: Artifact, n_retries: int = 5):
+    logger = logging.getLogger(__name__)
+    for i in range(n_retries):
+        try:
+            return artifact.download()
+        except ConnectionError as e:
+            logger.error(e)
+            logger.info(f"Retrying download of {artifact.name}")
+            time.sleep(2**i)
+
+
 def get_wandb_run_dfs(
     api,
     wandb_entity: str,
@@ -228,6 +244,7 @@ def get_wandb_run_dfs(
     only_finished_runs: bool = True,
     extra_filters: Optional[Dict] = None,
     num_iterations: Optional[int] = None,
+    limit: Optional[int] = 20,
 ) -> List[DataSet]:
     """Get data from wandb"""
     filters = {
@@ -247,12 +264,14 @@ def get_wandb_run_dfs(
     )
 
     dfs = []
-    for run in tqdm(runs):
+    for i, run in enumerate(runs):
+        if i >= limit:
+            continue
         artifacts = run.logged_artifacts()
         path = None
         for artifact in artifacts:
             if artifact.type == "optimization_result":
-                path = artifact.download()
+                path = download_with_retries(artifact)
                 break
         if path is not None:
             path = list(Path(path).glob("repeat_*.json"))[0]
