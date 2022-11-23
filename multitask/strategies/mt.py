@@ -348,6 +348,7 @@ class NewMTBO(Strategy):
                 num_restarts=kwargs.get("num_restarts", 100),
                 q=num_experiments,
                 raw_samples=kwargs.get("raw_samples", 2000),
+                options={"init_batch_limit": 1000},
             )
 
         # Convert result to datset
