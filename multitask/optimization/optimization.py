@@ -213,7 +213,7 @@ def stbo(
                 except gpytorch.utils.errors.NotPSDError:
                     retries += 1
                 except RuntimeError as e:
-                    # logger.error("Rutime error: %s", e)
+                    logger.error("Rutime error: %s", e)
                     wandb.alert(
                         title="Runtime error during optimization",
                         text="CUDA error!",
@@ -291,6 +291,7 @@ def mtbo(
     for i in trange(repeats):
         done = False
         retries = 0
+        exit_code = 1
         while not done:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -387,18 +388,20 @@ def mtbo(
                         artifact.add_file(output_path / f"repeat_{i}_model.pth")
                         run.log_artifact(artifact)
                     done = True
+                    exit_code = 0
                 except gpytorch.utils.errors.NotPSDError:
                     retries += 1
                 except RuntimeError as e:
-                    # logger.error("Rutime error: %s", e)
+                    logger.error("Rutime error: %s", e)
                     wandb.alert(
                         title="Runtime error during optimization",
                         text="CUDA error!",
                         level=AlertLevel.ERROR,
                         wait_duration=timedelta(minutes=1),
                     )
+                    raise e
                 finally:
-                    wandb.finish()
+                    wandb.finish(exit_code=exit_code)
             if retries >= N_RETRIES:
                 logger.info(
                     f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"

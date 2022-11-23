@@ -11,6 +11,7 @@ from multitask.benchmarks.cn_benchmark_training import (
 from multitask.utils import BenchmarkType
 import lightning as L
 from lightning.app.structures import Dict
+from lai_jupyter import JupyterLab
 from pathlib import Path
 import subprocess
 from typing import List, Optional, Literal
@@ -113,7 +114,7 @@ class OptimizationWork(L.LightningWork):
         max_experiments: Optional[int] = 20,
         batch_size: Optional[int] = 1,
         brute_force_categorical: Optional[bool] = False,
-        acquisition_function: Optional[str] = "EI",
+        acquisition_function: Optional[str] = "qNEI",
         repeats: Optional[int] = 20,
         print_warnings: Optional[bool] = True,
         parallel: bool = True,
@@ -218,7 +219,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         run_suzuki: bool = True,
         run_cn: bool = True,
         split_catalyst_suzuki: bool = True,
-        # compute_type: str = "cpu-medium",
+        # compute_type: str = "gpu",
+        run_jupyter: bool = False,
         parallel: bool = True,
         max_workers: int = 10,
         wandb_entity: Optional[str] = None,
@@ -237,9 +239,17 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         self.split_catalyst_suzuki = split_catalyst_suzuki
         self.run_cn = run_cn
         # self.compute_type = compute_type
+        self.run_jupyter = run_jupyter
         self.parallel = parallel
         self.wandb_entity = wandb_entity
         self.wandb_project = wandb_project
+
+        # Jupyter
+        if self.run_jupyter:
+            self.jupyter_work = JupyterLab(
+                kernel="python",
+                cloud_compute=L.CloudCompute("gpu"),
+            )
 
         # Workers
         self.max_workers = max_workers
@@ -262,7 +272,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     save_path=f"data/baumgartner_cn/emulator_case_{case}/",
                     figure_path="figures/",
                     parallel=self.parallel,
-                    cloud_compute=L.CloudCompute(name="cpu-medium"),
+                    cloud_compute=L.CloudCompute(name="gpu"),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                     max_epochs=1000,
@@ -280,7 +290,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 save_path="data/baumgartner_suzuki/emulator",
                 figure_path="figures/",
                 parallel=self.parallel,
-                cloud_compute=L.CloudCompute(name="cpu-medium"),
+                cloud_compute=L.CloudCompute(name="gpu"),
                 wandb_entity=self.wandb_entity,
                 wandb_project=self.wandb_project,
                 split_catalyst=self.split_catalyst_suzuki,
@@ -299,7 +309,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                     save_path=f"data/reizman_suzuki/emulator_case_{case}/",
                     figure_path="figures/",
                     parallel=self.parallel,
-                    cloud_compute=L.CloudCompute(name="cpu-medium"),
+                    cloud_compute=L.CloudCompute(name="gpu"),
                     wandb_entity=self.wandb_entity,
                     wandb_project=self.wandb_project,
                     split_catalyst=self.split_catalyst_suzuki,
@@ -392,6 +402,10 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
     def run(self):
         start = datetime.now()
+        # Jupyter
+        if self.run_jupyter:
+            self.jupyter_work.run()
+
         # Benchmark training
         if self.run_benchmark_training and not self.all_benchmarks_finished:
             # Check for finished jobs
@@ -462,6 +476,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         end = datetime.now()
         print(f"Run took {(end-start).total_seconds()} seconds")
 
+    def configure_layout(self):
+        return {"name": "JupyterLab", "content": self.jupyter_work}
+
     @staticmethod
     def generate_suzuki_configs_single_task(
         max_experiments: int, batch_size: int, repeats: int, parallel: bool
@@ -479,7 +496,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -499,7 +516,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -526,7 +543,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -548,7 +565,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -574,7 +591,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -598,7 +615,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -623,7 +640,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -657,7 +674,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -679,7 +696,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -705,7 +722,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -729,9 +746,32 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
-                "compute_type": "cpu-medium",
+                "compute_type": "gpu",
+            }
+        ]
+
+        # MTBO Baumgartner cotraining with all Reizman except 2
+        baumgartner_mtbo_configs_reizman_no_two = [
+            {
+                "strategy": "MTBO",
+                "benchmark_type": BenchmarkType.suzuki,
+                "model_name": f"baumgartner_suzuki",
+                "wandb_benchmark_artifact_name": "benchmark_baumgartner_suzuki:latest",
+                "output_path": f"data/multitask_results/results_baumgartner_suzuki_cotrain_reizman_suzuki_two",
+                "wandb_ct_dataset_artifact_name": f"reizman_suzuki:latest",
+                "ct_dataset_names": [
+                    f"reizman_suzuki_case_{case}" for case in range(1, 5) if case != 2
+                ],
+                "wandb_optimization_artifact_name": f"mtbo_baumgartner_suzuki_one_cotraining_reizman_suzuki_two",
+                "wandb_main_dataset_artifact_name": "baumgartner_suzuki:latest",
+                "max_experiments": max_experiments,
+                "batch_size": batch_size,
+                "repeats": repeats,
+                "acquisition_function": "qNEI",
+                "parallel": parallel,
+                "compute_type": "gpu",
             }
         ]
 
@@ -754,11 +794,38 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
-                "compute_type": "cpu-medium",
+                "compute_type": "gpu",
             }
             for case_main in range(1, 5)
+        ]
+
+        # MTBO Reizman cotraining with all Reizman
+        reizman_mtbo_configs_reizman_no_two = [
+            {
+                "strategy": "MTBO",
+                "benchmark_type": BenchmarkType.suzuki,
+                "model_name": f"reizman_suzuki_case_{case_main}",
+                "wandb_benchmark_artifact_name": f"benchmark_reizman_suzuki_case_{case_main}:latest",
+                "output_path": f"data/multitask_results/results_reizman_suzuki_case_{case_main}_cotrain_reizman_suzuki_case_all",
+                "wandb_ct_dataset_artifact_name": f"reizman_suzuki:latest",
+                "ct_dataset_names": [
+                    f"reizman_suzuki_case_{case_aux}"
+                    for case_aux in range(1, 5)
+                    if (case_main != case_aux) and (case_aux != 2)
+                ],
+                "wandb_optimization_artifact_name": f"mtbo_reizman_suzuki_{case_main}_one_cotraining_reizman_suzuki_all",
+                "wandb_main_dataset_artifact_name": f"reizman_suzuki:latest",
+                "max_experiments": max_experiments,
+                "batch_size": batch_size,
+                "repeats": repeats,
+                "acquisition_function": "qNEI",
+                "parallel": parallel,
+                "compute_type": "gpu",
+            }
+            for case_main in range(1, 5)
+            if case_main != 2
         ]
 
         return (
@@ -766,6 +833,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
             + reizman_mtbo_configs_reizman_one
             + baumgartner_mtbo_configs_reizman_one
             + baumgartner_mtbo_configs_reizman_all
+            + baumgartner_mtbo_configs_reizman_no_two
+            + reizman_mtbo_configs_reizman_no_two
             + reizman_mtbo_configs_reizman_all
         )
 
@@ -785,7 +854,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -813,7 +882,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -841,9 +910,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
-                "compute_type": "cpu-medium",
+                "compute_type": "gpu",
             }
             for case_main in range(1, 5)
         ]
@@ -870,7 +939,7 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
                 "compute_type": "gpu",
             }
@@ -898,9 +967,9 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
                 "max_experiments": max_experiments,
                 "batch_size": batch_size,
                 "repeats": repeats,
-                "acquisition_function": "EI",
+                "acquisition_function": "qNEI",
                 "parallel": parallel,
-                "compute_type": "cpu-medium",
+                "compute_type": "gpu",
             }
             for case_main in range(1, 5)
         ]
@@ -911,7 +980,8 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
 app = L.LightningApp(
     MultitaskBenchmarkStudy(
-        run_benchmark_training=True,
+        run_jupyter=False,
+        run_benchmark_training=False,
         run_single_task=True,
         run_single_task_head_start=True,
         run_multi_task=True,

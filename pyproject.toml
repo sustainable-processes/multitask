@@ -21,6 +21,7 @@ streamlit = { version = "^1.9.2", optional = true }
 wandb = "^0.13.2"
 typer = "^0.6.1"
 lightning = "1.8.1"
+lightning-jupyter = "^0.0.2"
 fastapi = "^0.79.0"
 torch = "^1.10.0,<1.13.0"
 

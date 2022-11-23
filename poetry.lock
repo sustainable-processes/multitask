@@ -228,6 +228,17 @@ future = ">=0.15.2"
 numpy = ">=1.12"
 
 [[package]]
+name = "babel"
+version = "2.11.0"
+description = "Internationalization utilities"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+pytz = ">=2015.7"
+
+[[package]]
 name = "backcall"
 version = "0.2.0"
 description = "Specifications for callback functions passed in to an API"
@@ -1161,6 +1172,17 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "json5"
+version = "0.9.10"
+description = "A Python implementation of the JSON5 data format."
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.extras]
+dev = ["hypothesis"]
+
+[[package]]
 name = "jsonschema"
 version = "4.17.0"
 description = "An implementation of JSON Schema validation for Python"
@@ -1245,12 +1267,59 @@ websocket-client = "*"
 test = ["coverage", "ipykernel", "pre-commit", "pytest (>=7.0)", "pytest-console-scripts", "pytest-cov", "pytest-mock", "pytest-timeout", "pytest-tornasync", "requests"]
 
 [[package]]
+name = "jupyterlab"
+version = "3.5.0"
+description = "JupyterLab computational environment"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+ipython = "*"
+jinja2 = ">=2.1"
+jupyter-core = "*"
+jupyter-server = ">=1.16.0,<3"
+jupyterlab-server = ">=2.10,<3.0"
+nbclassic = "*"
+notebook = "<7"
+packaging = "*"
+tomli = "*"
+tornado = ">=6.1.0"
+
+[package.extras]
+test = ["check-manifest", "coverage", "jupyterlab-server[test]", "pre-commit", "pytest (>=6.0)", "pytest-check-links (>=0.5)", "pytest-console-scripts", "pytest-cov", "requests", "requests-cache", "virtualenv"]
+ui-tests = ["build"]
+
+[[package]]
 name = "jupyterlab-pygments"
 version = "0.2.2"
 description = "Pygments theme using JupyterLab CSS variables"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
+
+[[package]]
+name = "jupyterlab-server"
+version = "2.16.3"
+description = "A set of server components for JupyterLab and JupyterLab like applications."
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+babel = "*"
+importlib-metadata = {version = ">=4.8.3", markers = "python_version < \"3.10\""}
+jinja2 = ">=3.0.3"
+json5 = "*"
+jsonschema = ">=3.0.1"
+jupyter-server = ">=1.8,<3"
+packaging = "*"
+requests = "*"
+
+[package.extras]
+docs = ["autodoc-traits", "docutils (<0.19)", "jinja2 (<3.1.0)", "mistune (<1)", "myst-parser", "pydata-sphinx-theme", "sphinx", "sphinx-copybutton", "sphinxcontrib-openapi"]
+openapi = ["openapi-core (>=0.14.2)", "ruamel-yaml"]
+test = ["codecov", "ipykernel", "jupyter-server[test]", "openapi-core (>=0.14.2,<0.15.0)", "openapi-spec-validator (<0.5)", "pytest (>=7.0)", "pytest-console-scripts", "pytest-cov", "requests-mock", "ruamel-yaml", "strict-rfc3339"]
 
 [[package]]
 name = "jupyterlab-widgets"
@@ -1331,6 +1400,21 @@ rich = "*"
 six = "*"
 urllib3 = "*"
 websocket-client = "*"
+
+[[package]]
+name = "lightning-jupyter"
+version = "0.0.2"
+description = "JupyterLab component for Lightning Applications"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+jupyterlab = "*"
+lightning = "*"
+
+[package.extras]
+test = ["check-manifest", "codecov (>=2.1)", "coverage", "flake8", "jupyterlab (==3.4.3)", "lightning", "pytest (>=3.0.5)", "pytest-cov", "pytest-flake8", "twine (==1.13.0)"]
 
 [[package]]
 name = "lightning-utilities"
@@ -3243,7 +3327,7 @@ viz = ["hiplot", "streamlit"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8.10,<3.10"
-content-hash = "4509055e90be28c7a9ed71697ab174025783dd20c9eed63e214a19746fa329c9"
+content-hash = "820af14ca7a0eaadbc119e9e0dd3829e26c84f925da6b4ad6f78127223fa13b6"
 
 [metadata.files]
 absl-py = [
@@ -3420,6 +3504,10 @@ attrs = [
 autograd = [
     {file = "autograd-1.5-py3-none-any.whl", hash = "sha256:a22a17e71c4a601359d544827762dd66d5ba50b287a8444d4f85ada1ee762ef6"},
     {file = "autograd-1.5.tar.gz", hash = "sha256:d80bd225154d1db13cb4eaccf7a18c358be72092641b68717f96fcf1d16acd0b"},
+]
+babel = [
+    {file = "Babel-2.11.0-py3-none-any.whl", hash = "sha256:1ad3eca1c885218f6dce2ab67291178944f810a10a9b5f3cb8382a5a232b64fe"},
+    {file = "Babel-2.11.0.tar.gz", hash = "sha256:5ef4b3226b0180dedded4229651c8b0e1a3a6a2837d45a073272f313e4cf97f6"},
 ]
 backcall = [
     {file = "backcall-0.2.0-py2.py3-none-any.whl", hash = "sha256:fbbce6a29f263178a1f7915c1940bde0ec2b2a967566fe1c65c1dfb7422bd255"},
@@ -4141,6 +4229,10 @@ joblib = [
     {file = "joblib-1.2.0-py3-none-any.whl", hash = "sha256:091138ed78f800342968c523bdde947e7a305b8594b910a0fea2ab83c3c6d385"},
     {file = "joblib-1.2.0.tar.gz", hash = "sha256:e1cee4a79e4af22881164f218d4311f60074197fb707e082e803b61f6d137018"},
 ]
+json5 = [
+    {file = "json5-0.9.10-py2.py3-none-any.whl", hash = "sha256:993189671e7412e9cdd8be8dc61cf402e8e579b35f1d1bb20ae6b09baa78bbce"},
+    {file = "json5-0.9.10.tar.gz", hash = "sha256:ad9f048c5b5a4c3802524474ce40a622fae789860a86f10cc4f7e5f9cf9b46ab"},
+]
 jsonschema = [
     {file = "jsonschema-4.17.0-py3-none-any.whl", hash = "sha256:f660066c3966db7d6daeaea8a75e0b68237a48e51cf49882087757bb59916248"},
     {file = "jsonschema-4.17.0.tar.gz", hash = "sha256:5bfcf2bca16a087ade17e02b282d34af7ccd749ef76241e7f9bd7c0cb8a9424d"},
@@ -4157,9 +4249,17 @@ jupyter-server = [
     {file = "jupyter_server-1.23.2-py3-none-any.whl", hash = "sha256:c01d0e84c22a14dd6b0e7d8ce4105b08a3426b46582668e28046a64c07311a4f"},
     {file = "jupyter_server-1.23.2.tar.gz", hash = "sha256:69cb954ef02c0ba1837787e34e4a1240c93c8eb590662fae1840778861957660"},
 ]
+jupyterlab = [
+    {file = "jupyterlab-3.5.0-py3-none-any.whl", hash = "sha256:f433059fe0e12d75ea90a81a0b6721113bb132857e3ec2197780b6fe84cbcbde"},
+    {file = "jupyterlab-3.5.0.tar.gz", hash = "sha256:e02556c8ea1b386963c4b464e4618aee153c5416b07ab481425c817a033323a2"},
+]
 jupyterlab-pygments = [
     {file = "jupyterlab_pygments-0.2.2-py2.py3-none-any.whl", hash = "sha256:2405800db07c9f770863bcf8049a529c3dd4d3e28536638bd7c1c01d2748309f"},
     {file = "jupyterlab_pygments-0.2.2.tar.gz", hash = "sha256:7405d7fde60819d905a9fa8ce89e4cd830e318cdad22a0030f7a901da705585d"},
+]
+jupyterlab-server = [
+    {file = "jupyterlab_server-2.16.3-py3-none-any.whl", hash = "sha256:d18eb623428b4ee732c2258afaa365eedd70f38b609981ea040027914df32bc6"},
+    {file = "jupyterlab_server-2.16.3.tar.gz", hash = "sha256:635a0b176a901f19351c02221a124e59317c476f511200409b7d867e8b2905c3"},
 ]
 jupyterlab-widgets = [
     {file = "jupyterlab_widgets-1.1.1-py3-none-any.whl", hash = "sha256:90ab47d99da03a3697074acb23b2975ead1d6171aa41cb2812041a7f2a08177a"},
@@ -4245,6 +4345,10 @@ lightning-api-access = [
 lightning-cloud = [
     {file = "lightning_cloud-0.5.11-py3-none-any.whl", hash = "sha256:10112efaf3591d87fbaf452359eadecbdf31eb963a0de18defbcf57d910e57bc"},
     {file = "lightning_cloud-0.5.11.tar.gz", hash = "sha256:33ca411d8f88dd690ba7af82260e1e27546471954cfa042221781627144288b7"},
+]
+lightning-jupyter = [
+    {file = "lightning-jupyter-0.0.2.tar.gz", hash = "sha256:ba675410c189dc47fc436771158e2465ddc2d97736805dc85a0a15d2292e64ce"},
+    {file = "lightning_jupyter-0.0.2-py3-none-any.whl", hash = "sha256:ec6fc6ba993dd800491c715ac53868ce64e1d6c68167ea1b071ce45e2a67d4ef"},
 ]
 lightning-utilities = [
     {file = "lightning-utilities-0.3.0.tar.gz", hash = "sha256:d769ab9b76ebdee3243d1051d509aafee57d7947734ddc22977deef8a6427f2f"},
