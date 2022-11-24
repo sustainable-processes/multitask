@@ -2,7 +2,7 @@ from multitask.benchmarks.suzuki_emulator import SuzukiEmulator
 from multitask.etl.suzuki_data_utils import get_suzuki_dataset
 from multitask.etl.cn_data_utils import get_cn_dataset
 from multitask.strategies import NewSTBO, NewMTBO
-from multitask.utils import WandbRunner, BenchmarkType
+from multitask.utils import WandbRunner, BenchmarkType, logger
 from botorch.models import SingleTaskGP, MultiTaskGP
 from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikelihood
 from summit import *
@@ -26,8 +26,6 @@ from wandb import AlertLevel
 import gc
 
 N_RETRIES = 5
-
-logger = logging.getLogger(__name__)
 dtype = torch.double
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -399,12 +397,12 @@ def mtbo(
                         level=AlertLevel.ERROR,
                         wait_duration=timedelta(minutes=1),
                     )
-                    raise e
                 finally:
                     wandb.finish(exit_code=exit_code)
             if retries >= N_RETRIES:
-                logger.info(
-                    f"Not able to find semi-positive definite matrix at {retries} tries. Skipping repeat {i}"
+                wandb.alert(
+                    title="Failed to optimize model after {N_RETRIES} retries.",
+                    level=AlertLevel.ERROR,
                 )
                 done = True
 

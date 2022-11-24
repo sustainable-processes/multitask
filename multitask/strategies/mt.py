@@ -1,4 +1,5 @@
 # from .mixed_gp_regression import MixedMultiTaskGP, LCMMultitaskGP
+import gc
 from .acquistion import CategoricalEI, CategoricalqNEI, WeightedEI
 from summit import *
 from summit.strategies.base import Strategy, Transform
@@ -149,6 +150,10 @@ class NewMTBO(Strategy):
             raise NotImplementedError(
                 "Multitask does not support batch optimization yet. See https://github.com/sustainable-processes/summit/issues/119#"
             )
+
+        # Helps with GPU memory
+        torch.cuda.empty_cache()
+        gc.collect()
 
         # Suggest lhs initial design or append new experiments to previous experiments
         if prev_res is None:

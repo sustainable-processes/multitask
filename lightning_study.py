@@ -245,11 +245,10 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
         self.wandb_project = wandb_project
 
         # Jupyter
-        if self.run_jupyter:
-            self.jupyter_work = JupyterLab(
-                kernel="python",
-                cloud_compute=L.CloudCompute("gpu"),
-            )
+        self.jupyter_work = JupyterLab(
+            kernel="python",
+            cloud_compute=L.CloudCompute("gpu"),
+        )
 
         # Workers
         self.max_workers = max_workers
