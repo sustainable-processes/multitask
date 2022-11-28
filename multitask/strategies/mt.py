@@ -228,8 +228,12 @@ class NewMTBO(Strategy):
 
         if self.brute_force_categorical and self.categorical_method is None:
             self.model = MixedMultiTaskGP(
-                torch.tensor(inputs_task).double(),
-                torch.tensor(output.data_to_numpy().astype(float)).double(),
+                torch.tensor(inputs_task, dtype=dtype, device=self.device),
+                torch.tensor(
+                    output.data_to_numpy().astype(float),
+                    dtype=dtype,
+                    device=self.device,
+                ),
                 cat_dims=cat_dimensions,
                 task_feature=-1,
                 output_tasks=output_tasks,
