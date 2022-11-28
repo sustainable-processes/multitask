@@ -720,13 +720,13 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
 
                 # Format subplot
                 ax_cat_best.set_title(
-                    f"{reizman_case_to_name[i]} (Aux. SB1)",
+                    f"{reizman_case_to_name[i]} (Aux. {reizman_case_to_name[j]})",
                     fontsize=heading_fontsize,
                 )
                 ax_cat_best.set_ylim(0.0, 1.0)
                 ax_cat_best.tick_params("y", labelsize=12, direction="in")
                 ax_cat_counts.set_title(
-                    f"{reizman_case_to_name[i]} (Aux. SB1)",
+                    f"{reizman_case_to_name[i]} (Aux. {reizman_case_to_name[j]})",
                     fontsize=heading_fontsize,
                 )
                 ax_cat_counts.set_ylim(0.0, 1.0)
@@ -873,11 +873,8 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
         )
 
         # Format subplot
-        aux_names = ",".join(
-            [f"{reizman_case_to_name[j]}" for j in range(1, 5) if j != i]
-        )
         ax_yld.set_title(
-            f"{reizman_case_to_name[i]} (Aux. {aux_names})", fontsize=heading_fontsize
+            f"{reizman_case_to_name[i]} (Aux. SB1)", fontsize=heading_fontsize
         )
         xlabels = np.arange(0, 21, 5)
         ax_yld.set_xticks(xlabels)
@@ -912,12 +909,12 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
 
         # Format subplot
         ax_cat_best.set_title(
-            f"{reizman_case_to_name[i]} (Aux. {aux_names})", fontsize=heading_fontsize
+            f"{reizman_case_to_name[i]} (Aux. SB1)", fontsize=heading_fontsize
         )
         ax_cat_best.set_ylim(0.0, 1.0)
         ax_cat_best.tick_params("y", labelsize=12, direction="in")
         ax_cat_counts.set_title(
-            f"{reizman_case_to_name[i]} (Aux. {aux_names})", fontsize=heading_fontsize
+            f"{reizman_case_to_name[i]} (Aux. SB1)", fontsize=heading_fontsize
         )
         ax_cat_counts.set_ylim(0.0, 1.0)
         ax_cat_counts.tick_params("y", labelsize=12, direction="in")
@@ -1027,7 +1024,7 @@ def reizman_suzuki_auxiliary_all_reizman_suzuki(
             num_iterations=num_iterations,
             extra_filters={
                 "config.ct_dataset_names": [
-                    f"reizman_suzuki_case_{[j]}" for j in range(1, 5) if j != i
+                    f"reizman_suzuki_case_{j}" for j in range(1, 5) if j != i
                 ],
             },
         )
@@ -1046,7 +1043,7 @@ def reizman_suzuki_auxiliary_all_reizman_suzuki(
             num_iterations=num_iterations,
             extra_filters={
                 "config.ct_dataset_names": [
-                    f"reizman_suzuki_case_{[j]}" for j in range(1, 5) if j != i
+                    f"reizman_suzuki_case_{j}" for j in range(1, 5) if j != i
                 ],
             },
         )

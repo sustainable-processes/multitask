@@ -1,4 +1,4 @@
-# from .mixed_gp_regression import MixedMultiTaskGP, LCMMultitaskGP
+from .mixed_gp_regression import MixedMultiTaskGP
 import gc
 from .acquistion import CategoricalEI, CategoricalqNEI, WeightedEI
 from summit import *
@@ -227,15 +227,14 @@ class NewMTBO(Strategy):
         # prior = LKJCovariancePrior(n_tasks, eta, sd_prior)
 
         if self.brute_force_categorical and self.categorical_method is None:
-            raise NotImplementedError("LCM model not implemented yet.")
-            # self.model = MixedMultiTaskGP(
-            #     torch.tensor(inputs_task).double(),
-            #     torch.tensor(output.data_to_numpy().astype(float)).double(),
-            #     cat_dims=cat_dimensions,
-            #     task_feature=-1,
-            #     output_tasks=output_tasks,
-            #     task_covar_prior=prior,
-            # )
+            self.model = MixedMultiTaskGP(
+                torch.tensor(inputs_task).double(),
+                torch.tensor(output.data_to_numpy().astype(float)).double(),
+                cat_dims=cat_dimensions,
+                task_feature=-1,
+                output_tasks=output_tasks,
+                # task_covar_prior=prior,
+            )
         elif self.model_type == self.LCM:
             raise NotImplementedError("LCM model not implemented yet.")
             # self.model = LCMMultitaskGP(

@@ -265,7 +265,7 @@ def get_wandb_run_dfs(
 
     dfs = []
     for i, run in enumerate(runs):
-        if i >= limit:
+        if limit is not None and i >= limit:
             continue
         artifacts = run.logged_artifacts()
         path = None

@@ -40,7 +40,7 @@ def stbo(
     wandb_main_dataset_artifact_name: Optional[str] = None,
     max_experiments: Optional[int] = 20,
     batch_size: Optional[int] = 1,
-    split_catalyst: Optional[bool] = True,
+    split_catalyst: Optional[bool] = False,
     brute_force_categorical: Optional[bool] = False,
     print_warnings: Optional[bool] = True,
     acquisition_function: Optional[str] = "EI",
@@ -210,16 +210,16 @@ def stbo(
                     exit_code = 0
                 except gpytorch.utils.errors.NotPSDError:
                     retries += 1
-                except RuntimeError as e:
-                    logger.error("Rutime error: %s", e)
-                    wandb.alert(
-                        title="Runtime error during optimization",
-                        text="CUDA error!",
-                        level=AlertLevel.ERROR,
-                        wait_duration=timedelta(minutes=1),
-                    )
-                    raise e
-                    retries += 1
+                # except RuntimeError as e:
+                #     logger.error("Rutime error: %s", e)
+                #     wandb.alert(
+                #         title="Runtime error during optimization",
+                #         text="CUDA error!",
+                #         level=AlertLevel.ERROR,
+                #         wait_duration=timedelta(minutes=1),
+                #     )
+                #     raise e
+                #     retries += 1
                 finally:
                     wandb.finish(exit_code=exit_code)
             if retries >= N_RETRIES:
@@ -298,7 +298,7 @@ def mtbo(
                     tags = ["MTBO", benchmark_type.value]
                     if os.environ.get("lightning_cloud"):
                         tags.append("lightning_cloud")
-                    args.update({"repeat": i})
+                    args.update({"repeat": i, "retries": retries})
                     run = wandb.init(
                         entity=wandb_entity,
                         project=wandb_project,
@@ -389,20 +389,19 @@ def mtbo(
                     exit_code = 0
                 except gpytorch.utils.errors.NotPSDError:
                     retries += 1
-                except RuntimeError as e:
-                    logger.error("Rutime error: %s", e)
-                    wandb.alert(
-                        title="Runtime error during optimization",
-                        text="CUDA error!",
-                        level=AlertLevel.ERROR,
-                        wait_duration=timedelta(minutes=1),
-                    )
+                # except RuntimeError as e:
+                #     logger.error("Rutime error: %s", e)
+                #     wandb.alert(
+                #         title="Runtime error during optimization",
+                #         text="CUDA error!",
+                #         level=AlertLevel.ERROR,
+                #         wait_duration=timedelta(minutes=1),
+                #     )
                 finally:
                     wandb.finish(exit_code=exit_code)
             if retries >= N_RETRIES:
-                wandb.alert(
-                    title="Failed to optimize model after {N_RETRIES} retries.",
-                    level=AlertLevel.ERROR,
+                logger.error(
+                    "Failed to optimize after {N_RETRIES} retries.",
                 )
                 done = True
 
@@ -419,9 +418,11 @@ class STBOCallback:
         self,
         max_iterations: int,
         main_ds: Optional[DataSet] = None,
+        brute_force_categorical: bool = False,
     ):
         self.max_iterations = max_iterations
         self.main_ds = main_ds
+        self.brute_force_categorical = brute_force_categorical
 
     def get_kernel_lengthscales(self, model: SingleTaskGP, domain: Domain):
         wandb_dict = {}
@@ -506,22 +507,23 @@ class STBOCallback:
                 output_means=strategy.transform.output_means,
                 output_stds=strategy.transform.output_stds,
                 encoders=strategy.transform.encoders,
+                brute_force_categorical=self.brute_force_categorical,
             )
             inputs = inputs.data_to_numpy().astype(float)
             output = output.data_to_numpy().astype(float)
             wandb_dict.update(self.get_marginal_likelihood(model, mll, inputs, output))
 
             # Calculate spearmans' rank coefficient on errors
-            wandb_dict.update(
-                self.get_spearmans_coefficient(
-                    model,
-                    inputs,
-                    output,
-                    include_table=True
-                    if iteration == self.max_iterations - 1
-                    else False,
-                )
-            )
+            # wandb_dict.update(
+            #     self.get_spearmans_coefficient(
+            #         model,
+            #         inputs,
+            #         output,
+            #         include_table=True
+            #         if iteration == self.max_iterations - 1
+            #         else False,
+            #     )
+            # )
 
         wandb.log(wandb_dict)
 
@@ -550,7 +552,11 @@ def run_stbo(
         categorical_method=categorical_method,
         acquisition_function=acquisition_function,
     )
-    stbo_callback = STBOCallback(max_iterations=max_iterations, main_ds=main_ds)
+    stbo_callback = STBOCallback(
+        max_iterations=max_iterations,
+        main_ds=main_ds,
+        brute_force_categorical=brute_force_categorical,
+    )
     r = WandbRunner(
         strategy=strategy,
         experiment=exp,
@@ -574,21 +580,26 @@ class MTBOCallback(STBOCallback):
         max_iterations: int,
         opt_task: int,
         main_ds: Optional[DataSet] = None,
+        brute_force_categorical: bool = False,
     ):
         self.max_iterations = max_iterations
         self.opt_task = opt_task
         self.main_ds = main_ds
+        self.brute_force_categorical = brute_force_categorical
 
     def get_kernel_lengthscales(self, model: SingleTaskGP, domain: Domain):
-        wandb_dict = super().get_kernel_lengthscales(model, domain)
-        with torch.no_grad():
-            task_covar_matrix = model.task_covar_module._eval_covar_matrix()
-            task_covar_matrix = task_covar_matrix.cpu().numpy()
-        for i in range(task_covar_matrix.shape[0]):
-            for j in range(task_covar_matrix.shape[1]):
-                wandb_dict.update(
-                    {f"kernel/task_covar_{i}_{j}": task_covar_matrix[i, j]}
-                )
+        try:
+            wandb_dict = super().get_kernel_lengthscales(model, domain)
+            with torch.no_grad():
+                task_covar_matrix = model.task_covar_module._eval_covar_matrix()
+                task_covar_matrix = task_covar_matrix.cpu().numpy()
+            for i in range(task_covar_matrix.shape[0]):
+                for j in range(task_covar_matrix.shape[1]):
+                    wandb_dict.update(
+                        {f"kernel/task_covar_{i}_{j}": task_covar_matrix[i, j]}
+                    )
+        except AttributeError:
+            wandb_dict = {}
         return wandb_dict
 
     def __call__(self, cls: WandbRunner, prev_res, iteration):
@@ -613,6 +624,7 @@ class MTBOCallback(STBOCallback):
                 output_means=strategy.transform.output_means,
                 output_stds=strategy.transform.output_stds,
                 encoders=strategy.transform.encoders,
+                brute_force_categorical=self.brute_force_categorical,
             )
             inputs = inputs.data_to_numpy().astype(float)
             inputs_task = np.append(
@@ -623,21 +635,21 @@ class MTBOCallback(STBOCallback):
             output = output.data_to_numpy().astype(float)
 
             # Marginal likelihood
-            wandb_dict.update(
-                self.get_marginal_likelihood(model, mll, inputs_task, output)
-            )
+            # wandb_dict.update(
+            #     self.get_marginal_likelihood(model, mll, inputs_task, output)
+            # )
 
             # Calculate spearmans' rank coefficient on errors
-            wandb_dict.update(
-                self.get_spearmans_coefficient(
-                    model,
-                    inputs_task,
-                    output,
-                    include_table=True
-                    if iteration == self.max_iterations - 1
-                    else False,
-                )
-            )
+            # wandb_dict.update(
+            #     self.get_spearmans_coefficient(
+            #         model,
+            #         inputs_task,
+            #         output,
+            #         include_table=True
+            #         if iteration == self.max_iterations - 1
+            #         else False,
+            #     )
+            # )
 
         wandb.log(wandb_dict)
 
@@ -679,7 +691,10 @@ def run_mtbo(
         **wandb_runner_kwargs,
     )
     mtbo_callback = MTBOCallback(
-        max_iterations=max_iterations, opt_task=task, main_ds=main_ds
+        max_iterations=max_iterations,
+        opt_task=task,
+        main_ds=main_ds,
+        brute_force_categorical=brute_force_categorical,
     )
     # Take highest yielding condition from co-training datasets
     # as initial experiment
@@ -697,6 +712,7 @@ def transform(
     output_means: Dict,
     output_stds: Dict,
     encoders: Optional[Dict] = None,
+    brute_force_categorical: bool = False,
 ):
     """Transform a dataset using existing parameters"""
     ds = ds.copy()
@@ -706,7 +722,7 @@ def transform(
             bounds = domain[v.name].bounds
             ds[v.name, "DATA"] = (ds[v.name] - bounds[0]) / (bounds[1] - bounds[0])
             input_columns.append(v.name)
-        elif isinstance(v, CategoricalVariable):
+        elif isinstance(v, CategoricalVariable) and not brute_force_categorical:
             ohe = encoders[v.name]
             values = np.atleast_2d(ds[v.name].to_numpy()).T
             one_hot_values = ohe.transform(values)
