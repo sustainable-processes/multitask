@@ -570,7 +570,11 @@ def run_stbo(
         prev_res = exp.run_experiments(conditions)
     else:
         prev_res = None
-    r.run(skip_wandb_intialization=True, callback=stbo_callback, prev_res=prev_res)
+    r.run(
+        skip_wandb_intialization=True,
+        # callback=stbo_callback,
+        prev_res=prev_res,
+    )
     return r
 
 
@@ -702,7 +706,11 @@ def run_mtbo(
     conditions = conditions.drop(["yld", "task"]).to_frame().T
     prev_res = exp.run_experiments(conditions)
     prev_res["task", "METADATA"] = task
-    r.run(skip_wandb_intialization=True, callback=mtbo_callback, prev_res=prev_res)
+    r.run(
+        skip_wandb_intialization=True,
+        # callback=mtbo_callback,
+        prev_res=prev_res,
+    )
     return r
 
 

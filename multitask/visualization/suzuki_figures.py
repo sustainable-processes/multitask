@@ -684,7 +684,7 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
 
                 # Format plot
                 ax_yld.set_title(
-                    f"{reizman_case_to_name[i]} (Aux. SB1)",
+                    f"{reizman_case_to_name[i]} (Aux. {reizman_case_to_name[j]})",
                     fontsize=heading_fontsize,
                 )
                 ax_yld.set_xlim(0, 20)

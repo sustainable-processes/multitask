@@ -87,10 +87,9 @@ def baumgartner_cn_auxiliary_one_baumgartner_cn(
             only_finished_runs=only_finished_runs,
             num_iterations=num_iterations,
             extra_filters={"config.ct_dataset_names": []},
+            limit=num_repeats,
         )
-        stbo_dfs = [combine_catalyst_bases(stbo_df) for stbo_df in stbo_dfs][
-            :num_repeats
-        ]
+        stbo_dfs = [combine_catalyst_bases(stbo_df) for stbo_df in stbo_dfs]
 
         for j in range(1, 5):
             if i != j:
@@ -108,6 +107,7 @@ def baumgartner_cn_auxiliary_one_baumgartner_cn(
                     extra_filters={
                         "config.ct_dataset_names": [f"baumgartner_cn_case_{j}"],
                     },
+                    limit=num_repeats,
                 )
                 mtbo_dfs = [combine_catalyst_bases(mtbo_df) for mtbo_df in mtbo_dfs][
                     :num_repeats
@@ -125,11 +125,12 @@ def baumgartner_cn_auxiliary_one_baumgartner_cn(
                     extra_filters={
                         "config.ct_dataset_names": [f"baumgartner_cn_case_{j}"],
                     },
+                    limit=num_repeats,
                 )
                 stbo_head_start_dfs = [
                     combine_catalyst_bases(stbo_head_start_df)
                     for stbo_head_start_df in stbo_head_start_dfs
-                ][:num_repeats]
+                ]
                 logger.info(
                     f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Baumgartner C-N case {i} with auxiliary of Baumgartner C-N case {j}"
                 )
