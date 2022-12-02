@@ -1,8 +1,11 @@
-from summit.experiment import Experiment
-from summit.domain import *
+from summit import *
+from summit.domain import Domain
+from sklearn.decomposition import PCA
 import numpy as np
+import pandas as pd
 from scipy.integrate import solve_ivp
-from typing import Optional
+from typing import List, Optional
+import warnings
 
 
 class MITKinetics(Experiment):
@@ -184,3 +187,214 @@ class MITKinetics(Experiment):
     def to_dict(self, **kwargs):
         experiment_params = dict(noise_level=self.noise_level)
         return super().to_dict(**experiment_params)
+
+
+def create_pcs_ds(
+    solvent_ds: DataSet,
+    ucb_ds: DataSet,
+    solubilities: DataSet,
+    num_components: int,
+    ucb_filter: bool = True,
+    verbose: bool = False,
+):
+    """Create dataset with principal components"""
+
+    # Merge data sets
+    solvent_ds_full = solvent_ds.join(solubilities)
+    if ucb_filter:
+        solvent_ds_final = pd.merge(
+            solvent_ds_full, ucb_ds, left_index=True, right_index=True
+        )
+    else:
+        solvent_ds_final = solvent_ds_full
+    if verbose:
+        print(f"{solvent_ds_final.shape[0]} solvents for optimization")
+
+    # Double check that there are no NaNs in the descriptors
+    values = solvent_ds_final.data_to_numpy()
+    values = values.astype(np.float64)
+    check = np.isnan(values)
+    assert check.all() == False
+
+    # Transform to principal componets
+    pca = PCA(n_components=num_components)
+    pca.fit(solvent_ds_full.standardize())
+    pcs = pca.fit_transform(solvent_ds_final.standardize())
+    if verbose:
+        explained_var = round(pca.explained_variance_ratio_.sum() * 100)
+        expl = f"{explained_var}% of variance is explained by {num_components} principal components."
+        print(expl)
+
+    # Create a new dataset with just the principal components
+    metadata_df = solvent_ds_final.loc[:, solvent_ds_final.metadata_columns]
+    pc_df = pd.DataFrame(
+        pcs,
+        columns=[f"PC_{i+1}" for i in range(num_components)],
+        index=metadata_df.index,
+    )
+    pc_ds = DataSet.from_df(pc_df)
+    return pd.concat([metadata_df, pc_ds], axis=1), pca
+
+
+class StereoSelectiveReaction(Experiment):
+    """Generate data to simulate a stereoselective chemical reaction
+
+    Parameters
+    -----------
+    solvent_ds: Dataset
+        Dataset with the solvent descriptors (must have cas numbers as index)
+    random_state: `numpy.random.RandomState`, optional
+        RandomState object. Creates a random state based ont eh computer clock
+        if one is not passed
+    pre_calculate: bool, optional
+        If True, pre-calculates the experiments for all solvents. Defaults to False
+    Notes
+    -----
+    This comes from Kobi Felton's MPhil Research Thesis.
+
+    Pre-calculating will ensure that multiple calls to experiments will give the same result
+    (as long as a random state is specified).
+
+    """
+
+    def __init__(
+        self,
+        solvent_ds: DataSet,
+        random_state=None,
+        use_descriptors: bool = True,
+        initial_concentrations: List = [0.5, 0.5],
+        pre_calculate: bool = False,
+    ):
+        self.solvent_ds = solvent_ds
+        self.use_descriptors = use_descriptors
+        self.initial_concentrations = initial_concentrations
+        self.random_state = (
+            random_state if random_state is not None else np.random.RandomState()
+        )
+        self.pre_calculate = pre_calculate
+        self.cas_numbers = self.solvent_ds.index.values.tolist()
+        domain = self.setup_domain(
+            solvent_ds=solvent_ds, use_descriptors=use_descriptors
+        )
+        super().__init__(domain)
+        if pre_calculate:
+            all_experiments = [self._run(cas) for cas in self.cas_numbers]
+            self.all_experiments = np.array(all_experiments)
+        else:
+            self.all_experiments = None
+
+    @staticmethod
+    def setup_domain(solvent_ds: DataSet, use_descriptors: bool):
+        domain = Domain()
+        if use_descriptors:
+            kwargs = {"descriptors": solvent_ds}
+        else:
+            kwargs = {"levels": solvent_ds.index.values.tolist()}
+        domain += CategoricalVariable(
+            name="solvent",
+            description="solvent for the borrowing hydrogen reaction",
+            **kwargs,
+        )
+        domain += ContinuousVariable(
+            name="temperature", description="Reaction temperature", bounds=[80, 120]
+        )
+        domain += ContinuousVariable(
+            name="conversion",
+            description="relative conversion to triphenylphosphine oxide determined by LCMS",
+            bounds=[0, 100],
+            is_objective=True,
+        )
+        domain += ContinuousVariable(
+            name="de",
+            description="diastereomeric excess determined by ratio of LCMS peaks",
+            bounds=[0, 100],
+            is_objective=True,
+        )
+        return domain
+
+    def _run(self, conditions: DataSet):
+        solvent_cas = str(conditions["solvent"].values[0])
+        if self.all_experiments is None:
+            result = self._run_rxn(solvent_cas)
+        else:
+            index = self.cas_numbers.index(solvent_cas)
+            result = self.all_experiments[index, :]
+        conditions["conversion", "DATA"] = result[0]
+        conditions["de", "DATA"] = result[1]
+        return conditions, {}
+
+    def _run_rxn(self, solvent_cas, rxn_time=25200, step_size=200, time_series=False):
+        """Generate fake experiment data for a stereoselective reaction"""
+        rxn_time = rxn_time + self.random_state.randn(1) * 0.01 * rxn_time
+        x = self._integrate_rate(solvent_cas, rxn_time, step_size)
+        cd1 = x[:, 0]
+        cd2 = x[:, 1]
+
+        conversion = cd1 / np.min(self.initial_concentrations) * 100
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            de = cd1 / (cd1 + cd2) * 100
+
+        if not time_series:
+            conversion = conversion[-1]
+            de = de[-1]
+        return np.array([conversion, de])
+
+    def _integrate_rate(self, solvent_cas, rxn_time=25200, step_size=200):
+        t0 = 0  # Have to start from time 0
+        x0 = 0.0  # Always start with 0 extent of reaction
+        trange = np.arange(t0, rxn_time, step_size)
+        res = solve_ivp(
+            self._rate, [t0, rxn_time], [x0, x0], args=(solvent_cas,), t_eval=trange
+        )
+        return res.y.T
+
+    def _rate(self, t, x, solvent_cas):
+        """Calculate  rates  for a given extent of reaction"""
+        # Constants
+        AD1 = 8.5e9  # L/(mol-s)
+        AD2 = 8.3e9  # L/(mol-s)
+        EAD1 = 105  # kJ/mol
+        EAD2 = 110  # kJ/mol
+        TRXN = 393  # K
+        R = 8.314e-3  # kJ/mol/K
+        Es1 = (
+            lambda pc1, pc2, pc3: -np.log(
+                abs((pc2 + 0.73 * pc1 - 4.46) * (pc2 + 2.105 * pc1 + 11.367))
+            )
+            + pc3
+        )
+        Es2 = (
+            lambda pc1, pc2, pc3: -2 * np.log(abs((pc2 + 0.73 * pc1 - 4.46)))
+            - 0.2 * pc3**2
+        )
+
+        # Solvent variable reaction rate coefficients
+        pc_solvent = self.solvent_ds.loc[solvent_cas][
+            self.solvent_ds.data_columns
+        ].to_numpy()
+        es1 = Es1(pc_solvent[0], pc_solvent[1], pc_solvent[2])
+        es2 = Es2(pc_solvent[0], pc_solvent[1], pc_solvent[2])
+        # T = 0.5 * self.random_state.randn() + TRXN
+        T = TRXN
+        kd1 = AD1 * np.exp(-(EAD1 + es1) / (R * T))
+        kd2 = AD2 * np.exp(-(EAD2 + es2) / (R * T))
+
+        # Calculate rates
+        x1dot = kd1 * self.ca(x) * self.cb(x)
+        x2dot = kd2 * self.ca(x) * self.cb(x)
+        return np.array([x1dot, x2dot])
+
+    def ca(self, x):
+        try:
+            ca = self.initial_concentrations[0] - x[:, 0] - x[:, 1]
+        except IndexError:
+            ca = self.initial_concentrations[0] - x[0] - x[1]
+        return ca
+
+    def cb(self, x):
+        try:
+            cb = self.initial_concentrations[1] - x[:, 0] - x[:, 1]
+        except IndexError:
+            cb = self.initial_concentrations[1] - x[0] - x[1]
+        return cb
