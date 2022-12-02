@@ -112,25 +112,25 @@ def baumgartner_cn_auxiliary_one_baumgartner_cn(
                 mtbo_dfs = [combine_catalyst_bases(mtbo_df) for mtbo_df in mtbo_dfs][
                     :num_repeats
                 ]
-                stbo_head_start_dfs = get_wandb_run_dfs(
-                    api,
-                    wandb_entity=wandb_entity,
-                    wandb_project=wandb_project,
-                    model_name=f"baumgartner_cn_case_{i}",
-                    strategy="STBO",
-                    include_tags=include_tags,
-                    filter_tags=filter_tags,
-                    only_finished_runs=only_finished_runs,
-                    num_iterations=num_iterations,
-                    extra_filters={
-                        "config.ct_dataset_names": [f"baumgartner_cn_case_{j}"],
-                    },
-                    limit=num_repeats,
-                )
-                stbo_head_start_dfs = [
-                    combine_catalyst_bases(stbo_head_start_df)
-                    for stbo_head_start_df in stbo_head_start_dfs
-                ]
+                # stbo_head_start_dfs = get_wandb_run_dfs(
+                #     api,
+                #     wandb_entity=wandb_entity,
+                #     wandb_project=wandb_project,
+                #     model_name=f"baumgartner_cn_case_{i}",
+                #     strategy="STBO",
+                #     include_tags=include_tags,
+                #     filter_tags=filter_tags,
+                #     only_finished_runs=only_finished_runs,
+                #     num_iterations=num_iterations,
+                #     extra_filters={
+                #         "config.ct_dataset_names": [f"baumgartner_cn_case_{j}"],
+                #     },
+                #     limit=num_repeats,
+                # )
+                # stbo_head_start_dfs = [
+                #     combine_catalyst_bases(stbo_head_start_df)
+                #     for stbo_head_start_df in stbo_head_start_dfs
+                # ]
                 logger.info(
                     f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Baumgartner C-N case {i} with auxiliary of Baumgartner C-N case {j}"
                 )
@@ -139,7 +139,7 @@ def baumgartner_cn_auxiliary_one_baumgartner_cn(
                 ax_yld = fig_yld.add_subplot(4, 3, k)
                 make_yld_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
-                    dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+                    # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
                     output_name="yld_best",
                     ax=ax_yld,
@@ -164,7 +164,7 @@ def baumgartner_cn_auxiliary_one_baumgartner_cn(
                 ax_cat_best = fig_cat_best.add_subplot(4, 3, k)
                 make_categorical_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
-                    dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+                    # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
                     categorical_variable="categoricals",
                     output_name="yld",
@@ -175,7 +175,7 @@ def baumgartner_cn_auxiliary_one_baumgartner_cn(
                 ax_cat_counts = fig_cat_counts.add_subplot(4, 3, k)
                 make_categorical_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
-                    dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+                    # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
                     categorical_variable="categoricals",
                     output_name="yld",
@@ -288,26 +288,26 @@ def baumgartner_cn_auxiliary_all_baumgartner_cn(
         stbo_dfs = [combine_catalyst_bases(stbo_df) for stbo_df in stbo_dfs][
             :num_repeats
         ]
-        stbo_head_start_dfs = get_wandb_run_dfs(
-            api,
-            wandb_entity=wandb_entity,
-            wandb_project=wandb_project,
-            model_name=f"baumgartner_cn_case_{i}",
-            strategy="STBO",
-            include_tags=include_tags,
-            filter_tags=filter_tags,
-            only_finished_runs=only_finished_runs,
-            num_iterations=num_iterations,
-            extra_filters={
-                "config.ct_dataset_names": [
-                    f"baumgartner_cn_case_{j}" for j in range(1, 5) if i != j
-                ],
-            },
-        )
-        stbo_head_start_dfs = [
-            combine_catalyst_bases(stbo_head_start_df)
-            for stbo_head_start_df in stbo_head_start_dfs
-        ][:num_repeats]
+        # stbo_head_start_dfs = get_wandb_run_dfs(
+        #     api,
+        #     wandb_entity=wandb_entity,
+        #     wandb_project=wandb_project,
+        #     model_name=f"baumgartner_cn_case_{i}",
+        #     strategy="STBO",
+        #     include_tags=include_tags,
+        #     filter_tags=filter_tags,
+        #     only_finished_runs=only_finished_runs,
+        #     num_iterations=num_iterations,
+        #     extra_filters={
+        #         "config.ct_dataset_names": [
+        #             f"baumgartner_cn_case_{j}" for j in range(1, 5) if i != j
+        #         ],
+        #     },
+        # )
+        # stbo_head_start_dfs = [
+        #     combine_catalyst_bases(stbo_head_start_df)
+        #     for stbo_head_start_df in stbo_head_start_dfs
+        # ][:num_repeats]
         mtbo_dfs = get_wandb_run_dfs(
             api,
             wandb_entity=wandb_entity,
@@ -335,7 +335,7 @@ def baumgartner_cn_auxiliary_all_baumgartner_cn(
         ax = fig_yld.add_subplot(1, 4, i)
         make_yld_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",
             ax=ax,
@@ -358,7 +358,7 @@ def baumgartner_cn_auxiliary_all_baumgartner_cn(
         ax_cat_best = fig_cat_best.add_subplot(1, 4, i)
         make_categorical_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             categorical_variable="categoricals",
             output_name="yld",
@@ -369,7 +369,7 @@ def baumgartner_cn_auxiliary_all_baumgartner_cn(
         ax_cat_counts = fig_cat_counts.add_subplot(1, 4, i)
         make_categorical_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             categorical_variable="categoricals",
             output_name="yld",

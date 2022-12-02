@@ -108,29 +108,29 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
         mtbo_dfs = [standardize_catalyst_smiles(mtbo_df) for mtbo_df in mtbo_dfs][
             :num_repeats
         ]
-        stbo_head_start_dfs = get_wandb_run_dfs(
-            api,
-            wandb_entity=wandb_entity,
-            wandb_project=wandb_project,
-            model_name="baumgartner_suzuki",
-            strategy="STBO",
-            include_tags=include_tags,
-            filter_tags=filter_tags,
-            only_finished_runs=only_finished_runs,
-            num_iterations=num_iterations,
-            extra_filters={
-                "config.ct_dataset_names": [f"reizman_suzuki_case_{i}"],
-            },
-        )
-        stbo_head_start_dfs = [
-            standardize_catalyst_smiles(stbo_df) for stbo_df in stbo_head_start_dfs
-        ][:num_repeats]
+        # stbo_head_start_dfs = get_wandb_run_dfs(
+        #     api,
+        #     wandb_entity=wandb_entity,
+        #     wandb_project=wandb_project,
+        #     model_name="baumgartner_suzuki",
+        #     strategy="STBO",
+        #     include_tags=include_tags,
+        #     filter_tags=filter_tags,
+        #     only_finished_runs=only_finished_runs,
+        #     num_iterations=num_iterations,
+        #     extra_filters={
+        #         "config.ct_dataset_names": [f"reizman_suzuki_case_{i}"],
+        #     },
+        # )
+        # stbo_head_start_dfs = [
+        #     standardize_catalyst_smiles(stbo_df) for stbo_df in stbo_head_start_dfs
+        # ][:num_repeats]
 
         # Make yield comparison subplot
         ax_yld = fig_yld.add_subplot(1, 4, k)
         make_yld_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",
             ax=ax_yld,
@@ -151,7 +151,7 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
         ax_cat_best = fig_cat_best.add_subplot(1, 4, k)
         make_categorical_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             categorical_variable="catalyst_smiles",
             output_name="yld",
@@ -162,7 +162,7 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
         ax_cat_counts = fig_cat_counts.add_subplot(1, 4, k)
         make_categorical_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             categorical_variable="catalyst_smiles",
             output_name="yld",
@@ -286,30 +286,30 @@ def baumgartner_suzuki_auxiliary_all_reizman_suzuki(
     mtbo_dfs = [standardize_catalyst_smiles(mtbo_df) for mtbo_df in mtbo_dfs][
         :num_repeats
     ]
-    stbo_head_start_dfs = get_wandb_run_dfs(
-        api,
-        wandb_entity=wandb_entity,
-        wandb_project=wandb_project,
-        model_name="baumgartner_suzuki",
-        strategy="STBO",
-        include_tags=include_tags,
-        filter_tags=filter_tags,
-        only_finished_runs=only_finished_runs,
-        # num_iterations=num_iterations,
-        extra_filters={
-            "config.ct_dataset_names": [
-                f"reizman_suzuki_case_{j}" for j in range(1, 5)
-            ],
-        },
-    )
-    stbo_head_start_dfs = [
-        standardize_catalyst_smiles(stbo_df) for stbo_df in stbo_head_start_dfs
-    ][:num_repeats]
+    # stbo_head_start_dfs = get_wandb_run_dfs(
+    #     api,
+    #     wandb_entity=wandb_entity,
+    #     wandb_project=wandb_project,
+    #     model_name="baumgartner_suzuki",
+    #     strategy="STBO",
+    #     include_tags=include_tags,
+    #     filter_tags=filter_tags,
+    #     only_finished_runs=only_finished_runs,
+    #     # num_iterations=num_iterations,
+    #     extra_filters={
+    #         "config.ct_dataset_names": [
+    #             f"reizman_suzuki_case_{j}" for j in range(1, 5)
+    #         ],
+    #     },
+    # )
+    # stbo_head_start_dfs = [
+    #     standardize_catalyst_smiles(stbo_df) for stbo_df in stbo_head_start_dfs
+    # ][:num_repeats]
 
     # Make comparison subplot
     make_yld_comparison_plot(
         dict(results=stbo_dfs, label="STBO", color="#a50026"),
-        dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+        # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
         dict(results=mtbo_dfs, label="MTBO", color="#313695"),
         output_name="yld_best",
         ax=ax_yld,
@@ -326,7 +326,7 @@ def baumgartner_suzuki_auxiliary_all_reizman_suzuki(
     # Categorical plots
     make_categorical_comparison_plot(
         dict(results=stbo_dfs, label="STBO", color="#a50026"),
-        dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+        # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
         dict(results=mtbo_dfs, label="MTBO", color="#313695"),
         categorical_variable="catalyst_smiles",
         output_name="yld",
@@ -336,7 +336,7 @@ def baumgartner_suzuki_auxiliary_all_reizman_suzuki(
     )
     make_categorical_comparison_plot(
         dict(results=stbo_dfs, label="STBO", color="#a50026"),
-        dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+        # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
         dict(results=mtbo_dfs, label="MTBO", color="#313695"),
         categorical_variable="catalyst_smiles",
         output_name="yld",
@@ -460,23 +460,23 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
         mtbo_dfs = [standardize_catalyst_smiles(mtbo_df) for mtbo_df in mtbo_dfs][
             :num_repeats
         ]
-        stbo_head_start_dfs = get_wandb_run_dfs(
-            api,
-            wandb_entity=wandb_entity,
-            wandb_project=wandb_project,
-            model_name=f"reizman_suzuki_case_{i}",
-            strategy="STBO",
-            include_tags=include_tags,
-            filter_tags=filter_tags,
-            only_finished_runs=only_finished_runs,
-            num_iterations=num_iterations,
-            extra_filters={
-                "config.ct_dataset_names": [f"baumgartner_suzuki"],
-            },
-        )
-        stbo_head_start_dfs = [
-            standardize_catalyst_smiles(stbo_df) for stbo_df in stbo_head_start_dfs
-        ][:num_repeats]
+        # stbo_head_start_dfs = get_wandb_run_dfs(
+        #     api,
+        #     wandb_entity=wandb_entity,
+        #     wandb_project=wandb_project,
+        #     model_name=f"reizman_suzuki_case_{i}",
+        #     strategy="STBO",
+        #     include_tags=include_tags,
+        #     filter_tags=filter_tags,
+        #     only_finished_runs=only_finished_runs,
+        #     num_iterations=num_iterations,
+        #     extra_filters={
+        #         "config.ct_dataset_names": [f"baumgartner_suzuki"],
+        #     },
+        # )
+        # stbo_head_start_dfs = [
+        #     standardize_catalyst_smiles(stbo_df) for stbo_df in stbo_head_start_dfs
+        # ][:num_repeats]
 
         logger.info(
             f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Baumgarnter Suzuki",
@@ -486,7 +486,7 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
         ax_yld = fig_yld.add_subplot(1, 4, k)
         make_yld_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",
             ax=ax_yld,
@@ -507,7 +507,7 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
         ax_cat_best = fig_cat_best.add_subplot(1, 4, k)
         make_categorical_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             categorical_variable="catalyst_smiles",
             output_name="yld",
@@ -518,7 +518,7 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
         ax_cat_counts = fig_cat_counts.add_subplot(1, 4, k)
         make_categorical_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             categorical_variable="catalyst_smiles",
             output_name="yld",
@@ -650,24 +650,24 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
                 mtbo_dfs = [
                     standardize_catalyst_smiles(mtbo_df) for mtbo_df in mtbo_dfs
                 ][:num_repeats]
-                stbo_head_start_dfs = get_wandb_run_dfs(
-                    api,
-                    wandb_entity=wandb_entity,
-                    wandb_project=wandb_project,
-                    model_name=f"reizman_suzuki_case_{i}",
-                    strategy="STBO",
-                    include_tags=include_tags,
-                    filter_tags=filter_tags,
-                    only_finished_runs=only_finished_runs,
-                    num_iterations=num_iterations,
-                    extra_filters={
-                        "config.ct_dataset_names": [f"reizman_suzuki_case_{j}"],
-                    },
-                )
-                stbo_head_start_dfs = [
-                    standardize_catalyst_smiles(stbo_df)
-                    for stbo_df in stbo_head_start_dfs
-                ][:num_repeats]
+                # stbo_head_start_dfs = get_wandb_run_dfs(
+                #     api,
+                #     wandb_entity=wandb_entity,
+                #     wandb_project=wandb_project,
+                #     model_name=f"reizman_suzuki_case_{i}",
+                #     strategy="STBO",
+                #     include_tags=include_tags,
+                #     filter_tags=filter_tags,
+                #     only_finished_runs=only_finished_runs,
+                #     num_iterations=num_iterations,
+                #     extra_filters={
+                #         "config.ct_dataset_names": [f"reizman_suzuki_case_{j}"],
+                #     },
+                # )
+                # stbo_head_start_dfs = [
+                #     standardize_catalyst_smiles(stbo_df)
+                #     for stbo_df in stbo_head_start_dfs
+                # ][:num_repeats]
                 logger.info(
                     f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Reizman Suzuki case {j}"
                 )
@@ -676,7 +676,7 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
                 ax_yld = fig_yld.add_subplot(4, 3, k)
                 make_yld_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
-                    dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+                    # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
                     output_name="yld_best",
                     ax=ax_yld,
@@ -698,7 +698,7 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
                 ax_cat_best = fig_cat_best.add_subplot(4, 3, k)
                 make_categorical_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
-                    dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+                    # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
                     categorical_variable="catalyst_smiles",
                     output_name="yld",
@@ -709,7 +709,7 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
                 ax_cat_counts = fig_cat_counts.add_subplot(4, 3, k)
                 make_categorical_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
-                    dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+                    # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
                     categorical_variable="catalyst_smiles",
                     output_name="yld",
@@ -842,21 +842,21 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
         mtbo_dfs = [standardize_catalyst_smiles(mtbo_df) for mtbo_df in mtbo_dfs][
             :num_repeats
         ]
-        stbo_head_start_dfs = get_wandb_run_dfs(
-            api,
-            wandb_entity=wandb_entity,
-            wandb_project=wandb_project,
-            model_name=f"reizman_suzuki_case_{i}",
-            strategy="STBO",
-            include_tags=include_tags,
-            filter_tags=filter_tags,
-            only_finished_runs=only_finished_runs,
-            num_iterations=num_iterations,
-            extra_filters={"config.ct_dataset_names": [f"baumgartner_suzuki"]},
-        )
-        stbo_head_start_dfs = [
-            standardize_catalyst_smiles(stbo_df) for stbo_df in stbo_head_start_dfs
-        ][:num_repeats]
+        # stbo_head_start_dfs = get_wandb_run_dfs(
+        #     api,
+        #     wandb_entity=wandb_entity,
+        #     wandb_project=wandb_project,
+        #     model_name=f"reizman_suzuki_case_{i}",
+        #     strategy="STBO",
+        #     include_tags=include_tags,
+        #     filter_tags=filter_tags,
+        #     only_finished_runs=only_finished_runs,
+        #     num_iterations=num_iterations,
+        #     extra_filters={"config.ct_dataset_names": [f"baumgartner_suzuki"]},
+        # )
+        # stbo_head_start_dfs = [
+        #     standardize_catalyst_smiles(stbo_df) for stbo_df in stbo_head_start_dfs
+        # ][:num_repeats]
 
         logger.info(
             f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Baumgarnter Suzuki",
@@ -866,7 +866,7 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
         ax_yld = fig_yld.add_subplot(1, 4, k)
         make_yld_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",
             ax=ax_yld,
@@ -887,7 +887,7 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
         ax_cat_best = fig_cat_best.add_subplot(1, 4, k)
         make_categorical_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             categorical_variable="catalyst_smiles",
             output_name="yld",
@@ -898,7 +898,7 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
         ax_cat_counts = fig_cat_counts.add_subplot(1, 4, k)
         make_categorical_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             categorical_variable="catalyst_smiles",
             output_name="yld",
@@ -1031,25 +1031,25 @@ def reizman_suzuki_auxiliary_all_reizman_suzuki(
         mtbo_dfs = [standardize_catalyst_smiles(mtbo_df) for mtbo_df in mtbo_dfs][
             :num_repeats
         ]
-        stbo_head_start_dfs = get_wandb_run_dfs(
-            api,
-            wandb_entity=wandb_entity,
-            wandb_project=wandb_project,
-            model_name=f"reizman_suzuki_case_{i}",
-            strategy="STBO",
-            include_tags=include_tags,
-            filter_tags=filter_tags,
-            only_finished_runs=only_finished_runs,
-            num_iterations=num_iterations,
-            extra_filters={
-                "config.ct_dataset_names": [
-                    f"reizman_suzuki_case_{j}" for j in range(1, 5) if j != i
-                ],
-            },
-        )
-        stbo_head_start_dfs = [
-            standardize_catalyst_smiles(stbo_df) for stbo_df in stbo_head_start_dfs
-        ][:num_repeats]
+        # stbo_head_start_dfs = get_wandb_run_dfs(
+        #     api,
+        #     wandb_entity=wandb_entity,
+        #     wandb_project=wandb_project,
+        #     model_name=f"reizman_suzuki_case_{i}",
+        #     strategy="STBO",
+        #     include_tags=include_tags,
+        #     filter_tags=filter_tags,
+        #     only_finished_runs=only_finished_runs,
+        #     num_iterations=num_iterations,
+        #     extra_filters={
+        #         "config.ct_dataset_names": [
+        #             f"reizman_suzuki_case_{j}" for j in range(1, 5) if j != i
+        #         ],
+        #     },
+        # )
+        # stbo_head_start_dfs = [
+        #     standardize_catalyst_smiles(stbo_df) for stbo_df in stbo_head_start_dfs
+        # ][:num_repeats]
 
         logger.info(
             f"Found {len(stbo_dfs)} STBO and {len(mtbo_dfs)} MTBO runs for Reizman Suzuki case {i} with auxiliary of Baumgarnter Suzuki",
@@ -1059,7 +1059,7 @@ def reizman_suzuki_auxiliary_all_reizman_suzuki(
         ax_yld = fig_yld.add_subplot(1, 4, k)
         make_yld_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             output_name="yld_best",
             ax=ax_yld,
@@ -1083,7 +1083,7 @@ def reizman_suzuki_auxiliary_all_reizman_suzuki(
         ax_cat_best = fig_cat_best.add_subplot(1, 4, k)
         make_categorical_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             categorical_variable="catalyst_smiles",
             output_name="yld",
@@ -1094,7 +1094,7 @@ def reizman_suzuki_auxiliary_all_reizman_suzuki(
         ax_cat_counts = fig_cat_counts.add_subplot(1, 4, k)
         make_categorical_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
-            dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
+            # dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
             categorical_variable="catalyst_smiles",
             output_name="yld",
