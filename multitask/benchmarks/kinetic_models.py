@@ -349,8 +349,12 @@ class StereoSelectiveReaction(Experiment):
         )
         return res.y.T
 
-    def _rate(self, t, x, solvent_cas):
+    def _rate(self, t, X, solvent_cas):
         """Calculate  rates  for a given extent of reaction"""
+        # Variables
+        x = X[:, :2]  # product concentrations
+        T = X[:, 2]
+
         # Constants
         AD1 = 8.5e9  # L/(mol-s)
         AD2 = 8.3e9  # L/(mol-s)
