@@ -4,7 +4,6 @@ figures/
 .storage/
 artifacts/
 .dvc/
-nbs/
 wandb/
 .git/
 .eggs/

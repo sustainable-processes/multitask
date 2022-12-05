@@ -12,6 +12,7 @@ from gpytorch.mlls.exact_marginal_log_likelihood import (
 )
 import numpy as np
 import torch
+import pandas as pd
 
 dtype = torch.double
 
@@ -85,7 +86,7 @@ class NewSTBO(Strategy):
         elif prev_res is not None and self.all_experiments is None:
             self.all_experiments = prev_res
         elif prev_res is not None and self.all_experiments is not None:
-            self.all_experiments = self.all_experiments.append(prev_res)
+            self.all_experiments = pd.concat([self.all_experiments, prev_res], axis=0)
         self.iterations += 1
         data = self.all_experiments
 
@@ -160,7 +161,7 @@ class NewSTBO(Strategy):
                     ),
                 )
             elif self.acquistion_function == "UCB":
-                self.acq = UCB(self.model, beta=1.5)
+                self.acq = UCB(self.model, beta=5.0)
             else:
                 raise ValueError(
                     f"{self.acquistion_function} not a valid acquisition function"
@@ -184,7 +185,7 @@ class NewSTBO(Strategy):
                 num_restarts=kwargs.get("num_restarts", 100),
                 fixed_features_list=fixed_features_list,
                 q=num_experiments,
-                raw_samples=kwargs.get("raw_samples", 2000),
+                raw_samples=kwargs.get("raw_samples", 100),
             )
         else:
             if self.acquistion_function == "EI":

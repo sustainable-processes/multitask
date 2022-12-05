@@ -1,0 +1,53 @@
+name: case_2
+# Difference from case1:
+# changed optimal from L1->L8, less product cleavage
+# Also, L5 and L6 are somewhat active but still not best
+ligands:
+  # Second best
+  L1:
+    k: [1.9837, 1.8888, 0.4729, 0.0016, 0.0542, 0.06]
+    Ea: [31.608, 72.262, 72.2561, 94.056, 86.3949, 85.8141]
+  # Okay, forms less impurity1 but slower
+  L2:
+    k: [1.9254, 1.0042, 0.0481, 0.002, 0.0051, 0.06]
+    Ea: [37.1031, 68.4827, 67.711, 86.3227, 156.4937, 80.0543]
+  # Bad lots of impurity 1
+  L3:
+    k: [1.9613, 0.9746, 2.0812, 0.0185, 0.005, 0.06]
+    Ea: [40.2048, 39.4042, 45.0582, 80.3266, 81.3352, 80.0543]
+  # Okay, forms lots of deactivated catalyst
+  L4:
+    k: [1.7546, 0.9722, 0.0105, 0.0207, 4.0184, 0.06]
+    Ea:  [85.1642, 48.5582, 68.6894, 85.4312, 40.3806, 80.0543]
+  # Okay but not best
+  L5:
+    k: [2.2258, 0.9543, 0.001, 0.0011, 0.0009, 0.06]
+    Ea: [43.2109, 72.3142, 97.5053, 99.3544, 100.8202, 80.0543]
+  # Okay but not best
+  L6:
+    k: [2.0195, 2.5642, 0.0009, 0.001, 0.001, 0.06]
+    Ea: [38.2022, 78.543, 102.5822, 100.8419, 100.059, 80.0543]
+  # Really slow catalyst, never gets past induction
+  L7:
+    k: [0.001, 0.0001,0.001,0.001,0.001, 0.06]
+    Ea: [71.5803, 52.1945, 108.2683, 102.343, 103.5439, 80.0543]
+  # Best but slowish induction
+  L8:
+    k: [0.001, 3.9413, 0.5395, 0.0016, 0.0498, 0.06]
+    Ea: [62.1641, 68.1354, 72.8405, 89.4259, 83.8128, 80.0543]
+solvents:
+  # Best solvent, somewhat faster
+  S1:
+    k: [1.0,3.532, 2., 1., 1., 2.0]  
+  # Okay solvent, faster but hastens impurity 2 formation
+  S2:
+    k: [1.0, 4.156, 2., 5., 1., 0.5]
+  # Okay solvent
+  S3:
+    k: [1.0, 1.245, 2., 1., 1., 0.5]  
+  # Worst solvent, slows everything down
+  S4:
+    k: [1.0,0.5, 0.5, 0.5, 0.5, 0.2] 
+  # Okay solvent, accelerates catalyst deactivation
+  S5:
+    k: [1.0,1.5, 2., 1.0, 1.5, 1.] 

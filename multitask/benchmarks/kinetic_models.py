@@ -4,8 +4,15 @@ from sklearn.decomposition import PCA
 import numpy as np
 import pandas as pd
 from scipy.integrate import solve_ivp
-from typing import List, Optional
+from typing import Dict, List, Optional
+from yaml import load as yaml_load
+
+try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+    from yaml import Loader, Dumper
 import warnings
+from pathlib import Path
 
 
 class MITKinetics(Experiment):
@@ -352,8 +359,9 @@ class StereoSelectiveReaction(Experiment):
     def _rate(self, t, X, solvent_cas):
         """Calculate  rates  for a given extent of reaction"""
         # Variables
-        x = X[:, :2]  # product concentrations
-        T = X[:, 2]
+        x = X
+        # x = X[:, :2]  # product concentrations
+        # T = X[:, 2]
 
         # Constants
         AD1 = 8.5e9  # L/(mol-s)
@@ -402,3 +410,175 @@ class StereoSelectiveReaction(Experiment):
         except IndexError:
             cb = self.initial_concentrations[1] - x[0] - x[1]
         return cb
+
+
+class MultitaskKinetics(Experiment):
+    def __init__(
+        self,
+        name: str,
+        ligand_constants: Dict[str, dict],
+        solvent_constants: Dict[str, dict],
+        noise_level: float = 2.0,
+    ):
+        self.name = name
+        self.ligand_constants = ligand_constants
+        self.solvent_constants = solvent_constants
+        self.noise_level = noise_level
+        self.rng = np.random.default_rng()
+        domain = self.setup_domain(
+            ligands=list(ligand_constants.keys()),
+            solvents=list(solvent_constants.keys()),
+        )
+
+        super().__init__(domain)
+
+    @staticmethod
+    def setup_domain(ligands: List[str], solvents: List[str]):
+        domain = Domain()
+        domain += CategoricalVariable(
+            name="ligand", description="Ligand for catalyst complex", levels=ligands
+        )
+        domain += CategoricalVariable(
+            name="solvent", description="Reaction solvent", levels=solvents
+        )
+        domain += ContinuousVariable(
+            name="temperature",
+            description="Reaction temperature in degrees Celsius",
+            bounds=(30, 100),
+        )
+        domain += ContinuousVariable(
+            name="res_time", description="Residence time in minutes", bounds=(60, 240)
+        )
+        domain += ContinuousVariable(
+            name="cat_conc", description="Catalyst concentration", bounds=(1, 5)
+        )
+        domain += ContinuousVariable(
+            name="yld", description="Reaction yield", bounds=(0, 100), is_objective=True
+        )
+        return domain
+
+    def _run(self, conditions: DataSet, **kwargs):
+        rxn = conditions
+        df = self._react(
+            ligand=str(rxn["ligand"].values[0]),
+            solvent=str(rxn["solvent"].values[0]),
+            temperature=float(rxn["temperature"]),
+            res_time=float(rxn["res_time"]),
+            cat_conc=float(rxn["cat_conc"]),
+            # step_size=float(rxn["res_time"]) / 2,
+        )
+        limiting = min(df["sm1"].iloc[0], df["sm2"].iloc[0])
+        prod = df["prod"].iloc[-1]
+        conditions["yld", "DATA"] = prod / limiting * 100
+        return conditions, {}
+
+    def _react(
+        self,
+        ligand: str,
+        solvent: str,
+        temperature: float,
+        res_time: float,
+        cat_conc: float,
+        step_size: float = 15,
+    ) -> pd.DataFrame:
+        # Constants
+        C0 = [
+            0.0,  # Precat
+            0.0,  # Ligand
+            0.3,  # SM1
+            0.25,  # SM2
+            0.003 * cat_conc,  # Catalyst
+            0.0,  # Product
+            0.0,  # impurity1
+            0.0,  # impurity2
+            0.0,  # deactivatecat
+            0.0,  # impurity3
+        ]
+        T = temperature + 273.15
+
+        # Kinetic constants
+        lig = self.ligand_constants[ligand]
+        k = lig["k"]
+        Ea = lig["Ea"]
+        AD = [7e9, 8.3e9, 8.5e9, 8e9, 8.8e9, 8e9]
+        solvent_multiplers = self.solvent_constants[solvent]["k"]
+        kV = [
+            ADi * ki * np.exp(-Eai / (8.314e-3 * T)) for ADi, ki, Eai in zip(AD, k, Ea)
+        ]
+        kV = [
+            kVi * solvent_multipler_i
+            for kVi, solvent_multipler_i in zip(kV, solvent_multiplers)
+        ]
+        trange = np.arange(0, res_time, step_size)
+
+        # Solve differential equations
+        res = solve_ivp(
+            self._rate,
+            t_span=[0, res_time],
+            y0=C0,
+            t_eval=trange,
+            args=(kV,),
+            method="LSODA",  # Works well for stiff systems
+        )
+
+        # Noise
+        y = res.y.T
+        y += y * self.rng.normal(scale=self.noise_level, size=y.shape) / 100
+
+        return pd.DataFrame(
+            y,
+            columns=[
+                "precat",
+                "ligand",
+                "sm1",
+                "sm2",
+                "cat",
+                "prod",
+                "impurity1",
+                "impurity2",
+                "deactivate_cat",
+                "impurity3",
+            ],
+            index=trange,
+        )
+
+    def _rate(self, t, C, kV: list):
+        # Concentrations
+        # precat = C[0]
+        lig = C[1]
+        sm1 = C[2]
+        sm2 = C[3]
+        cat = C[4]
+        product = C[5]
+        # impurity_1 = C[6]
+        # impurity_2 = C[7]
+        # deactive_cat = C[8]
+
+        # Equations
+        r = np.zeros(10)
+        r[0] = kV[0] * cat
+        r[1] = kV[0] * cat
+        r[2] = -kV[1] * sm1 * sm2 * lig - kV[2] * sm1 * sm2 * lig
+        r[3] = -kV[1] * sm1 * sm2 * lig - kV[2] * sm1 * sm2 * lig - kV[3] * sm2
+        r[4] = -kV[0] * cat - 2 * kV[4] * cat * cat
+        r[5] = kV[1] * sm1 * sm2 * lig - kV[5] * product
+        r[6] = kV[2] * sm1 * sm2 * lig
+        r[7] = kV[3] * sm2
+        r[8] = kV[4] * cat * cat
+        r[9] = kV[5] * product
+
+        return r
+
+    @classmethod
+    def load_yaml(cls, filepath: str):
+        # Loading data
+        with open(filepath, "r") as f:
+            data = yaml_load(f, Loader=Loader)
+        name = data["name"]
+        ligands = data["ligands"]
+        solvents = data["solvents"]
+
+        # Instantiate class
+        mtk = cls(name=name, ligand_constants=ligands, solvent_constants=solvents)
+
+        return mtk

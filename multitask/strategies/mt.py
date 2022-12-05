@@ -16,6 +16,7 @@ from gpytorch.priors.lkj_prior import LKJCovariancePrior
 from gpytorch.priors.torch_priors import GammaPrior
 import torch
 import numpy as np
+import pandas as pd
 from typing import Optional
 
 
@@ -165,10 +166,11 @@ class NewMTBO(Strategy):
             return conditions
         elif prev_res is not None and self.all_experiments is None:
             self.all_experiments = prev_res
-            data = self.all_experiments.append(self.pretraining_data)
+            data = pd.concat([self.all_experiments, self.pretraining_data], axis=0)
         elif prev_res is not None and self.all_experiments is not None:
-            self.all_experiments = self.all_experiments.append(prev_res)
-            data = self.all_experiments.append(self.pretraining_data)
+            data = pd.concat(
+                [self.all_experiments, prev_res, self.pretraining_data], axis=0
+            )
         else:
             data = self.pretraining_data
         self.iterations += 1

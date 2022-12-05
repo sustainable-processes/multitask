@@ -998,14 +998,14 @@ class MultitaskBenchmarkStudy(L.LightningFlow):
 
 app = L.LightningApp(
     MultitaskBenchmarkStudy(
-        run_jupyter=False,
+        run_jupyter=True,
         run_benchmark_training=False,
         run_single_task=True,
         run_single_task_head_start=True,
         run_multi_task=True,
         run_suzuki=False,
         split_catalyst_suzuki=False,
-        run_cn=True,
+        run_cn=False,
         parallel=True,
         max_workers=30,
         wandb_entity="ceb-sre",
