@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 import logging
 import wandb
+import numpy as np
 from skorch.callbacks import WandbLogger
 
 logger = logging.getLogger(__name__)
@@ -64,11 +65,14 @@ def train_benchmark(
         wandb.run.summary.update(scores)
 
     # Parity plot
+    axis_fontsize = 14
+    heading_fontsize = 18
     fig, axes = emulator.parity_plot(include_test=True)
     ax = axes[0]
     ax.set_title("")
-    ax.set_xlabel("Measured Yield (%)")
-    ax.set_ylabel("Predicted Yield (%)")
+    ax.set_xlabel("Measured Yield (%)", fontsize=heading_fontsize)
+    ax.set_ylabel("Predicted Yield (%)", fontsize=heading_fontsize)
+    ax.tick_params(axis="both", which="major", labelsize=axis_fontsize)
     figure_path = Path(figure_path)
     figure_path.mkdir(parents=True, exist_ok=True)
     fig.savefig(figure_path / f"{dataset_name}_parity_plot.png", dpi=300)

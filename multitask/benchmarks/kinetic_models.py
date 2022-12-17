@@ -509,7 +509,7 @@ class MultitaskKinetics(Experiment):
             kVi * solvent_multipler_i
             for kVi, solvent_multipler_i in zip(kV, solvent_multiplers)
         ]
-        trange = np.arange(0, res_time, step_size)
+        trange = np.linspace(0, res_time, int((res_time + step_size) // step_size))
 
         # Solve differential equations
         res = solve_ivp(

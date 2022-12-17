@@ -1007,7 +1007,7 @@ app = L.LightningApp(
         split_catalyst_suzuki=False,
         run_cn=False,
         parallel=True,
-        max_workers=30,
+        max_workers=1,
         wandb_entity="ceb-sre",
         wandb_project="multitask",
     ),
