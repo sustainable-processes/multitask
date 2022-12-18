@@ -168,9 +168,8 @@ class NewMTBO(Strategy):
             self.all_experiments = prev_res
             data = pd.concat([self.all_experiments, self.pretraining_data], axis=0)
         elif prev_res is not None and self.all_experiments is not None:
-            data = pd.concat(
-                [self.all_experiments, prev_res, self.pretraining_data], axis=0
-            )
+            self.all_experiments = pd.concat([self.all_experiments, prev_res], axis=0)
+            data = pd.concat([self.all_experiments, self.pretraining_data], axis=0)
         else:
             data = self.pretraining_data
         self.iterations += 1
