@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Felton"
+  given-names: "Kobi"
+  orcid: "https://orcid.org/0000-0002-3616-4766"
+- family-names: "Wigh"
+  given-names: "Daniel"
+  orcid: "https://orcid.org/0000-0002-0494-643X"
+title: "multitask"
+version: 0.1.0
+# doi: 10.5281/zenodo.1234
+url: "https://github.com/sustainable-processes/multitask"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Taylor"
+    given-names: "Connor"
+    orcid: "https://orcid.org/0000-0002-4002-5937"
+  - family-names: "Felton"
+    given-names: "Kobi"
+    orcid: "https://orcid.org/0000-0002-3616-4766"
+  - family-names: "Wigh"
+    given-names: "Daniel"
+    orcid: "https://orcid.org/0000-0002-0494-643X"
+  - family-names: "Jeraal"
+    given-names: "Mohammed"
+  - family-names: "Grainger"
+    given-names: "Rachel"
+    orcid: "https://orcid.org/0000-0002-3944-0201"
+  - family-names: "Chessari"
+    given-names: "Gianni"
+    orcid: "https://orcid.org/0000-0002-8151-7778"
+  - family-names: "Johnson"
+    given-names: "Christopher"
+  - family-names: "Lapkin"
+    given-names: "Alexei"
+    orcid: https://orcid.org/0000-0001-7621-0889"
+  doi: "10.1021/acscentsci.3c00050"
+  journal: "ACS Central Science"
+  month: 4
+  start: 957 # First page number
+  end: 968 # Last page number
+  title: "Accelerated Chemical Reaction Optimization Using Multi-Task Learning"
+  issue: 5
+  volume: 9
+  year: 2023

@@ -432,7 +432,7 @@ def specify_outcome(case, reaction: Reaction, row: pd.Series):
 def add_provenance(reaction: Reaction):
     provenance = reaction.provenance
     provenance.doi = "110.1039/C6RE00153J"
-    provenance.publication_url = "http://doi.org/10.1039/C6RE00153J."
+    provenance.publication_url = "http://doi.org/10.1039/C6RE00153J"
     creator = provenance.record_created.person
     creator.username = "marcosfelt"
     creator.name = "Kobi Felton"

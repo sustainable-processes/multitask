@@ -2,7 +2,7 @@
 [![](https://img.shields.io/badge/Weights_&_Biases-FFCC33?style=for-the-badge&logo=WeightsAndBiases&logoColor=black)](https://wandb.ai/ceb-sre/multitask/)
 
 
-Optimizing reactions using multitask Bayesian optimization.
+Optimizing reactions using multitask Bayesian optimization. Based on the paper [Accelerated Chemical Reaction Optimization Using Multi-Task Learning](https://doi.org/10.1021/acscentsci.3c00050).
 
 ## Setup
 
@@ -85,5 +85,24 @@ Please format your code using [black](https://github.com/psf/black). Jupyter not
 * Put final code for pipelines in `multitask`, and add the code to pipelines as described in the previous section.
 * [Typer](https://typer.tiangolo.com/tutorial/first-steps/) is great for turning a python function into a command line script. It's already installed, so you might as well use it.
 
+## Citing
 
+If you find this project useful, we encourage you to
 
+* Star this repository :star: 
+* Cite our [paper](https://doi.org/10.1021/acscentsci.3c00050).
+```
+@article{Taylor2023,
+  doi = {10.1021/acscentsci.3c00050},
+  url = {https://doi.org/10.1021/acscentsci.3c00050},
+  year = {2023},
+  month = apr,
+  publisher = {American Chemical Society ({ACS})},
+  volume = {9},
+  number = {5},
+  pages = {957--968},
+  author = {Connor J. Taylor and Kobi C. Felton and Daniel Wigh and Mohammed I. Jeraal and Rachel Grainger and Gianni Chessari and Christopher N. Johnson and Alexei A. Lapkin},
+  title = {Accelerated Chemical Reaction Optimization Using Multi-Task Learning},
+  journal = {{ACS} Central Science}
+}
+```
