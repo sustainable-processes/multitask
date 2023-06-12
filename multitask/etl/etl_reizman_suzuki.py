@@ -5,6 +5,7 @@ python etl_reizman_suzuki.py ../data/reizman_suzuki/c8re00032h2.xlsx ../data/rei
 
 """
 
+import datetime
 from multitask.utils import *
 from ord_schema.proto.reaction_pb2 import *
 from ord_schema.proto.dataset_pb2 import *
@@ -79,6 +80,9 @@ def inner_loop(row: pd.Series, case) -> Reaction:
 
     # Specify reaction outcome
     specify_outcome(case, reaction, row)
+
+    # Add provenance
+    add_provenance(reaction)
 
     return reaction
 
@@ -380,6 +384,7 @@ def define_measurement(measurement: ProductMeasurement, row: pd.Series):
     measurement.analysis_key = "LCMS"
     measurement.type = ProductMeasurement.YIELD
     measurement.percentage.value = row["yld"]
+    measurement.uses_internal_standard = True
 
 
 products_by_case = {
@@ -431,14 +436,20 @@ def specify_outcome(case, reaction: Reaction, row: pd.Series):
 
 def add_provenance(reaction: Reaction):
     provenance = reaction.provenance
-    provenance.doi = "110.1039/C6RE00153J"
+    provenance.doi = "10.1039/C6RE00153J"
     provenance.publication_url = "http://doi.org/10.1039/C6RE00153J"
-    creator = provenance.record_created.person
-    creator.username = "marcosfelt"
-    creator.name = "Kobi Felton"
-    creator.orcid = "0000-0002-3616-4766"
-    creator.organization = "University of Cambridge"
-    creator.email = "kobi.c.f@gmail.com"
+    event = RecordEvent(
+        time={"value": str(datetime.datetime.now())},
+        person={
+            "username": "marcosfelt",
+            "name": "Kobi Felton",
+            "orcid": "0000-0002-3616-4766",
+            "organization": "University of Cambridge",
+            "email": "kobi.c.f@gmail.com"
+
+        },
+    )
+    provenance.record_created.CopyFrom(event)
 
 
 if __name__ == "__main__":

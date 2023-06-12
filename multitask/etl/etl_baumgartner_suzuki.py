@@ -5,6 +5,7 @@ python etl_baumgartner_suzuki.py ../data/baumgartner_suzuki/c8re00032h2.xlsx ../
 
 """
 
+import datetime
 from ord_schema.proto.reaction_pb2 import *
 from ord_schema.proto.dataset_pb2 import *
 from ord_schema.message_helpers import find_submessages
@@ -80,6 +81,9 @@ def inner_loop(row: pd.Series) -> Reaction:
 
     # Specify reaction outcome
     specify_outcome(reaction, row)
+
+    # Add provenance
+    add_provenance(reaction)
 
     return reaction
 
@@ -424,6 +428,7 @@ def define_measurement(measurement: ProductMeasurement, row: pd.Series):
         "2-Fluoro-3,3'-bipyridine Retention time in min"
     ]
     measurement.retention_time.units = Time.MINUTE
+    measurement.uses_internal_standard = True
 
 
 def specify_outcome(reaction: Reaction, row: pd.Series):
@@ -461,12 +466,18 @@ def add_provenance(reaction: Reaction):
     provenance = reaction.provenance
     provenance.doi = "10.1039/c8re00032h"
     provenance.publication_url = "http://doi.org/10.1039/c8re00032h"
-    creator = provenance.record_created.person
-    creator.username = "marcosfelt"
-    creator.name = "Kobi Felton"
-    creator.orcid = "0000-0002-3616-4766"
-    creator.organization = "University of Cambridge"
-    creator.email = "kobi.c.f@gmail.com"
+    event = RecordEvent(
+        time={"value": str(datetime.datetime.now())},
+        person={
+            "username": "marcosfelt",
+            "name": "Kobi Felton",
+            "orcid": "0000-0002-3616-4766",
+            "organization": "University of Cambridge",
+            "email": "kobi.c.f@gmail.com"
+
+        },
+    )
+    provenance.record_created.CopyFrom(event)
 
 
 if __name__ == "__main__":

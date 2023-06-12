@@ -33,6 +33,7 @@ NB 8: It seems I'm not allowed to specify an internal standard within the add_st
 
 """
 
+import datetime
 from ord_schema.proto.reaction_pb2 import *
 from ord_schema.proto.dataset_pb2 import *
 from ord_schema import validations
@@ -125,6 +126,9 @@ def inner_loop(row: pd.Series, stock_df: pd.DataFrame) -> Reaction:
 
     # Specify reaction outcome
     specify_outcome(reaction, row)
+
+    # Add provenance
+    add_provenance(reaction)
 
     return reaction
 
@@ -604,6 +608,7 @@ def add_standard(measurement: ProductMeasurement, row: pd.Series):
 def define_measurement(measurement: ProductMeasurement, row: pd.Series):
     measurement.analysis_key = "LCMS"
     measurement.type = ProductMeasurement.YIELD
+    measurement.uses_internal_standard = True
     rxn_yield = row["Reaction Yield"]
 
     try:
@@ -613,26 +618,9 @@ def define_measurement(measurement: ProductMeasurement, row: pd.Series):
         rxn_yield = rxn_yield / 100
     except:
         pass
-    # try:
-    #     rxn_yield = rxn_yield.replace("≥", "")
-    # except:
-    #     pass
-    # try:
-    #     rxn_yield = rxn_yield.replace("%", "")
-    # except:
-    #     pass
-    # try:
-    #     rxn_yield = float(rxn_yield)
-    # except:
-    #     pass
+
     if rxn_yield < 200:
         measurement.percentage.value = rxn_yield * 100
-
-    # measurement.retention_time.value = row[
-    #    "2-Fluoro-3,3'-bipyridine Retention time in min"
-    # ]
-    # measurement.retention_time.units = Time.MINUTE
-
 
 # nucleophile ID must be given. Since electrophile stays constant, the product
 # can be inferred from the nucleophile alone
@@ -680,12 +668,17 @@ def add_provenance(reaction: Reaction):
     provenance = reaction.provenance
     provenance.doi = "10.1021/acs.oprd.9b00236"
     provenance.publication_url = "http://doi.org/10.1021/acs.oprd.9b00236"
-    creator = provenance.record_created.person
-    creator.username = "dswigh"
-    creator.name = "Daniel Wigh"
-    creator.orcid = "0000-0002-0494-643X"
-    creator.organization = "University of Cambridge"
-    creator.email = "dswigh@gmail.com"
+    event = RecordEvent(
+        time={"value": str(datetime.datetime.now())},
+        person={
+            "username": "dswigh",
+            "name": "Daniel Wigh",
+            "orcid": "0000-0002-0494-643X",
+            "organization": "University of Cambridge",
+            "email": "dswigh@gmail.com"
+        },
+    )
+    provenance.record_created.CopyFrom(event)
 
 
 if __name__ == "__main__":
