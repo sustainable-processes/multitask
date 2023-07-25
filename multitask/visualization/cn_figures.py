@@ -3,7 +3,7 @@ Make figures for publication
 """
 from .plots import (
     get_wandb_run_dfs,
-    make_yld_comparison_plot,
+    make_comparison_plot,
     make_categorical_comparison_plot,
 )
 from summit import *
@@ -137,7 +137,7 @@ def baumgartner_cn_auxiliary_one_baumgartner_cn(
 
                 # Make yield subplot
                 ax_yld = fig_yld.add_subplot(4, 3, k)
-                make_yld_comparison_plot(
+                make_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
                     dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
@@ -333,7 +333,7 @@ def baumgartner_cn_auxiliary_all_baumgartner_cn(
 
         # Make yield subplot
         ax = fig_yld.add_subplot(1, 4, i)
-        make_yld_comparison_plot(
+        make_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
             dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),

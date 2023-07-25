@@ -19,8 +19,12 @@ def make_average_plot(
     ax: Axes,
     label: Optional[str] = None,
     color: Optional[str] = None,
+    bounds: Optional[List[float]] = None,
+    dropna: bool = True,
 ):
     yields = [df[output_name] for df in results]
+    if dropna:
+        yields = [df.dropna() for df in yields]
     yields = np.array(yields)
     mean_yield = np.mean(yields, axis=0)
     std_yield = np.std(yields, axis=0)
@@ -28,8 +32,10 @@ def make_average_plot(
     ax.plot(x, mean_yield, label=label, linewidth=4, c=color)
     top = mean_yield + 1.96 * std_yield
     bottom = mean_yield - 1.96 * std_yield
-    bottom = np.clip(bottom, 0, 100)
-    top = np.clip(top, 0, 100)
+    if bounds is None:
+        bounds = [0, 100]
+    bottom = np.clip(bottom, bounds[0], bounds[1])
+    top = np.clip(top, bounds[0], bounds[1])
     ax.fill_between(
         x,
         bottom,
@@ -59,8 +65,8 @@ def make_repeats_plot(
         )
 
 
-def make_yld_comparison_plot(
-    *args, output_name: str, ax: Axes, plot_type: str = "average"
+def make_comparison_plot(
+    *args, output_name: str, ax: Axes, plot_type: str = "average", n_experiments:int=20
 ):
     for arg in args:
         if plot_type == "average":
@@ -70,6 +76,7 @@ def make_yld_comparison_plot(
                 ax,
                 label=arg["label"],
                 color=arg.get("color"),
+                bounds=arg.get("bounds"),
             )
         elif plot_type == "repeats":
             make_repeats_plot(
@@ -86,8 +93,8 @@ def make_yld_comparison_plot(
         ax.legend(prop=fontdict, framealpha=0.0)
     else:
         ax.legend(prop=fontdict)
-    ax.set_xlim(0, 20)
-    ax.set_xticks(np.arange(0, 20, 2).astype(int))
+    ax.set_xlim(0, n_experiments)
+    ax.set_xticks(np.arange(0, n_experiments, 2).astype(int))
     ax.tick_params(direction="in")
     return ax
 

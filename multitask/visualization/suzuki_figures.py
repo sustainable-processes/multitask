@@ -3,7 +3,7 @@ Make Suzuki cross coupling figures for publication
 """
 from multitask.etl.etl_baumgartner_suzuki import ligands, pre_catalysts
 from .plots import (
-    make_yld_comparison_plot,
+    make_comparison_plot,
     make_categorical_comparison_plot,
     get_wandb_run_dfs,
 )
@@ -128,7 +128,7 @@ def baumgartner_suzuki_auxiliary_one_reizman_suzuki(
 
         # Make yield comparison subplot
         ax_yld = fig_yld.add_subplot(1, 4, k)
-        make_yld_comparison_plot(
+        make_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
             dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
@@ -307,7 +307,7 @@ def baumgartner_suzuki_auxiliary_all_reizman_suzuki(
     ][:num_repeats]
 
     # Make comparison subplot
-    make_yld_comparison_plot(
+    make_comparison_plot(
         dict(results=stbo_dfs, label="STBO", color="#a50026"),
         dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
         dict(results=mtbo_dfs, label="MTBO", color="#313695"),
@@ -484,7 +484,7 @@ def reizman_suzuki_auxiliary_one_baumgartner_suzuki(
 
         # Make subplot
         ax_yld = fig_yld.add_subplot(1, 4, k)
-        make_yld_comparison_plot(
+        make_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
             dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
@@ -674,7 +674,7 @@ def reizman_suzuki_auxiliary_one_reizman_suzuki(
 
                 # Make subplot
                 ax_yld = fig_yld.add_subplot(4, 3, k)
-                make_yld_comparison_plot(
+                make_comparison_plot(
                     dict(results=stbo_dfs, label="STBO", color="#a50026"),
                     dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
                     dict(results=mtbo_dfs, label="MTBO", color="#313695"),
@@ -864,7 +864,7 @@ def reizman_suzuki_auxiliary_all_baumgartner_suzuki(
 
         # Make subplot
         ax_yld = fig_yld.add_subplot(1, 4, k)
-        make_yld_comparison_plot(
+        make_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
             dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
@@ -1057,7 +1057,7 @@ def reizman_suzuki_auxiliary_all_reizman_suzuki(
 
         # Make subplot
         ax_yld = fig_yld.add_subplot(1, 4, k)
-        make_yld_comparison_plot(
+        make_comparison_plot(
             dict(results=stbo_dfs, label="STBO", color="#a50026"),
             dict(results=stbo_head_start_dfs, label="STBO HS", color="#FDAE61"),
             dict(results=mtbo_dfs, label="MTBO", color="#313695"),
